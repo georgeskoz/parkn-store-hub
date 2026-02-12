@@ -35,8 +35,10 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
+                  Profile
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-                  Dashboard
                 </Button>
                 <Button variant="outline" size="sm" onClick={signOut}>
                   Log Out
