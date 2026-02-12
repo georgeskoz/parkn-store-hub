@@ -16,6 +16,7 @@ import ParkingSearch from "./pages/ParkingSearch";
 import ParkingDetail from "./pages/ParkingDetail";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
+import BookingSuccess from "./pages/BookingSuccess";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/parking" element={<ParkingSearch />} />
             <Route path="/parking/:id" element={<ParkingDetail />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
+            <Route path="/booking/success" element={<BookingSuccess />} />
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
