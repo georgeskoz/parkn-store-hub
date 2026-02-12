@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Car, Warehouse } from "lucide-react";
+import { Menu, X, Car } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -30,18 +33,28 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Log In
-            </Button>
-            <Button size="sm">
-              Sign Up
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </Button>
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                  Log In
+                </Button>
+                <Button size="sm" onClick={() => navigate("/auth")}>
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
-          <button
-            className="md:hidden text-foreground"
-            onClick={() => setIsOpen(!isOpen)}
-          >
+          <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -58,8 +71,17 @@ const Navbar = () => {
               List Your Space
             </Link>
             <div className="flex gap-2 pt-2 px-3">
-              <Button variant="ghost" size="sm" className="flex-1">Log In</Button>
-              <Button size="sm" className="flex-1">Sign Up</Button>
+              {user ? (
+                <>
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => { navigate("/dashboard"); setIsOpen(false); }}>Dashboard</Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={signOut}>Log Out</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => { navigate("/auth"); setIsOpen(false); }}>Log In</Button>
+                  <Button size="sm" className="flex-1" onClick={() => { navigate("/auth"); setIsOpen(false); }}>Sign Up</Button>
+                </>
+              )}
             </div>
           </div>
         )}
