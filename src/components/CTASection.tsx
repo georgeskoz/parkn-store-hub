@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 const CTASection = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-24">
       <div className="container mx-auto px-4">
@@ -22,7 +24,7 @@ const CTASection = () => {
               Turn your unused space into income. List for free and start earning with every booking.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <Button variant="hero-outline" size="lg" className="text-base">
+              <Button variant="hero-outline" size="lg" className="text-base" onClick={() => navigate("/list")}>
                 Start Listing
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>

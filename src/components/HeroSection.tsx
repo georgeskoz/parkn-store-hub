@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
@@ -43,11 +45,11 @@ const HeroSection = () => {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="mt-8 flex flex-col sm:flex-row gap-3"
           >
-            <Button variant="hero" size="lg" className="text-base">
+            <Button variant="hero" size="lg" className="text-base" onClick={() => navigate("/parking")}>
               <Search className="w-5 h-5 mr-2" />
               Find a Spot
             </Button>
-            <Button variant="hero-outline" size="lg" className="text-base">
+            <Button variant="hero-outline" size="lg" className="text-base" onClick={() => navigate("/list")}>
               List Your Space
             </Button>
           </motion.div>
