@@ -8,6 +8,8 @@ export interface ParkingListing {
     city: string;
     region: string;
     address: string;
+    lat: number;
+    lng: number;
   };
   type: "outdoor" | "indoor" | "covered" | "underground";
   pricing: {
@@ -28,7 +30,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p1",
     title: "Downtown Underground Garage",
     description: "Secure underground parking steps from Sainte-Catherine Street. EV charging available.",
-    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Downtown", address: "1200 Rue Peel" },
+    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Downtown", address: "1200 Rue Peel", lat: 45.5017, lng: -73.5673 },
     type: "underground",
     pricing: { hourly: 5, daily: 25, monthly: 280 },
     features: ["EV Charging", "24/7 Access", "Security Camera", "Heated"],
@@ -42,7 +44,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p2",
     title: "Plateau Residential Driveway",
     description: "Private driveway spot in the heart of the Plateau. Quiet residential area.",
-    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Plateau", address: "4321 Rue Saint-Denis" },
+    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Plateau", address: "4321 Rue Saint-Denis", lat: 45.5225, lng: -73.5700 },
     type: "outdoor",
     pricing: { hourly: 3, daily: 15, monthly: 160 },
     features: ["Residential", "Quiet Area", "Easy Access"],
@@ -56,7 +58,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p3",
     title: "Covered Commercial Lot",
     description: "Large covered lot near the Old Port. Ideal for tourists and downtown workers.",
-    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Old Port", address: "300 Rue de la Commune" },
+    location: { country: "Canada", province: "Quebec", city: "Montreal", region: "Old Port", address: "300 Rue de la Commune", lat: 45.5048, lng: -73.5538 },
     type: "covered",
     pricing: { hourly: 6, daily: 30, monthly: 350 },
     features: ["Covered", "24/7 Access", "Security Guard", "Well-lit"],
@@ -70,7 +72,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p4",
     title: "Laval Indoor Parking",
     description: "Indoor heated parking near Carrefour Laval. Monthly passes available.",
-    location: { country: "Canada", province: "Quebec", city: "Laval", region: "Chomedey", address: "3035 Boul. Le Carrefour" },
+    location: { country: "Canada", province: "Quebec", city: "Laval", region: "Chomedey", address: "3035 Boul. Le Carrefour", lat: 45.5700, lng: -73.7490 },
     type: "indoor",
     pricing: { hourly: 3, daily: 18, monthly: 200 },
     features: ["Indoor", "Heated", "Near Mall", "Wheelchair Accessible"],
@@ -84,7 +86,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p5",
     title: "Old Quebec Tourist Spot",
     description: "Walking distance to Château Frontenac and historic quarter. Outdoor secured lot.",
-    location: { country: "Canada", province: "Quebec", city: "Quebec City", region: "Old Quebec", address: "15 Rue Dalhousie" },
+    location: { country: "Canada", province: "Quebec", city: "Quebec City", region: "Old Quebec", address: "15 Rue Dalhousie", lat: 46.8139, lng: -71.2080 },
     type: "outdoor",
     pricing: { hourly: 4, daily: 22, monthly: 240 },
     features: ["Tourist Area", "Secured", "Walkable"],
@@ -98,7 +100,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p6",
     title: "Longueuil Metro Parking",
     description: "Steps from Longueuil metro station. Perfect park-and-ride for commuters.",
-    location: { country: "Canada", province: "Quebec", city: "Longueuil", region: "Vieux-Longueuil", address: "100 Place Charles-Le Moyne" },
+    location: { country: "Canada", province: "Quebec", city: "Longueuil", region: "Vieux-Longueuil", address: "100 Place Charles-Le Moyne", lat: 45.5312, lng: -73.5185 },
     type: "underground",
     pricing: { hourly: 2, daily: 12, monthly: 140 },
     features: ["Near Metro", "Commuter-Friendly", "24/7 Access"],
@@ -112,7 +114,7 @@ export const parkingListings: ParkingListing[] = [
     id: "p7",
     title: "Sherbrooke University Lot",
     description: "Budget-friendly outdoor lot near Université de Sherbrooke campus.",
-    location: { country: "Canada", province: "Quebec", city: "Sherbrooke", region: "Fleurimont", address: "2500 Boul. de l'Université" },
+    location: { country: "Canada", province: "Quebec", city: "Sherbrooke", region: "Fleurimont", address: "2500 Boul. de l'Université", lat: 45.3794, lng: -71.9294 },
     type: "outdoor",
     pricing: { hourly: 2, daily: 10, monthly: 100 },
     features: ["Near Campus", "Affordable", "Student-Friendly"],
