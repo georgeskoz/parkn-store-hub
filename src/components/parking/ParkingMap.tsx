@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+// @ts-ignore - MarkerClusterGroup is added to L namespace
 import "leaflet.markercluster";
 import type { ParkingListing } from "@/data/parkingListings";
 
@@ -20,18 +21,18 @@ interface ParkingMapProps {
 }
 
 export default function ParkingMap({ listings, pricingMode }: ParkingMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+   const mapRef = useRef<HTMLDivElement>(null);
+   const mapInstance = useRef<L.Map | null>(null);
+   const clusterRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-    mapInstance.current = L.map(mapRef.current).setView([46.0, -73.0], 7);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(mapInstance.current);
-    clusterRef.current = L.markerClusterGroup();
-    mapInstance.current.addLayer(clusterRef.current);
+   useEffect(() => {
+     if (!mapRef.current || mapInstance.current) return;
+     mapInstance.current = L.map(mapRef.current).setView([46.0, -73.0], 7);
+     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+     }).addTo(mapInstance.current);
+     clusterRef.current = (L as any).markerClusterGroup();
+     mapInstance.current.addLayer(clusterRef.current);
 
     return () => {
       mapInstance.current?.remove();
