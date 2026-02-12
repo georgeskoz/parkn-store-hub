@@ -1,11 +1,15 @@
 import { useLocation, Link, Navigate } from "react-router-dom";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { CheckCircle, MapPin, Calendar, DollarSign, ArrowLeft } from "lucide-react";
+import { CheckCircle, MapPin, Calendar, DollarSign, ArrowLeft, CreditCard, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface BookingState {
   listingType: string;
@@ -25,11 +29,40 @@ interface BookingState {
 
 export default function BookingConfirmation() {
   const { state } = useLocation() as { state: BookingState | null };
+  const { user } = useAuth();
+  const [paying, setPaying] = useState(false);
 
   if (!state) return <Navigate to="/" replace />;
 
   const start = new Date(state.startDate);
   const end = new Date(state.endDate);
+
+  const handlePay = async () => {
+    if (!user) {
+      toast({ title: "Please sign in", description: "You must be logged in to complete a booking.", variant: "destructive" });
+      return;
+    }
+    setPaying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-booking-payment", {
+        body: state,
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Payment error", description: err.message || "Could not start payment.", variant: "destructive" });
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const platformFee = +(state.total * 0.1).toFixed(2);
+  const providerPayout = +(state.total - platformFee).toFixed(2);
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,8 +70,8 @@ export default function BookingConfirmation() {
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-xl">
         <div className="text-center mb-8">
           <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Booking Confirmed!</h1>
-          <p className="text-muted-foreground mt-1">Your reservation has been placed successfully.</p>
+          <h1 className="text-2xl font-bold text-foreground">Confirm Your Booking</h1>
+          <p className="text-muted-foreground mt-1">Review details and proceed to payment.</p>
         </div>
 
         <Card className="card-shadow">
@@ -80,9 +113,18 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            <Badge variant="secondary" className="w-full justify-center py-2">
-              <DollarSign className="w-3 h-3 mr-1" /> Payment will be processed via Stripe (coming soon)
-            </Badge>
+            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
+              <div className="flex justify-between"><span>Platform fee (10%)</span><span>${platformFee}</span></div>
+              <div className="flex justify-between"><span>Provider payout (90%)</span><span>${providerPayout}</span></div>
+            </div>
+
+            <Button className="w-full" size="lg" onClick={handlePay} disabled={paying}>
+              {paying ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+              ) : (
+                <><CreditCard className="w-4 h-4 mr-2" /> Pay ${state.total} CAD</>
+              )}
+            </Button>
           </CardContent>
         </Card>
 
@@ -90,7 +132,7 @@ export default function BookingConfirmation() {
           <Button variant="outline" className="flex-1" asChild>
             <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Dashboard</Link>
           </Button>
-          <Button className="flex-1" asChild>
+          <Button variant="outline" className="flex-1" asChild>
             <Link to={`/${state.listingType}`}>Browse More</Link>
           </Button>
         </div>
