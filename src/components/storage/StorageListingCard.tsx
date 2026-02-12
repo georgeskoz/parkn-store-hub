@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -107,7 +108,7 @@ export default function StorageListingCard({ listing, duration, isComparing, onT
                 Compare
               </label>
             </div>
-            <Button size="sm" className="text-xs h-8">View</Button>
+            <Button size="sm" className="text-xs h-8" asChild><Link to={`/storage/${listing.id}`}>View</Link></Button>
           </div>
         </div>
 
