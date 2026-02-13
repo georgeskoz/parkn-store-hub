@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 import { STEPS, INITIAL_FORM, type ListingFormData } from "@/components/listing/ListingFormTypes";
 import StepTypeCategory from "@/components/listing/StepTypeCategory";
@@ -23,6 +24,7 @@ export default function ListYourSpace() {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<ListingFormData>({ ...INITIAL_FORM });
+  const [submitting, setSubmitting] = useState(false);
 
   const update = (key: string, value: any) => setForm((p) => ({ ...p, [key]: value }));
   const toggleFeature = (f: string) =>
@@ -47,13 +49,53 @@ export default function ListYourSpace() {
     return true;
   };
 
-  const handleSubmit = () => {
-    if (!form.disclaimerAccepted) {
-      toast({ title: "Please accept the disclaimer", variant: "destructive" });
-      return;
+  const handleSubmit = async () => {
+    if (!form.disclaimerAccepted || !user) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("listings").insert({
+        user_id: user.id,
+        category: form.category,
+        type: form.type,
+        title: form.title,
+        description: form.description,
+        address: form.address,
+        unit: form.unit || null,
+        postal_code: form.postalCode || null,
+        city: form.city,
+        province: form.province,
+        country: form.country,
+        region: form.region || null,
+        lat: form.lat ?? 0,
+        lng: form.lng ?? 0,
+        features: form.features,
+        availability: form.availability,
+        spots: form.category === "parking" ? parseInt(form.spots) || 1 : null,
+        size: form.size || null,
+        sqft: form.sqft ? parseInt(form.sqft) : null,
+        hourly: form.hourly ? parseFloat(form.hourly) : null,
+        daily: form.daily ? parseFloat(form.daily) : null,
+        monthly: form.monthly ? parseFloat(form.monthly) : null,
+        weekly: form.weekly ? parseFloat(form.weekly) : null,
+        seasonal: form.seasonal ? parseFloat(form.seasonal) : null,
+        cancellation: form.cancellation || null,
+        student_discount: form.studentDiscount,
+        student_discount_percent: form.studentDiscount ? parseInt(form.studentDiscountPercent) : null,
+        student_universities: form.studentUniversities || null,
+        nearby_landmarks: form.nearbyLandmarks,
+        photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
+        disclaimer_accepted: form.disclaimerAccepted,
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Listing created!", description: "Your space is now live on the marketplace." });
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Error creating listing", description: err.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
-    toast({ title: "Listing created!", description: "Your space has been submitted for review." });
-    navigate("/dashboard");
   };
 
   if (!user) {
@@ -110,8 +152,9 @@ export default function ListYourSpace() {
                   Next <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={!form.disclaimerAccepted}>
-                  <Check className="w-4 h-4 mr-1" /> Submit Listing
+                <Button onClick={handleSubmit} disabled={!form.disclaimerAccepted || submitting}>
+                  {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                  {submitting ? "Submitting…" : "Submit Listing"}
                 </Button>
               )}
             </div>
