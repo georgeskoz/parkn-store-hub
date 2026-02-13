@@ -1,5 +1,4 @@
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Warehouse } from "lucide-react";
 import type { ListingFormData } from "./ListingFormTypes";
 
@@ -26,19 +25,6 @@ export default function StepTypeCategory({ form, update }: Props) {
           ))}
         </div>
       </div>
-      {form.category && (
-        <div>
-          <Label>Type</Label>
-          <Select value={form.type} onValueChange={(v) => update("type", v)}>
-            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-            <SelectContent>
-              {form.category === "parking"
-                ? ["outdoor", "indoor", "covered", "underground"].map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)
-                : ["indoor", "outdoor", "heated", "climate-controlled"].map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
     </div>
   );
 }

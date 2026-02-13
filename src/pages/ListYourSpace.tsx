@@ -39,9 +39,9 @@ export default function ListYourSpace() {
   };
 
   const canNext = () => {
-    if (step === 0) return !!form.category && !!form.type;
+    if (step === 0) return !!form.category;
     if (step === 1) return !!form.title && !!form.address && !!form.city && !!form.province && !!form.country;
-    if (step === 2) return !!form.description;
+    if (step === 2) return !!form.type && !!form.description;
     if (step === 3) return true; // photos optional
     if (step === 4) return form.category === "parking" ? !!form.daily : !!form.monthly;
     if (step === 5) return true;
