@@ -8,6 +8,8 @@ export interface StorageListing {
     province: string;
     country: string;
     address: string;
+    lat: number;
+    lng: number;
   };
   type: "indoor" | "outdoor" | "heated" | "climate-controlled";
   size: string; // e.g. "10x10", "5x10"
@@ -32,7 +34,7 @@ export const storageListings: StorageListing[] = [
     id: "s1",
     title: "Heated Garage Unit — Downtown",
     description: "Secure heated garage space in the heart of downtown Montreal. 24/7 access with keypad entry.",
-    location: { city: "Montreal", region: "Montreal Island", province: "Quebec", country: "Canada", address: "450 Rue Saint-Jacques" },
+    location: { city: "Montreal", region: "Montreal Island", province: "Quebec", country: "Canada", address: "450 Rue Saint-Jacques", lat: 45.5017, lng: -73.5673 },
     type: "heated",
     size: "10x20",
     sqft: 200,
@@ -49,7 +51,7 @@ export const storageListings: StorageListing[] = [
     id: "s2",
     title: "Climate-Controlled Locker",
     description: "Perfect for sensitive items. Temperature and humidity controlled unit near Old Port.",
-    location: { city: "Montreal", region: "Montreal Island", province: "Quebec", country: "Canada", address: "120 Rue de la Commune" },
+    location: { city: "Montreal", region: "Montreal Island", province: "Quebec", country: "Canada", address: "120 Rue de la Commune", lat: 45.5048, lng: -73.5538 },
     type: "climate-controlled",
     size: "5x10",
     sqft: 50,
@@ -66,7 +68,7 @@ export const storageListings: StorageListing[] = [
     id: "s3",
     title: "Outdoor Covered Parking Pad",
     description: "Large covered outdoor pad suitable for RVs, boats, or multiple vehicles. Gated compound.",
-    location: { city: "Laval", region: "Laval", province: "Quebec", country: "Canada", address: "890 Boul. des Laurentides" },
+    location: { city: "Laval", region: "Laval", province: "Quebec", country: "Canada", address: "890 Boul. des Laurentides", lat: 45.5700, lng: -73.7490 },
     type: "outdoor",
     size: "20x30",
     sqft: 600,
@@ -83,7 +85,7 @@ export const storageListings: StorageListing[] = [
     id: "s4",
     title: "Indoor Self-Storage Unit",
     description: "Clean indoor unit in a secure building with elevator access. Great for furniture and boxes.",
-    location: { city: "Quebec City", region: "Quebec Metro", province: "Quebec", country: "Canada", address: "55 Rue du Pont" },
+    location: { city: "Quebec City", region: "Quebec Metro", province: "Quebec", country: "Canada", address: "55 Rue du Pont", lat: 46.8139, lng: -71.2080 },
     type: "indoor",
     size: "10x10",
     sqft: 100,
@@ -100,7 +102,7 @@ export const storageListings: StorageListing[] = [
     id: "s5",
     title: "Premium Heated Warehouse Bay",
     description: "Large heated warehouse bay ideal for commercial storage, seasonal inventory, or vehicle collections.",
-    location: { city: "Longueuil", region: "South Shore", province: "Quebec", country: "Canada", address: "2100 Boul. Roland-Therrien" },
+    location: { city: "Longueuil", region: "South Shore", province: "Quebec", country: "Canada", address: "2100 Boul. Roland-Therrien", lat: 45.5312, lng: -73.5185 },
     type: "heated",
     size: "20x20",
     sqft: 400,
@@ -117,7 +119,7 @@ export const storageListings: StorageListing[] = [
     id: "s6",
     title: "Budget Outdoor Lot Space",
     description: "Affordable fenced outdoor lot space for general storage. Ideal for trailers or equipment.",
-    location: { city: "Sherbrooke", region: "Eastern Townships", province: "Quebec", country: "Canada", address: "340 Rue King Ouest" },
+    location: { city: "Sherbrooke", region: "Eastern Townships", province: "Quebec", country: "Canada", address: "340 Rue King Ouest", lat: 45.3794, lng: -71.9294 },
     type: "outdoor",
     size: "15x15",
     sqft: 225,
