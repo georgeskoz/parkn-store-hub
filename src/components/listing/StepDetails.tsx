@@ -24,6 +24,18 @@ export default function StepDetails({ form, update, toggleFeature }: Props) {
       </div>
 
       <div>
+        <Label>Type</Label>
+        <Select value={form.type} onValueChange={(v) => update("type", v)}>
+          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+          <SelectContent>
+            {form.category === "parking"
+              ? ["outdoor", "indoor", "covered", "underground"].map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)
+              : ["indoor", "outdoor", "heated", "climate-controlled"].map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
         <Label>Description</Label>
         <Textarea
           value={form.description}
