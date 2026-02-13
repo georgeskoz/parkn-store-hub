@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      listings: {
+        Row: {
+          address: string
+          availability: string
+          cancellation: string | null
+          category: string
+          city: string
+          country: string
+          created_at: string
+          daily: number | null
+          description: string
+          disclaimer_accepted: boolean
+          features: string[] | null
+          hourly: number | null
+          id: string
+          lat: number
+          lng: number
+          monthly: number | null
+          nearby_landmarks: string[] | null
+          photos: Json | null
+          postal_code: string | null
+          province: string
+          region: string | null
+          seasonal: number | null
+          size: string | null
+          spots: number | null
+          sqft: number | null
+          student_discount: boolean | null
+          student_discount_percent: number | null
+          student_universities: string | null
+          title: string
+          type: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+          weekly: number | null
+        }
+        Insert: {
+          address: string
+          availability?: string
+          cancellation?: string | null
+          category: string
+          city: string
+          country: string
+          created_at?: string
+          daily?: number | null
+          description: string
+          disclaimer_accepted?: boolean
+          features?: string[] | null
+          hourly?: number | null
+          id?: string
+          lat: number
+          lng: number
+          monthly?: number | null
+          nearby_landmarks?: string[] | null
+          photos?: Json | null
+          postal_code?: string | null
+          province: string
+          region?: string | null
+          seasonal?: number | null
+          size?: string | null
+          spots?: number | null
+          sqft?: number | null
+          student_discount?: boolean | null
+          student_discount_percent?: number | null
+          student_universities?: string | null
+          title: string
+          type: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+          weekly?: number | null
+        }
+        Update: {
+          address?: string
+          availability?: string
+          cancellation?: string | null
+          category?: string
+          city?: string
+          country?: string
+          created_at?: string
+          daily?: number | null
+          description?: string
+          disclaimer_accepted?: boolean
+          features?: string[] | null
+          hourly?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          monthly?: number | null
+          nearby_landmarks?: string[] | null
+          photos?: Json | null
+          postal_code?: string | null
+          province?: string
+          region?: string | null
+          seasonal?: number | null
+          size?: string | null
+          spots?: number | null
+          sqft?: number | null
+          student_discount?: boolean | null
+          student_discount_percent?: number | null
+          student_universities?: string | null
+          title?: string
+          type?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
