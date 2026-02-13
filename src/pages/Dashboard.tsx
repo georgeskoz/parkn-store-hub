@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import MyListings from "@/components/dashboard/MyListings";
 
 type ViewMode = "provider" | "seeker";
 
@@ -136,37 +137,41 @@ const Dashboard = () => {
 };
 
 const ProviderView = () => (
-  <div className="grid md:grid-cols-3 gap-6">
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">Active Listings</CardTitle>
-        <CardDescription>Your parking & storage spots</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">0</p>
-        <Button variant="outline" size="sm" className="mt-4 w-full">
-          <Plus className="w-4 h-4 mr-1" /> Create Listing
-        </Button>
-      </CardContent>
-    </Card>
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">Active Bookings</CardTitle>
-        <CardDescription>Current reservations on your spots</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">0</p>
-      </CardContent>
-    </Card>
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">Revenue</CardTitle>
-        <CardDescription>Total earnings this month</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">$0.00</p>
-      </CardContent>
-    </Card>
+  <div className="space-y-6">
+    <div className="grid md:grid-cols-3 gap-6">
+      <Card className="card-shadow">
+        <CardHeader>
+          <CardTitle className="text-lg">Create Listing</CardTitle>
+          <CardDescription>Add a new space to your portfolio</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" asChild>
+            <Link to="/list">
+              <Plus className="w-4 h-4 mr-2" /> New Listing
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+      <Card className="card-shadow">
+        <CardHeader>
+          <CardTitle className="text-lg">Active Bookings</CardTitle>
+          <CardDescription>Current reservations on your spots</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-bold text-foreground">0</p>
+        </CardContent>
+      </Card>
+      <Card className="card-shadow">
+        <CardHeader>
+          <CardTitle className="text-lg">Revenue</CardTitle>
+          <CardDescription>Total earnings this month</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-bold text-foreground">$0.00</p>
+        </CardContent>
+      </Card>
+    </div>
+    <MyListings />
   </div>
 );
 
