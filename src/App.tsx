@@ -14,6 +14,7 @@ import StorageDetail from "./pages/StorageDetail";
 import ProfileSettings from "./pages/ProfileSettings";
 import ParkingSearch from "./pages/ParkingSearch";
 import ParkingDetail from "./pages/ParkingDetail";
+import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
 import BookingSuccess from "./pages/BookingSuccess";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/storage" element={<StorageListings />} />
             <Route path="/storage/:id" element={<StorageDetail />} />
+            <Route path="/find" element={<FindASpot />} />
             <Route path="/parking" element={<ParkingSearch />} />
             <Route path="/parking/:id" element={<ParkingDetail />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
