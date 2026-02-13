@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import StorageListings from "./pages/StorageListings";
 import StorageDetail from "./pages/StorageDetail";
+import ListingDetail from "./pages/ListingDetail";
 import ProfileSettings from "./pages/ProfileSettings";
 import ParkingSearch from "./pages/ParkingSearch";
 import ParkingDetail from "./pages/ParkingDetail";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/storage" element={<StorageListings />} />
             <Route path="/storage/:id" element={<StorageDetail />} />
             <Route path="/find" element={<FindASpot />} />
+            <Route path="/listing/:id" element={<ListingDetail />} />
             <Route path="/parking" element={<ParkingSearch />} />
             <Route path="/parking/:id" element={<ParkingDetail />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
