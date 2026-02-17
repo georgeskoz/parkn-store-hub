@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          category: string | null
+          city: string | null
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          end_date: string
+          id: string
+          listing_id: string
+          payment_intent_id: string | null
+          provider_id: string
+          seeker_id: string
+          start_date: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          payment_intent_id?: string | null
+          provider_id: string
+          seeker_id: string
+          start_date: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          payment_intent_id?: string | null
+          provider_id?: string
+          seeker_id?: string
+          start_date?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           address: string
@@ -151,6 +213,45 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      surge_pricing: {
+        Row: {
+          category: string
+          city: string
+          created_at: string
+          days_of_week: number[] | null
+          end_time: string | null
+          id: string
+          is_active: boolean
+          start_time: string | null
+          surge_multiplier: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          city: string
+          created_at?: string
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          start_time?: string | null
+          surge_multiplier?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          city?: string
+          created_at?: string
+          days_of_week?: number[] | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean
+          start_time?: string | null
+          surge_multiplier?: number
           updated_at?: string
         }
         Relationships: []
