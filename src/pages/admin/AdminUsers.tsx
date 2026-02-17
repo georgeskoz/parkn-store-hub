@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, UserPlus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type UserRow = {
   id: string;
@@ -22,6 +23,11 @@ const AdminUsers = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newName, setNewName] = useState("");
   const { toast } = useToast();
 
   const fetchUsers = async () => {
@@ -69,6 +75,49 @@ const AdminUsers = () => {
     }
   };
 
+  const handleCreateAdmin = async () => {
+    if (!newEmail || !newPassword) {
+      toast({ title: "Error", description: "Email and password are required", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ email: newEmail, password: newPassword, displayName: newName }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        toast({ title: "Error", description: result.error || "Failed to create admin", variant: "destructive" });
+      } else {
+        toast({ title: "Admin created", description: `${newEmail} has been added as an admin.` });
+        setDialogOpen(false);
+        setNewEmail("");
+        setNewPassword("");
+        setNewName("");
+        fetchUsers();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filtered = users.filter((u) =>
     (u.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
     u.id.toLowerCase().includes(search.toLowerCase())
@@ -76,7 +125,43 @@ const AdminUsers = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create Admin User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Admin User</DialogTitle>
+              <DialogDescription>Create a new user account with admin privileges.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-name">Display Name</Label>
+                <Input id="admin-name" placeholder="John Doe" value={newName} onChange={(e) => setNewName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">Email</Label>
+                <Input id="admin-email" type="email" placeholder="admin@example.com" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">Password</Label>
+                <Input id="admin-password" type="password" placeholder="Min 6 characters" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateAdmin} disabled={creating}>
+                {creating ? "Creating..." : "Create Admin"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
