@@ -10,16 +10,6 @@ const corsHeaders = {
 
 const PLATFORM_COMMISSION_PERCENT = 10;
 
-function getDayOfWeek(dateStr: string): number {
-  return new Date(dateStr).getDay();
-}
-
-function parseTimeToMinutes(t: string | null): number | null {
-  if (!t) return null;
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -60,7 +50,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get listing details for surge pricing + provider
+    // Look up listing for surge match & provider id
     const { data: listing } = await supabase
       .from("listings")
       .select("city, category, user_id")
@@ -68,41 +58,34 @@ serve(async (req) => {
       .single();
     if (!listing) throw new Error("Listing not found");
 
-    // Check surge pricing
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const currentDow = now.getDay();
-
+    // Server-side surge lookup (cannot be bypassed by client)
+    const nowIso = new Date().toISOString();
     const { data: surgeRules } = await supabase
       .from("surge_pricing")
-      .select("surge_multiplier, start_time, end_time, days_of_week")
+      .select("id, label, surge_multiplier, start_at, end_at, category")
       .eq("city", listing.city)
-      .eq("category", listing.category)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .or(`category.eq.${listing.category},category.eq.all`)
+      .lte("start_at", nowIso)
+      .gte("end_at", nowIso);
 
     let surgeMultiplier = 1;
+    let surgeLabel: string | null = null;
+    let surgeRuleId: string | null = null;
     for (const rule of surgeRules || []) {
-      const days = rule.days_of_week as number[] | null;
-      const startMin = parseTimeToMinutes(rule.start_time);
-      const endMin = parseTimeToMinutes(rule.end_time);
-
-      const dayMatch = !days || days.includes(currentDow);
-      const timeMatch =
-        startMin === null || endMin === null ||
-        (startMin <= endMin
-          ? currentMinutes >= startMin && currentMinutes <= endMin
-          : currentMinutes >= startMin || currentMinutes <= endMin);
-
-      if (dayMatch && timeMatch && rule.surge_multiplier > surgeMultiplier) {
-        surgeMultiplier = rule.surge_multiplier;
+      if (Number(rule.surge_multiplier) > surgeMultiplier) {
+        surgeMultiplier = Number(rule.surge_multiplier);
+        surgeLabel = rule.label;
+        surgeRuleId = rule.id;
       }
     }
 
-    const baseSubtotal = +unitPrice * +units;
+    const baseSubtotal = +(+unitPrice * +units).toFixed(2);
     const subtotal = +(baseSubtotal * surgeMultiplier).toFixed(2);
     const gst = +(subtotal * 0.05).toFixed(2);
     const qst = +(subtotal * 0.09975).toFixed(2);
     const total = +(subtotal + gst + qst).toFixed(2);
+    const originalTotal = +(baseSubtotal * 1.14975).toFixed(2);
 
     const totalCents = Math.round(total * 100);
     const platformFeeCents = Math.round(totalCents * PLATFORM_COMMISSION_PERCENT / 100);
@@ -112,7 +95,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Create pending booking
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
@@ -123,6 +105,8 @@ serve(async (req) => {
         end_date: endDate,
         status: "pending",
         total_amount: total,
+        original_amount: originalTotal,
+        surge_multiplier: surgeMultiplier,
         commission_rate: PLATFORM_COMMISSION_PERCENT,
         commission_amount: platformFeeCents / 100,
         category: listing.category,
@@ -134,8 +118,7 @@ serve(async (req) => {
     if (bookingError) throw new Error(bookingError.message);
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string | undefined;
-    if (customers.data.length > 0) customerId = customers.data[0].id;
+    const customerId = customers.data[0]?.id;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -146,7 +129,7 @@ serve(async (req) => {
             currency: "cad",
             product_data: {
               name: title,
-              description: `${listingType} booking: ${address} (${rate} rate × ${units})`,
+              description: `${listingType} booking: ${address} (${rate} rate × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}`,
             },
             unit_amount: totalCents,
           },
@@ -166,6 +149,9 @@ serve(async (req) => {
         gst: String(gst),
         qst: String(qst),
         surge_multiplier: String(surgeMultiplier),
+        surge_label: surgeLabel || "",
+        surge_rule_id: surgeRuleId || "",
+        original_total: String(originalTotal),
         platform_fee_cents: String(platformFeeCents),
         provider_payout_cents: String(totalCents - platformFeeCents),
         user_id: user.id,
@@ -175,7 +161,16 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ url: session.url, surgeMultiplier, subtotal, gst, qst, total }),
+      JSON.stringify({
+        url: session.url,
+        surgeMultiplier,
+        surgeLabel,
+        subtotal,
+        gst,
+        qst,
+        total,
+        originalTotal,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (error) {

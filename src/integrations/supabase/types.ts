@@ -24,11 +24,13 @@ export type Database = {
           end_date: string
           id: string
           listing_id: string
+          original_amount: number | null
           payment_intent_id: string | null
           provider_id: string
           seeker_id: string
           start_date: string
           status: string
+          surge_multiplier: number
           total_amount: number
           updated_at: string
         }
@@ -41,11 +43,13 @@ export type Database = {
           end_date: string
           id?: string
           listing_id: string
+          original_amount?: number | null
           payment_intent_id?: string | null
           provider_id: string
           seeker_id: string
           start_date: string
           status?: string
+          surge_multiplier?: number
           total_amount?: number
           updated_at?: string
         }
@@ -58,11 +62,13 @@ export type Database = {
           end_date?: string
           id?: string
           listing_id?: string
+          original_amount?: number | null
           payment_intent_id?: string | null
           provider_id?: string
           seeker_id?: string
           start_date?: string
           status?: string
+          surge_multiplier?: number
           total_amount?: number
           updated_at?: string
         }
@@ -296,9 +302,12 @@ export type Database = {
           city: string
           created_at: string
           days_of_week: number[] | null
+          end_at: string | null
           end_time: string | null
           id: string
           is_active: boolean
+          label: string | null
+          start_at: string | null
           start_time: string | null
           surge_multiplier: number
           updated_at: string
@@ -308,9 +317,12 @@ export type Database = {
           city: string
           created_at?: string
           days_of_week?: number[] | null
+          end_at?: string | null
           end_time?: string | null
           id?: string
           is_active?: boolean
+          label?: string | null
+          start_at?: string | null
           start_time?: string | null
           surge_multiplier?: number
           updated_at?: string
@@ -320,9 +332,12 @@ export type Database = {
           city?: string
           created_at?: string
           days_of_week?: number[] | null
+          end_at?: string | null
           end_time?: string | null
           id?: string
           is_active?: boolean
+          label?: string | null
+          start_at?: string | null
           start_time?: string | null
           surge_multiplier?: number
           updated_at?: string
