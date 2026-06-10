@@ -3,17 +3,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight, MessageSquare, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MyListings from "@/components/dashboard/MyListings";
 import StripeConnectCard from "@/components/dashboard/StripeConnectCard";
+import ConversationsList from "@/components/messaging/ConversationsList";
+import ConversationPanel from "@/components/messaging/ConversationPanel";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 type ViewMode = "provider" | "seeker";
 
 const Dashboard = () => {
   const { user, profile, roles, signOut, addRole } = useAuth();
   const { toast } = useToast();
+  const { total: unreadTotal } = useUnreadMessages();
   const [viewMode, setViewMode] = useState<ViewMode>(
     roles.includes("provider") ? "provider" : "seeker"
   );
@@ -31,7 +36,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Bar */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
@@ -64,7 +68,6 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Role Selection / Onboarding */}
         {roles.length === 0 && (
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to SpotVault!</h1>
@@ -98,7 +101,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Dashboard Content */}
         {roles.length > 0 && (
           <div>
             <div className="flex items-center gap-3 mb-8">
@@ -110,7 +112,6 @@ const Dashboard = () => {
               </Badge>
             </div>
 
-            {/* Add missing role CTA */}
             {!hasRole(viewMode === "provider" ? "seeker" : "provider") && (
               <Card className="mb-6 border-dashed">
                 <CardContent className="flex items-center justify-between py-4">
@@ -129,10 +130,56 @@ const Dashboard = () => {
               </Card>
             )}
 
-            {viewMode === "provider" ? <ProviderView profile={profile} /> : <SeekerView />}
+            <Tabs defaultValue="overview">
+              <TabsList>
+                <TabsTrigger value="overview">
+                  <LayoutDashboard className="w-4 h-4 mr-1" /> Overview
+                </TabsTrigger>
+                <TabsTrigger value="messages" className="relative">
+                  <MessageSquare className="w-4 h-4 mr-1" /> Messages
+                  {unreadTotal > 0 && (
+                    <Badge className="ml-2 h-5 min-w-5 px-1 text-[10px]">{unreadTotal}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="mt-6">
+                {viewMode === "provider" ? <ProviderView profile={profile} /> : <SeekerView />}
+              </TabsContent>
+
+              <TabsContent value="messages" className="mt-6">
+                <MessagesTab />
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </main>
+    </div>
+  );
+};
+
+const MessagesTab = () => {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  return (
+    <div className="grid md:grid-cols-[320px_1fr] gap-6">
+      <div>
+        <ConversationsList
+          activeId={activeId}
+          onSelectConversation={(id) => setActiveId(id)}
+        />
+      </div>
+      <div>
+        {activeId ? (
+          <ConversationPanel
+            conversationId={activeId}
+            onClose={() => setActiveId(null)}
+          />
+        ) : (
+          <Card className="card-shadow h-[500px] flex items-center justify-center">
+            <p className="text-sm text-muted-foreground">Select a conversation to view messages.</p>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
