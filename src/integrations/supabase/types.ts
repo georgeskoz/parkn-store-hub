@@ -76,6 +76,41 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          listing_id: string
+          provider_id: string
+          seeker_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id: string
+          provider_id: string
+          seeker_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id?: string
+          provider_id?: string
+          seeker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           address: string
@@ -187,6 +222,38 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -195,6 +262,8 @@ export type Database = {
           display_name: string | null
           id: string
           phone: string | null
+          stripe_account_id: string | null
+          stripe_onboarding_complete: boolean
           updated_at: string
         }
         Insert: {
@@ -204,6 +273,8 @@ export type Database = {
           display_name?: string | null
           id: string
           phone?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean
           updated_at?: string
         }
         Update: {
@@ -213,6 +284,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean
           updated_at?: string
         }
         Relationships: []
