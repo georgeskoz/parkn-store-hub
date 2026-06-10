@@ -118,8 +118,14 @@ export default function BookingConfirmation() {
               <div className="flex justify-between text-muted-foreground text-xs">
                 <span>QST (9.975%)</span><span>${state.qst}</span>
               </div>
+              {surgeInfo && (
+                <div className="flex justify-between text-amber-600 text-xs">
+                  <span>Surge Pricing (×{surgeInfo.multiplier})</span>
+                  <span>+${(surgeInfo.subtotal - state.subtotal).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-foreground border-t border-border pt-2">
-                <span>Total</span><span>${state.total}</span>
+                <span>Total</span><span>${surgeInfo ? surgeInfo.total.toFixed(2) : state.total}</span>
               </div>
             </div>
 
