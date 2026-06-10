@@ -31,6 +31,7 @@ export default function BookingConfirmation() {
   const { state } = useLocation() as { state: BookingState | null };
   const { user } = useAuth();
   const [paying, setPaying] = useState(false);
+  const [surgeInfo, setSurgeInfo] = useState<{ multiplier: number; subtotal: number; gst: number; qst: number; total: number } | null>(null);
 
   if (!state) return <Navigate to="/" replace />;
 
