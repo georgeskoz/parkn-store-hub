@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Loader2 } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface ConversationRow {
   id: string;
@@ -16,12 +17,14 @@ interface ConversationRow {
 
 interface Props {
   onSelectConversation: (id: string) => void;
+  activeId?: string | null;
 }
 
-export default function ConversationsList({ onSelectConversation }: Props) {
+export default function ConversationsList({ onSelectConversation, activeId }: Props) {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { byConversation } = useUnreadMessages();
 
   useEffect(() => {
     if (!user) return;
@@ -65,27 +68,36 @@ export default function ConversationsList({ onSelectConversation }: Props) {
 
   return (
     <div className="space-y-3">
-      {conversations.map((c) => (
-        <Card
-          key={c.id}
-          className="card-shadow cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => onSelectConversation(c.id)}
-        >
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{c.listings?.title || "Listing"}</CardTitle>
-              <Badge variant="outline" className="text-xs">
-                {c.seeker_id === user?.id ? "Provider" : "Seeker"}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Last message: {new Date(c.last_message_at).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+      {conversations.map((c) => {
+        const unread = byConversation[c.id] || 0;
+        const active = activeId === c.id;
+        return (
+          <Card
+            key={c.id}
+            className={`card-shadow cursor-pointer transition-colors ${active ? "border-primary bg-muted/40" : "hover:bg-muted/50"}`}
+            onClick={() => onSelectConversation(c.id)}
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-base truncate">{c.listings?.title || "Listing"}</CardTitle>
+                <div className="flex items-center gap-1 shrink-0">
+                  {unread > 0 && (
+                    <Badge className="text-xs">{unread}</Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {c.seeker_id === user?.id ? "Provider" : "Seeker"}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Last message: {new Date(c.last_message_at).toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

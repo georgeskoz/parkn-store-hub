@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Car } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Menu, X, Car, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { total: unreadTotal } = useUnreadMessages();
   const navigate = useNavigate();
 
   return (
@@ -35,10 +38,18 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <Button variant="ghost" size="sm" className="relative" onClick={() => navigate("/messages")}>
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Messages
+                  {unreadTotal > 0 && (
+                    <Badge className="ml-2 h-5 min-w-5 px-1 text-[10px]">{unreadTotal}</Badge>
+                  )}
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
                   Profile
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+                  Dashboard
                 </Button>
                 <Button variant="outline" size="sm" onClick={signOut}>
                   Log Out
