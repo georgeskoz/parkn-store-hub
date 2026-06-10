@@ -7,6 +7,7 @@ import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight } from "lucide-react
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MyListings from "@/components/dashboard/MyListings";
+import StripeConnectCard from "@/components/dashboard/StripeConnectCard";
 
 type ViewMode = "provider" | "seeker";
 
