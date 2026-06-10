@@ -31,6 +31,7 @@ export default function BookingConfirmation() {
   const { state } = useLocation() as { state: BookingState | null };
   const { user } = useAuth();
   const [paying, setPaying] = useState(false);
+  const [surgeInfo, setSurgeInfo] = useState<{ multiplier: number; subtotal: number; gst: number; qst: number; total: number } | null>(null);
 
   if (!state) return <Navigate to="/" replace />;
 
@@ -48,6 +49,15 @@ export default function BookingConfirmation() {
         body: state,
       });
       if (error) throw error;
+      if (data?.surgeMultiplier && data.surgeMultiplier > 1) {
+        setSurgeInfo({
+          multiplier: data.surgeMultiplier,
+          subtotal: data.subtotal,
+          gst: data.gst,
+          qst: data.qst,
+          total: data.total,
+        });
+      }
       if (data?.url) {
         window.open(data.url, "_blank");
       } else {
@@ -108,8 +118,14 @@ export default function BookingConfirmation() {
               <div className="flex justify-between text-muted-foreground text-xs">
                 <span>QST (9.975%)</span><span>${state.qst}</span>
               </div>
+              {surgeInfo && (
+                <div className="flex justify-between text-amber-600 text-xs">
+                  <span>Surge Pricing (×{surgeInfo.multiplier})</span>
+                  <span>+${(surgeInfo.subtotal - state.subtotal).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-foreground border-t border-border pt-2">
-                <span>Total</span><span>${state.total}</span>
+                <span>Total</span><span>${surgeInfo ? surgeInfo.total.toFixed(2) : state.total}</span>
               </div>
             </div>
 

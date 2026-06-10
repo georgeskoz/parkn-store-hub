@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 import { MapPin, ArrowLeft, User, Mail, Phone, Check } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import ConversationPanel from "@/components/messaging/ConversationPanel";
 
 interface DbListing {
   id: string;
@@ -76,10 +78,12 @@ const availColor: Record<string, string> = {
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [listing, setListing] = useState<DbListing | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showMessages, setShowMessages] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -378,7 +382,7 @@ export default function ListingDetail() {
                       </a>
                     </Button>
                   )}
-                  <Button className="w-full">
+                  <Button className="w-full" onClick={() => setShowMessages(true)}>
                     <Mail className="w-4 h-4 mr-2" />
                     Send Message
                   </Button>
@@ -403,6 +407,17 @@ export default function ListingDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Messaging panel */}
+            {showMessages && (
+              <div className="fixed bottom-4 right-4 z-50">
+                <ConversationPanel
+                  listingId={listing.id}
+                  providerId={listing.user_id}
+                  onClose={() => setShowMessages(false)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </main>

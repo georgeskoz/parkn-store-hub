@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.create-admin-user]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-stripe-connect-link]
+verify_jwt = false

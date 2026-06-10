@@ -10,6 +10,8 @@ interface Profile {
   avatar_url: string | null;
   phone: string | null;
   bio: string | null;
+  stripe_account_id: string | null;
+  stripe_onboarding_complete: boolean;
 }
 
 interface AuthContextType {

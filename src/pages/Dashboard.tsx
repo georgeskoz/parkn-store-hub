@@ -7,6 +7,7 @@ import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight } from "lucide-react
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MyListings from "@/components/dashboard/MyListings";
+import StripeConnectCard from "@/components/dashboard/StripeConnectCard";
 
 type ViewMode = "provider" | "seeker";
 
@@ -128,7 +129,7 @@ const Dashboard = () => {
               </Card>
             )}
 
-            {viewMode === "provider" ? <ProviderView /> : <SeekerView />}
+            {viewMode === "provider" ? <ProviderView profile={profile} /> : <SeekerView />}
           </div>
         )}
       </main>
@@ -136,9 +137,9 @@ const Dashboard = () => {
   );
 };
 
-const ProviderView = () => (
+const ProviderView = ({ profile }: { profile: any }) => (
   <div className="space-y-6">
-    <div className="grid md:grid-cols-3 gap-6">
+    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle className="text-lg">Create Listing</CardTitle>
@@ -152,6 +153,10 @@ const ProviderView = () => (
           </Button>
         </CardContent>
       </Card>
+      <StripeConnectCard
+        stripeAccountId={profile?.stripe_account_id}
+        onboardingComplete={profile?.stripe_onboarding_complete}
+      />
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle className="text-lg">Active Bookings</CardTitle>
