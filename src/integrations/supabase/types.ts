@@ -84,6 +84,7 @@ export type Database = {
       }
       conversations: {
         Row: {
+          booking_id: string | null
           created_at: string
           id: string
           last_message_at: string
@@ -92,6 +93,7 @@ export type Database = {
           seeker_id: string
         }
         Insert: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           seeker_id: string
         }
         Update: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
@@ -108,6 +111,13 @@ export type Database = {
           seeker_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_listing_id_fkey"
             columns: ["listing_id"]
@@ -230,27 +240,40 @@ export type Database = {
       }
       messages: {
         Row: {
+          booking_id: string | null
           content: string
           conversation_id: string
           created_at: string
           id: string
+          read_at: string | null
           sender_id: string
         }
         Insert: {
+          booking_id?: string | null
           content: string
           conversation_id: string
           created_at?: string
           id?: string
+          read_at?: string | null
           sender_id: string
         }
         Update: {
+          booking_id?: string | null
           content?: string
           conversation_id?: string
           created_at?: string
           id?: string
+          read_at?: string | null
           sender_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_conversation_id_fkey"
             columns: ["conversation_id"]
