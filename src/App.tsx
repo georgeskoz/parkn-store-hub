@@ -19,6 +19,7 @@ import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
 import BookingSuccess from "./pages/BookingSuccess";
+import Messages from "./pages/Messages";
 import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
