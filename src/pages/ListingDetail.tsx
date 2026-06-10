@@ -382,7 +382,7 @@ export default function ListingDetail() {
                       </a>
                     </Button>
                   )}
-                  <Button className="w-full">
+                  <Button className="w-full" onClick={() => setShowMessages(true)}>
                     <Mail className="w-4 h-4 mr-2" />
                     Send Message
                   </Button>
