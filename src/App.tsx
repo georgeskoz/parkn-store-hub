@@ -52,6 +52,7 @@ const App = () => (
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
