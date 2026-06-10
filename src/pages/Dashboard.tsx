@@ -129,7 +129,7 @@ const Dashboard = () => {
               </Card>
             )}
 
-            {viewMode === "provider" ? <ProviderView /> : <SeekerView />}
+            {viewMode === "provider" ? <ProviderView profile={profile} /> : <SeekerView />}
           </div>
         )}
       </main>
