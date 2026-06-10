@@ -49,6 +49,15 @@ export default function BookingConfirmation() {
         body: state,
       });
       if (error) throw error;
+      if (data?.surgeMultiplier && data.surgeMultiplier > 1) {
+        setSurgeInfo({
+          multiplier: data.surgeMultiplier,
+          subtotal: data.subtotal,
+          gst: data.gst,
+          qst: data.qst,
+          total: data.total,
+        });
+      }
       if (data?.url) {
         window.open(data.url, "_blank");
       } else {
