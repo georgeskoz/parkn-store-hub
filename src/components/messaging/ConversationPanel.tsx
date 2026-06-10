@@ -62,7 +62,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
         } else {
           const { data: created } = await supabase
             .from("conversations")
-            .insert({ listing_id: listingId, seeker_id: user.id, provider_id })
+            .insert({ listing_id: listingId, seeker_id: user.id, provider_id: providerId })
             .select("*")
             .single();
           if (created) setConv(created);
