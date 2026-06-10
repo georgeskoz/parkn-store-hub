@@ -10,6 +10,7 @@ interface Message {
   sender_id: string;
   content: string;
   created_at: string;
+  read_at: string | null;
 }
 
 interface Conversation {
@@ -73,7 +74,18 @@ export default function ConversationPanel({ conversationId, listingId, providerI
     load();
   }, [user, conversationId, listingId, providerId]);
 
-  // Load messages
+  // Mark unread messages addressed to me as read
+  const markRead = async () => {
+    if (!conv?.id || !user) return;
+    await supabase
+      .from("messages")
+      .update({ read_at: new Date().toISOString() })
+      .eq("conversation_id", conv.id)
+      .neq("sender_id", user.id)
+      .is("read_at", null);
+  };
+
+  // Load messages + mark read
   useEffect(() => {
     if (!conv?.id) return;
     const fetchMessages = async () => {
@@ -83,20 +95,31 @@ export default function ConversationPanel({ conversationId, listingId, providerI
         .eq("conversation_id", conv.id)
         .order("created_at", { ascending: true });
       setMessages(data || []);
+      markRead();
     };
     fetchMessages();
   }, [conv?.id]);
 
   // Realtime subscription
   useEffect(() => {
-    if (!conv?.id) return;
+    if (!conv?.id || !user) return;
     const channel = supabase
       .channel(`messages:${conv.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conv.id}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const m = payload.new as Message;
+          setMessages((prev) => [...prev, m]);
+          if (m.sender_id !== user.id) markRead();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conv.id}` },
+        (payload) => {
+          const m = payload.new as Message;
+          setMessages((prev) => prev.map((x) => (x.id === m.id ? m : x)));
         }
       )
       .subscribe();
@@ -104,7 +127,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
     return () => {
       channel.unsubscribe();
     };
-  }, [conv?.id]);
+  }, [conv?.id, user?.id]);
 
   // Auto-scroll
   useEffect(() => {
@@ -153,10 +176,15 @@ export default function ConversationPanel({ conversationId, listingId, providerI
         {messages.map((msg) => {
           const isMe = msg.sender_id === user?.id;
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+            <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
               <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                 {msg.content}
               </div>
+              {isMe && (
+                <span className="text-[10px] text-muted-foreground mt-1">
+                  {msg.read_at ? "Read" : "Sent"}
+                </span>
+              )}
             </div>
           );
         })}
