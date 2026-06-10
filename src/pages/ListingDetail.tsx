@@ -407,6 +407,17 @@ export default function ListingDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Messaging panel */}
+            {showMessages && (
+              <div className="fixed bottom-4 right-4 z-50">
+                <ConversationPanel
+                  listingId={listing.id}
+                  providerId={listing.user_id}
+                  onClose={() => setShowMessages(false)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </main>
