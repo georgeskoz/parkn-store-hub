@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight, MessageSquare, LayoutDashboard, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MyListings from "@/components/dashboard/MyListings";
@@ -12,6 +12,8 @@ import StripeConnectCard from "@/components/dashboard/StripeConnectCard";
 import ConversationsList from "@/components/messaging/ConversationsList";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import SeekerReviewsPanel from "@/components/reviews/SeekerReviewsPanel";
+import ProviderReviewsPanel from "@/components/reviews/ProviderReviewsPanel";
 
 type ViewMode = "provider" | "seeker";
 
@@ -141,6 +143,9 @@ const Dashboard = () => {
                     <Badge className="ml-2 h-5 min-w-5 px-1 text-[10px]">{unreadTotal}</Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="reviews">
+                  <Star className="w-4 h-4 mr-1" /> Reviews
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -149,6 +154,10 @@ const Dashboard = () => {
 
               <TabsContent value="messages" className="mt-6">
                 <MessagesTab />
+              </TabsContent>
+
+              <TabsContent value="reviews" className="mt-6">
+                {viewMode === "provider" ? <ProviderReviewsPanel /> : <SeekerReviewsPanel />}
               </TabsContent>
             </Tabs>
           </div>
