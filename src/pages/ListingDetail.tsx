@@ -404,3 +404,45 @@ export default function ListingDetail() {
     </div>
   );
 }
+
+function ListingTitleBlock({ listing, isParking }: { listing: DbListing; isParking: boolean }) {
+  const { avg, count } = useListingRatingSummary(listing.id);
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-foreground">{listing.title}</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <StarRating value={avg} readOnly size={16} />
+            <span className="text-sm text-muted-foreground">
+              {count > 0 ? `${avg.toFixed(1)} (${count} review${count > 1 ? "s" : ""})` : "No reviews yet"}
+            </span>
+          </div>
+          <p className="text-muted-foreground flex items-center gap-1 mt-2">
+            <MapPin className="w-4 h-4" />
+            {listing.address}
+            {listing.region && `, ${listing.region}`}, {listing.city}, {listing.province}
+          </p>
+        </div>
+        <Badge variant="secondary" className="capitalize shrink-0">
+          {listing.type}
+        </Badge>
+      </div>
+      <div className="flex items-center gap-4 mt-4 text-sm flex-wrap">
+        <Badge className={`text-xs border ${availColor[listing.availability] || availColor.available}`}>
+          {listing.availability === "available"
+            ? isParking && listing.spots
+              ? `${listing.spots} spots`
+              : "Available"
+            : listing.availability.charAt(0).toUpperCase() + listing.availability.slice(1)}
+        </Badge>
+        {listing.category === "storage" && listing.size && (
+          <span className="text-muted-foreground">{listing.size} ft · {listing.sqft} sqft</span>
+        )}
+        {listing.category === "parking" && listing.spots && (
+          <span className="text-muted-foreground">{listing.spots} spots</span>
+        )}
+      </div>
+    </div>
+  );
+}
