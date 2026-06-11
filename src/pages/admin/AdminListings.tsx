@@ -108,24 +108,41 @@ const AdminListings = () => {
                   <TableHead>Type</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Rating</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((l) => (
+                {filtered.map((l) => {
+                  const r = ratings[l.id];
+                  return (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium max-w-[200px] truncate">{l.title}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{l.category}</Badge></TableCell>
                     <TableCell className="capitalize">{l.type}</TableCell>
                     <TableCell>{l.city}, {l.province}</TableCell>
                     <TableCell>{getPrice(l)}</TableCell>
+                    <TableCell>
+                      {r ? (
+                        <div className="flex items-center gap-1 text-sm">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span className="font-medium">{r.avg.toFixed(1)}</span>
+                          <span className="text-muted-foreground">({r.count})</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell><Badge variant={l.availability === "available" ? "default" : "secondary"} className="capitalize">{l.availability}</Badge></TableCell>
                     <TableCell className="text-sm text-muted-foreground">{new Date(l.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => window.open(`/listing/${l.id}`, "_blank")}><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setReviewListing(l)} title="Manage reviews">
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
@@ -144,15 +161,23 @@ const AdminListings = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No listings found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No listings found</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      <AdminReviewManager
+        listingId={reviewListing?.id || null}
+        listingTitle={reviewListing?.title}
+        open={!!reviewListing}
+        onClose={() => setReviewListing(null)}
+      />
     </div>
   );
 };
