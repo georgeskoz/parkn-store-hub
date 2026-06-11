@@ -217,6 +217,7 @@ export default function ListingDetail() {
             )}
 
             <ListingTitleBlock listing={listing} isParking={isParking} />
+            {/* end title */}
 
             {/* Description */}
             <div>
@@ -299,6 +300,12 @@ export default function ListingDetail() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Reviews */}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-3">Reviews</h2>
+              <ListingReviews listingId={listing.id} />
             </div>
 
             {/* Map */}
