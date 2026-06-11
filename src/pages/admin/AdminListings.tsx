@@ -6,16 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Trash2, Eye } from "lucide-react";
+import { Search, Trash2, Eye, Star, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Tables } from "@/integrations/supabase/types";
+import AdminReviewManager from "@/components/admin/AdminReviewManager";
 
 const AdminListings = () => {
   const [listings, setListings] = useState<Tables<"listings">[]>([]);
+  const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [reviewListing, setReviewListing] = useState<Tables<"listings"> | null>(null);
   const { toast } = useToast();
 
   const fetchListings = async () => {
@@ -23,7 +26,25 @@ const AdminListings = () => {
     let query = supabase.from("listings").select("*").order("created_at", { ascending: false });
     if (categoryFilter !== "all") query = query.eq("category", categoryFilter);
     const { data } = await query;
-    setListings(data || []);
+    const rows = data || [];
+    setListings(rows);
+
+    if (rows.length) {
+      const { data: revs } = await supabase
+        .from("reviews")
+        .select("listing_id, rating")
+        .eq("visible", true)
+        .in("listing_id", rows.map((l) => l.id));
+      const map: Record<string, { sum: number; count: number }> = {};
+      (revs || []).forEach((r: any) => {
+        if (!map[r.listing_id]) map[r.listing_id] = { sum: 0, count: 0 };
+        map[r.listing_id].sum += r.rating;
+        map[r.listing_id].count += 1;
+      });
+      const out: Record<string, { avg: number; count: number }> = {};
+      Object.entries(map).forEach(([id, v]) => { out[id] = { avg: v.sum / v.count, count: v.count }; });
+      setRatings(out);
+    }
     setLoading(false);
   };
 
