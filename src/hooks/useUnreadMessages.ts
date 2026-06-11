@@ -40,13 +40,13 @@ export function useUnreadMessages() {
 
     load();
 
-    const channel = supabase
-      .channel("unread-messages")
+    const channel = supabase.channel(`unread-messages-${user.id}`);
+    channel
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, load)
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [user]);
 
