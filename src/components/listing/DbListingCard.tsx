@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Car, Warehouse } from "lucide-react";
+import { MapPin } from "lucide-react";
+import parkingCover from "@/assets/parking-cover.jpg";
+import storageCover from "@/assets/storage-cover.jpg";
 
 interface DbListing {
   id: string;
@@ -46,16 +48,12 @@ export default function DbListingCard({ listing, distance }: Props) {
   const isParking = listing.category === "parking";
   const price = listing.monthly || listing.daily || listing.hourly;
   const priceLabel = listing.monthly ? "/mo" : listing.daily ? "/day" : listing.hourly ? "/hr" : "";
-  const coverPhoto = listing.photos?.[0]?.url;
+  const coverPhoto = listing.photos?.[0]?.url || (isParking ? parkingCover : storageCover);
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-200 overflow-hidden">
-      <div className="h-40 bg-muted flex items-center justify-center relative overflow-hidden">
-        {coverPhoto ? (
-          <img src={coverPhoto} alt={listing.title} className="w-full h-full object-cover" />
-        ) : (
-          isParking ? <Car className="w-10 h-10 text-muted-foreground/30" /> : <Warehouse className="w-10 h-10 text-muted-foreground/30" />
-        )}
+      <div className="h-40 bg-muted relative overflow-hidden">
+        <img src={coverPhoto} alt={listing.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
             {listing.type}

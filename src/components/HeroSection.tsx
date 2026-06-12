@@ -1,11 +1,22 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const [location, setLocation] = useState("");
+  const [when, setWhen] = useState("");
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (location.trim()) params.set("q", location.trim());
+    if (when.trim()) params.set("when", when.trim());
+    navigate(`/find${params.toString() ? `?${params}` : ""}`);
+  };
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
@@ -68,6 +79,9 @@ const HeroSection = () => {
               <input
                 type="text"
                 placeholder="Location or address"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className="bg-transparent w-full text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
             </div>
@@ -76,10 +90,13 @@ const HeroSection = () => {
               <input
                 type="text"
                 placeholder="Date & time"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className="bg-transparent w-full text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
             </div>
-            <Button className="px-8">
+            <Button className="px-8" onClick={handleSearch}>
               Search
             </Button>
           </div>
