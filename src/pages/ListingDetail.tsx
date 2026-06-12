@@ -109,8 +109,8 @@ export default function ListingDetail() {
         setListing({ ...data, photos: photoArray } as unknown as DbListing);
 
         // Fetch profile info
-        const { data: profileData } = await supabase
-          .from("profiles")
+        const { data: profileData } = await (supabase as any)
+          .from("profiles_public")
           .select("display_name, phone, avatar_url, bio")
           .eq("id", data.user_id)
           .maybeSingle();

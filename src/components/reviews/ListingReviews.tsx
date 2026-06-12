@@ -57,8 +57,8 @@ export default function ListingReviews({ listingId }: Props) {
       // Fetch reviewer profiles
       const ids = Array.from(new Set(rows.map((r) => r.reviewer_id)));
       if (ids.length) {
-        const { data: profiles } = await supabase
-          .from("profiles")
+        const { data: profiles } = await (supabase as any)
+          .from("profiles_public")
           .select("id, display_name, avatar_url")
           .in("id", ids);
         const map = new Map((profiles || []).map((p: any) => [p.id, p]));
