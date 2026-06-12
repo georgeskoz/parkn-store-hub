@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /messages
+Disallow: /profile
+Disallow: /booking
+
+Sitemap: https://parkn-store-hub.lovable.app/sitemap.xml

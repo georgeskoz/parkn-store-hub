@@ -113,7 +113,7 @@ export default function StorageListings() {
               {activeFilters.map(f => (
                 <Badge key={f} variant="secondary" className="gap-1 text-xs capitalize">
                   {f}
-                  <button onClick={() => { if (cities.includes(f)) setCity("all"); else setType("all"); }}>
+                  <button onClick={() => { if (cities.includes(f)) setCity("all"); else setType("all"); }} aria-label={`Clear ${f} filter`}>
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>

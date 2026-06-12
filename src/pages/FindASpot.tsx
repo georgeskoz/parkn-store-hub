@@ -217,7 +217,7 @@ export default function FindASpot() {
                 className="pl-9 pr-8"
               />
               {(destination || userCoords) && (
-                <button onClick={clearLocation} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <button onClick={clearLocation} aria-label="Clear location" className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                 </button>
               )}
