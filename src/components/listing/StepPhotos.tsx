@@ -13,6 +13,8 @@ interface Props {
 }
 
 const MAX_PHOTOS = 10;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function StepPhotos({ form, update }: Props) {
   const { user } = useAuth();
@@ -35,6 +37,14 @@ export default function StepPhotos({ form, update }: Props) {
     const newPhotos: UploadedPhoto[] = [];
 
     for (const file of toUpload) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast({ title: "Invalid file type", description: `${file.name} is not a supported image (JPEG, PNG, WebP, GIF only).`, variant: "destructive" });
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast({ title: "File too large", description: `${file.name} exceeds the 10MB limit.`, variant: "destructive" });
+        continue;
+      }
       const ext = file.name.split(".").pop();
       const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 

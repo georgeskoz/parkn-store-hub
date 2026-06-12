@@ -35,7 +35,6 @@ serve(async (req) => {
       startDate,
       endDate,
       rate,
-      unitPrice,
       units,
       listingType,
     } = body;
@@ -44,19 +43,40 @@ serve(async (req) => {
       throw new Error("Missing booking details");
     }
 
+    const allowedRates = ["hourly", "daily", "weekly", "monthly", "seasonal"];
+    if (!allowedRates.includes(rate)) {
+      throw new Error("Invalid rate");
+    }
+    const unitsNum = Number(units);
+    if (!Number.isFinite(unitsNum) || unitsNum <= 0 || unitsNum > 10000) {
+      throw new Error("Invalid units");
+    }
+
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Look up listing for surge match & provider id
+    // Look up listing for surge match, provider id, and authoritative pricing
     const { data: listing } = await supabase
       .from("listings")
-      .select("city, category, user_id")
+      .select("city, category, user_id, hourly, daily, weekly, monthly, seasonal")
       .eq("id", listingId)
       .single();
     if (!listing) throw new Error("Listing not found");
+
+    const rateMap: Record<string, number | null> = {
+      hourly: (listing as any).hourly ?? null,
+      daily: (listing as any).daily ?? null,
+      weekly: (listing as any).weekly ?? null,
+      monthly: (listing as any).monthly ?? null,
+      seasonal: (listing as any).seasonal ?? null,
+    };
+    const unitPrice = rateMap[rate];
+    if (unitPrice == null || Number(unitPrice) <= 0) {
+      throw new Error("Selected rate is not available for this listing");
+    }
 
     // Server-side surge lookup (cannot be bypassed by client)
     const nowIso = new Date().toISOString();
@@ -80,7 +100,7 @@ serve(async (req) => {
       }
     }
 
-    const baseSubtotal = +(+unitPrice * +units).toFixed(2);
+    const baseSubtotal = +(+unitPrice * unitsNum).toFixed(2);
     const subtotal = +(baseSubtotal * surgeMultiplier).toFixed(2);
     const gst = +(subtotal * 0.05).toFixed(2);
     const qst = +(subtotal * 0.09975).toFixed(2);
