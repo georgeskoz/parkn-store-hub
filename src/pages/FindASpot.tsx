@@ -13,6 +13,7 @@ import ParkingCard from "@/components/parking/ParkingCard";
 import StorageListingCard from "@/components/storage/StorageListingCard";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 
 type Category = "all" | "parking" | "storage";
 
@@ -31,8 +32,15 @@ const allProvinces = (country: string) => Object.keys(locationTree[country] || {
 const allCities = (country: string, province: string) => Object.keys(locationTree[country]?.[province] || {});
 
 export default function FindASpot() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState<Category>("all");
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q !== null) setSearch(q);
+  }, [searchParams]);
+
   const [country, setCountry] = useState("all");
   const [province, setProvince] = useState("all");
   const [city, setCity] = useState("all");

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -149,7 +150,7 @@ const Dashboard = () => {
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
-                {viewMode === "provider" ? <ProviderView profile={profile} /> : <SeekerView />}
+                {viewMode === "provider" ? <ProviderView profile={profile} userId={user?.id} /> : <SeekerView userId={user?.id} />}
               </TabsContent>
 
               <TabsContent value="messages" className="mt-6">
@@ -193,85 +194,132 @@ const MessagesTab = () => {
   );
 };
 
-const ProviderView = ({ profile }: { profile: any }) => (
-  <div className="space-y-6">
-    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) => {
+  const [activeBookings, setActiveBookings] = useState(0);
+  const [revenue, setRevenue] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("bookings")
+        .select("status,total_amount,commission_amount,created_at")
+        .eq("provider_id", userId);
+      const list = data || [];
+      setActiveBookings(list.filter((b) => ["confirmed", "active", "pending"].includes(b.status)).length);
+      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+      const rev = list
+        .filter((b) => new Date(b.created_at) >= startOfMonth && ["confirmed", "active", "completed"].includes(b.status))
+        .reduce((sum, b) => sum + (Number(b.total_amount) - Number(b.commission_amount || 0)), 0);
+      setRevenue(rev);
+    })();
+  }, [userId]);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Create Listing</CardTitle>
+            <CardDescription>Add a new space to your portfolio</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" asChild>
+              <Link to="/list">
+                <Plus className="w-4 h-4 mr-2" /> New Listing
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <StripeConnectCard
+          stripeAccountId={profile?.stripe_account_id}
+          onboardingComplete={profile?.stripe_onboarding_complete}
+        />
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Active Bookings</CardTitle>
+            <CardDescription>Current reservations on your spots</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">{activeBookings}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Revenue</CardTitle>
+            <CardDescription>Total earnings this month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">${revenue.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+      </div>
+      <MyListings />
+    </div>
+  );
+};
+
+const SeekerView = ({ userId }: { userId?: string }) => {
+  const [parkingCount, setParkingCount] = useState(0);
+  const [storageCount, setStorageCount] = useState(0);
+  const [spent, setSpent] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("bookings")
+        .select("category,total_amount,status,created_at")
+        .eq("seeker_id", userId);
+      const list = data || [];
+      const active = list.filter((b) => ["confirmed", "active", "pending"].includes(b.status));
+      setParkingCount(active.filter((b) => b.category === "parking").length);
+      setStorageCount(active.filter((b) => b.category === "storage").length);
+      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+      const sp = list
+        .filter((b) => new Date(b.created_at) >= startOfMonth && ["confirmed", "active", "completed"].includes(b.status))
+        .reduce((sum, b) => sum + Number(b.total_amount), 0);
+      setSpent(sp);
+    })();
+  }, [userId]);
+
+  return (
+    <div className="grid md:grid-cols-3 gap-6">
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle className="text-lg">Create Listing</CardTitle>
-          <CardDescription>Add a new space to your portfolio</CardDescription>
+          <CardTitle className="text-lg">My Bookings</CardTitle>
+          <CardDescription>Upcoming & active parking reservations</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" asChild>
-            <Link to="/list">
-              <Plus className="w-4 h-4 mr-2" /> New Listing
-            </Link>
+          <p className="text-3xl font-bold text-foreground">{parkingCount}</p>
+          <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
+            <Link to="/find?category=parking"><Car className="w-4 h-4 mr-1" /> Find Parking</Link>
           </Button>
         </CardContent>
       </Card>
-      <StripeConnectCard
-        stripeAccountId={profile?.stripe_account_id}
-        onboardingComplete={profile?.stripe_onboarding_complete}
-      />
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle className="text-lg">Active Bookings</CardTitle>
-          <CardDescription>Current reservations on your spots</CardDescription>
+          <CardTitle className="text-lg">Storage Contracts</CardTitle>
+          <CardDescription>Long-term storage rentals</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-bold text-foreground">0</p>
+          <p className="text-3xl font-bold text-foreground">{storageCount}</p>
+          <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
+            <Link to="/find?category=storage"><Warehouse className="w-4 h-4 mr-1" /> Find Storage</Link>
+          </Button>
         </CardContent>
       </Card>
       <Card className="card-shadow">
         <CardHeader>
-          <CardTitle className="text-lg">Revenue</CardTitle>
-          <CardDescription>Total earnings this month</CardDescription>
+          <CardTitle className="text-lg">Spent</CardTitle>
+          <CardDescription>Total spent this month</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-bold text-foreground">$0.00</p>
+          <p className="text-3xl font-bold text-foreground">${spent.toFixed(2)}</p>
         </CardContent>
       </Card>
     </div>
-    <MyListings />
-  </div>
-);
-
-const SeekerView = () => (
-  <div className="grid md:grid-cols-3 gap-6">
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">My Bookings</CardTitle>
-        <CardDescription>Upcoming & active reservations</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">0</p>
-        <Button variant="outline" size="sm" className="mt-4 w-full">
-          <Car className="w-4 h-4 mr-1" /> Find Parking
-        </Button>
-      </CardContent>
-    </Card>
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">Storage Contracts</CardTitle>
-        <CardDescription>Long-term storage rentals</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">0</p>
-        <Button variant="outline" size="sm" className="mt-4 w-full">
-          <Warehouse className="w-4 h-4 mr-1" /> Find Storage
-        </Button>
-      </CardContent>
-    </Card>
-    <Card className="card-shadow">
-      <CardHeader>
-        <CardTitle className="text-lg">Spent</CardTitle>
-        <CardDescription>Total spent this month</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold text-foreground">$0.00</p>
-      </CardContent>
-    </Card>
-  </div>
-);
+  );
+};
 
 export default Dashboard;

@@ -2,8 +2,9 @@ import { ParkingListing } from "@/data/parkingListings";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, Car } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import parkingCover from "@/assets/parking-cover.jpg";
 
 type PricingMode = "hourly" | "daily" | "monthly";
 
@@ -19,8 +20,8 @@ export default function ParkingCard({ listing, pricingMode }: { listing: Parking
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-200 overflow-hidden">
-      <div className="h-36 bg-muted flex items-center justify-center relative">
-        <Car className="w-10 h-10 text-muted-foreground/30" />
+      <div className="h-36 bg-muted relative overflow-hidden">
+        <img src={parkingCover} alt={listing.title} loading="lazy" width={800} height={512} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 left-3">
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">{listing.type}</Badge>
         </div>

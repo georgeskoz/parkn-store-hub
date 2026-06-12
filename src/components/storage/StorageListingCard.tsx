@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StorageListing, DurationOption } from "@/data/storageListings";
 import { MapPin, Star, Shield, Thermometer, CloudSun, Warehouse, Trees } from "lucide-react";
+import storageCover from "@/assets/storage-cover.jpg";
 
 const typeIcons: Record<string, React.ReactNode> = {
   heated: <Thermometer className="w-4 h-4" />,
@@ -41,9 +42,9 @@ export default function StorageListingCard({ listing, duration, isComparing, onT
   return (
     <Card className="group overflow-hidden transition-all duration-200 hover:card-shadow-hover card-shadow border-border">
       {/* Image placeholder */}
-      <div className="relative h-44 bg-muted flex items-center justify-center overflow-hidden">
+      <div className="relative h-44 bg-muted overflow-hidden">
+        <img src={listing.imageUrl && listing.imageUrl !== "/placeholder.svg" ? listing.imageUrl : storageCover} alt={listing.title} loading="lazy" width={800} height={512} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent z-10" />
-        <Warehouse className="w-12 h-12 text-muted-foreground/40" />
         <div className="absolute top-3 left-3 z-20 flex gap-1.5">
           <Badge variant="secondary" className="flex items-center gap-1 text-xs font-medium bg-card/90 backdrop-blur-sm border-0">
             {typeIcons[listing.type]}
