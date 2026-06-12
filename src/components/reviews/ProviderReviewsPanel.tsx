@@ -35,8 +35,8 @@ export default function ProviderReviewsPanel() {
       const listingIds = Array.from(new Set(rows.map((r) => r.listing_id)));
 
       if (reviewerIds.length) {
-        const { data: profs } = await supabase
-          .from("profiles").select("id, display_name").in("id", reviewerIds);
+        const { data: profs } = await (supabase as any)
+          .from("profiles_public").select("id, display_name").in("id", reviewerIds);
         const m = new Map((profs || []).map((p: any) => [p.id, p]));
         rows.forEach((r) => { r.reviewer = m.get(r.reviewer_id) as any; });
       }
