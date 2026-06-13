@@ -169,6 +169,7 @@ export type Database = {
           size: string | null
           spots: number | null
           sqft: number | null
+          status: string
           student_discount: boolean | null
           student_discount_percent: number | null
           student_universities: string | null
@@ -205,6 +206,7 @@ export type Database = {
           size?: string | null
           spots?: number | null
           sqft?: number | null
+          status?: string
           student_discount?: boolean | null
           student_discount_percent?: number | null
           student_universities?: string | null
@@ -241,6 +243,7 @@ export type Database = {
           size?: string | null
           spots?: number | null
           sqft?: number | null
+          status?: string
           student_discount?: boolean | null
           student_discount_percent?: number | null
           student_universities?: string | null
