@@ -15,6 +15,8 @@ import ConversationPanel from "@/components/messaging/ConversationPanel";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import SeekerReviewsPanel from "@/components/reviews/SeekerReviewsPanel";
 import ProviderReviewsPanel from "@/components/reviews/ProviderReviewsPanel";
+import SeekerBookingsList from "@/components/dashboard/SeekerBookingsList";
+import ProviderCancelledBookings from "@/components/dashboard/ProviderCancelledBookings";
 
 type ViewMode = "provider" | "seeker";
 
@@ -254,6 +256,7 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
           </CardContent>
         </Card>
       </div>
+      {userId && <ProviderCancelledBookings userId={userId} />}
       <MyListings />
     </div>
   );
@@ -284,40 +287,43 @@ const SeekerView = ({ userId }: { userId?: string }) => {
   }, [userId]);
 
   return (
-    <div className="grid md:grid-cols-3 gap-6">
-      <Card className="card-shadow">
-        <CardHeader>
-          <CardTitle className="text-lg">My Bookings</CardTitle>
-          <CardDescription>Upcoming & active parking reservations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-foreground">{parkingCount}</p>
-          <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-            <Link to="/find?category=parking"><Car className="w-4 h-4 mr-1" /> Find Parking</Link>
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="card-shadow">
-        <CardHeader>
-          <CardTitle className="text-lg">Storage Contracts</CardTitle>
-          <CardDescription>Long-term storage rentals</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-foreground">{storageCount}</p>
-          <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-            <Link to="/find?category=storage"><Warehouse className="w-4 h-4 mr-1" /> Find Storage</Link>
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="card-shadow">
-        <CardHeader>
-          <CardTitle className="text-lg">Spent</CardTitle>
-          <CardDescription>Total spent this month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-foreground">${spent.toFixed(2)}</p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Parking Bookings</CardTitle>
+            <CardDescription>Upcoming & active parking reservations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">{parkingCount}</p>
+            <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
+              <Link to="/find?category=parking"><Car className="w-4 h-4 mr-1" /> Find Parking</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Storage Contracts</CardTitle>
+            <CardDescription>Long-term storage rentals</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">{storageCount}</p>
+            <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
+              <Link to="/find?category=storage"><Warehouse className="w-4 h-4 mr-1" /> Find Storage</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="card-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg">Spent</CardTitle>
+            <CardDescription>Total spent this month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">${spent.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+      </div>
+      {userId && <SeekerBookingsList userId={userId} />}
     </div>
   );
 };

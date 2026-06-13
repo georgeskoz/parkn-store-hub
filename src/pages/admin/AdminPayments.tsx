@@ -5,8 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, DollarSign, TrendingUp, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, LineChart, Line } from "recharts";
+import { AreaChart, Area, XAxis, YAxis } from "recharts";
 
 type Booking = {
   id: string;
@@ -20,6 +22,10 @@ type Booking = {
   city: string | null;
   category: string | null;
   created_at: string;
+  refund_amount: number | null;
+  refund_status: string | null;
+  cancelled_at: string | null;
+  payment_intent_id: string | null;
 };
 
 const AdminPayments = () => {
@@ -27,14 +33,26 @@ const AdminPayments = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
-      setBookings((data || []) as Booking[]);
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+    setBookings((data || []) as Booking[]);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleAdminFullRefund = async (id: string) => {
+    if (!confirm("Issue a full refund and cancel this booking?")) return;
+    const { data, error } = await supabase.functions.invoke("cancel-booking", {
+      body: { bookingId: id, adminOverrideFullRefund: true, reason: "Admin manual refund" },
+    });
+    if (error || data?.error) {
+      toast({ title: "Refund failed", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Refund issued", description: `$${data.refundAmount?.toFixed(2)} (${data.refundStatus})` });
+    await load();
+  };
 
   const totalRevenue = bookings.reduce((s, b) => s + Number(b.total_amount), 0);
   const totalCommission = bookings.reduce((s, b) => s + Number(b.commission_amount), 0);
@@ -125,26 +143,41 @@ const AdminPayments = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Commission</TableHead>
-                  <TableHead>Rate</TableHead>
+                  <TableHead>Refund</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-mono text-xs">{b.id.slice(0, 8)}…</TableCell>
-                    <TableCell>{b.city || "—"}</TableCell>
-                    <TableCell className="capitalize">{b.category || "—"}</TableCell>
-                    <TableCell className="font-medium">${Number(b.total_amount).toFixed(2)}</TableCell>
-                    <TableCell className="text-accent-foreground">${Number(b.commission_amount).toFixed(2)}</TableCell>
-                    <TableCell>{b.commission_rate}%</TableCell>
-                    <TableCell><Badge variant={b.status === "completed" ? "default" : b.status === "pending" ? "secondary" : "destructive"} className="capitalize">{b.status}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(b.created_at).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))}
+                {filtered.map((b) => {
+                  const refundable = !["cancelled", "completed", "refunded"].includes(b.status) && !!b.payment_intent_id;
+                  return (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-mono text-xs">{b.id.slice(0, 8)}…</TableCell>
+                      <TableCell>{b.city || "—"}</TableCell>
+                      <TableCell className="capitalize">{b.category || "—"}</TableCell>
+                      <TableCell className="font-medium">${Number(b.total_amount).toFixed(2)}</TableCell>
+                      <TableCell className="text-accent-foreground">${Number(b.commission_amount).toFixed(2)}</TableCell>
+                      <TableCell className="text-sm">
+                        {Number(b.refund_amount || 0) > 0 ? (
+                          <span>${Number(b.refund_amount).toFixed(2)} <span className="text-muted-foreground">({b.refund_status})</span></span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell><Badge variant={b.status === "completed" ? "default" : b.status === "pending" ? "secondary" : "destructive"} className="capitalize">{b.status}</Badge></TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{new Date(b.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {refundable && (
+                          <Button size="sm" variant="outline" onClick={() => handleAdminFullRefund(b.id)}>
+                            Refund
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No transactions found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No transactions found</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
