@@ -22,6 +22,10 @@ type Booking = {
   city: string | null;
   category: string | null;
   created_at: string;
+  refund_amount: number | null;
+  refund_status: string | null;
+  cancelled_at: string | null;
+  payment_intent_id: string | null;
 };
 
 const AdminPayments = () => {
