@@ -91,24 +91,48 @@ export default function ProfileSettings() {
             <CardDescription>This information will be visible to other users</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Avatar placeholder */}
+            {/* Avatar upload */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                 {form.avatar_url ? (
-                  <img src={form.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  <img src={form.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-8 h-8 text-muted-foreground" />
                 )}
               </div>
-              <div className="flex-1">
-                <Label htmlFor="avatar_url">Avatar URL</Label>
-                <Input
-                  id="avatar_url"
-                  placeholder="https://example.com/avatar.jpg"
-                  value={form.avatar_url}
-                  onChange={e => setForm(p => ({ ...p, avatar_url: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Paste a URL to your profile photo</p>
+              <div className="flex-1 space-y-2">
+                <Label>Profile Photo</Label>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarFile(f); e.target.value = ""; }}
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarFile(f); e.target.value = ""; }}
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                    Upload Photo
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} disabled={uploading}>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Take Selfie
+                  </Button>
+                  {form.avatar_url && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, avatar_url: "" }))} disabled={uploading}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG/JPG up to 5MB</p>
               </div>
             </div>
 
