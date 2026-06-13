@@ -1,4 +1,4 @@
-import { useLocation, Link, Navigate } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { CheckCircle, MapPin, Calendar, ArrowLeft, CreditCard, Loader2, Zap } from "lucide-react";
+import { CheckCircle, MapPin, Calendar, ArrowLeft, CreditCard, Loader2, Zap, SearchX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
