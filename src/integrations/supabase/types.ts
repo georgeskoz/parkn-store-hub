@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
           category: string | null
           city: string | null
           commission_amount: number
@@ -27,14 +29,19 @@ export type Database = {
           original_amount: number | null
           payment_intent_id: string | null
           provider_id: string
+          refund_amount: number
+          refund_status: string | null
           seeker_id: string
           start_date: string
           status: string
+          stripe_refund_id: string | null
           surge_multiplier: number
           total_amount: number
           updated_at: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           category?: string | null
           city?: string | null
           commission_amount?: number
@@ -46,14 +53,19 @@ export type Database = {
           original_amount?: number | null
           payment_intent_id?: string | null
           provider_id: string
+          refund_amount?: number
+          refund_status?: string | null
           seeker_id: string
           start_date: string
           status?: string
+          stripe_refund_id?: string | null
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           category?: string | null
           city?: string | null
           commission_amount?: number
@@ -65,9 +77,12 @@ export type Database = {
           original_amount?: number | null
           payment_intent_id?: string | null
           provider_id?: string
+          refund_amount?: number
+          refund_status?: string | null
           seeker_id?: string
           start_date?: string
           status?: string
+          stripe_refund_id?: string | null
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
