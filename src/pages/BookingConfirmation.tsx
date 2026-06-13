@@ -45,38 +45,61 @@ export default function BookingConfirmation() {
   useEffect(() => {
     if (!state) return;
     (async () => {
-      const { data: listing } = await supabase
-        .from("listings")
-        .select("city, category")
-        .eq("id", state.listingId)
-        .single();
-      if (!listing) return;
-      const nowIso = new Date().toISOString();
-      const { data: rules } = await supabase
-        .from("surge_pricing")
-        .select("label, surge_multiplier, start_at, end_at, category")
-        .eq("city", listing.city)
-        .eq("is_active", true)
-        .or(`category.eq.${listing.category},category.eq.all`)
-        .lte("start_at", nowIso)
-        .gte("end_at", nowIso);
-      let best = { multiplier: 1, label: null as string | null };
-      for (const r of rules || []) {
-        if (Number(r.surge_multiplier) > best.multiplier) {
-          best = { multiplier: Number(r.surge_multiplier), label: r.label };
+      try {
+        const { data: listing } = await supabase
+          .from("listings")
+          .select("city, category")
+          .eq("id", state.listingId)
+          .maybeSingle();
+        if (!listing) return;
+        const nowIso = new Date().toISOString();
+        const { data: rules } = await supabase
+          .from("surge_pricing")
+          .select("label, surge_multiplier, start_at, end_at, category")
+          .eq("city", listing.city)
+          .eq("is_active", true)
+          .or(`category.eq.${listing.category},category.eq.all`)
+          .lte("start_at", nowIso)
+          .gte("end_at", nowIso);
+        let best = { multiplier: 1, label: null as string | null };
+        for (const r of rules || []) {
+          if (Number(r.surge_multiplier) > best.multiplier) {
+            best = { multiplier: Number(r.surge_multiplier), label: r.label };
+          }
         }
-      }
-      if (best.multiplier > 1) {
-        const subtotal = +(state.subtotal * best.multiplier).toFixed(2);
-        const gst = +(subtotal * 0.05).toFixed(2);
-        const qst = +(subtotal * 0.09975).toFixed(2);
-        const total = +(subtotal + gst + qst).toFixed(2);
-        setSurge({ multiplier: best.multiplier, label: best.label, subtotal, gst, qst, total });
+        if (best.multiplier > 1) {
+          const subtotal = +(state.subtotal * best.multiplier).toFixed(2);
+          const gst = +(subtotal * 0.05).toFixed(2);
+          const qst = +(subtotal * 0.09975).toFixed(2);
+          const total = +(subtotal + gst + qst).toFixed(2);
+          setSurge({ multiplier: best.multiplier, label: best.label, subtotal, gst, qst, total });
+        }
+      } catch (err) {
+        console.warn("Surge lookup skipped:", err);
       }
     })();
   }, [state]);
 
-  if (!state) return <Navigate to="/" replace />;
+  if (!state) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-24 pb-16 container mx-auto px-4 max-w-xl text-center">
+          <SearchX className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground">No booking in progress</h1>
+          <p className="text-muted-foreground mt-2">
+            Pick a spot first, then return here to confirm your booking.
+          </p>
+          <div className="flex gap-3 justify-center mt-6">
+            <Button asChild><Link to="/find">Find a Spot</Link></Button>
+            <Button variant="outline" asChild><Link to="/dashboard">Dashboard</Link></Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
 
   const start = new Date(state.startDate);
   const end = new Date(state.endDate);
