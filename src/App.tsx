@@ -10,11 +10,10 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import StorageListings from "./pages/StorageListings";
-import StorageDetail from "./pages/StorageDetail";
 import ListingDetail from "./pages/ListingDetail";
 import ProfileSettings from "./pages/ProfileSettings";
 import ParkingSearch from "./pages/ParkingSearch";
-import ParkingDetail from "./pages/ParkingDetail";
+import RedirectToListing from "./pages/RedirectToListing";
 import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
@@ -42,11 +41,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/storage" element={<StorageListings />} />
-            <Route path="/storage/:id" element={<StorageDetail />} />
+            <Route path="/storage/:id" element={<RedirectToListing />} />
             <Route path="/find" element={<FindASpot />} />
             <Route path="/listing/:id" element={<ListingDetail />} />
             <Route path="/parking" element={<ParkingSearch />} />
-            <Route path="/parking/:id" element={<ParkingDetail />} />
+            <Route path="/parking/:id" element={<RedirectToListing />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
             <Route path="/booking/success" element={<BookingSuccess />} />
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />
