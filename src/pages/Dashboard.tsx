@@ -256,6 +256,7 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
           </CardContent>
         </Card>
       </div>
+      {userId && <ProviderCancelledBookings userId={userId} />}
       <MyListings />
     </div>
   );
