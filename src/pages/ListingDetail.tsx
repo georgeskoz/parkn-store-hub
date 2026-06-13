@@ -90,8 +90,8 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMessages, setShowMessages] = useState(false);
-
-  useEffect(() => {
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
     const fetchListing = async () => {
       if (!id) return;
 
