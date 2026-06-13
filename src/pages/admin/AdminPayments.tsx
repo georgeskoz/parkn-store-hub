@@ -33,14 +33,26 @@ const AdminPayments = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
-      setBookings((data || []) as Booking[]);
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+    setBookings((data || []) as Booking[]);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleAdminFullRefund = async (id: string) => {
+    if (!confirm("Issue a full refund and cancel this booking?")) return;
+    const { data, error } = await supabase.functions.invoke("cancel-booking", {
+      body: { bookingId: id, adminOverrideFullRefund: true, reason: "Admin manual refund" },
+    });
+    if (error || data?.error) {
+      toast({ title: "Refund failed", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Refund issued", description: `$${data.refundAmount?.toFixed(2)} (${data.refundStatus})` });
+    await load();
+  };
 
   const totalRevenue = bookings.reduce((s, b) => s + Number(b.total_amount), 0);
   const totalCommission = bookings.reduce((s, b) => s + Number(b.commission_amount), 0);
