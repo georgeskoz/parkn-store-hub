@@ -7,6 +7,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, differenceInDays } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   Carousel,
   CarouselContent,
@@ -14,7 +18,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { MapPin, ArrowLeft, User, Mail, Phone, Check } from "lucide-react";
+import { MapPin, ArrowLeft, User, Mail, Phone, Check, CalendarIcon, Clock } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
@@ -86,6 +90,8 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMessages, setShowMessages] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -170,6 +176,49 @@ export default function ListingDetail() {
   const isParking = listing.category === "parking";
   const price = listing.monthly || listing.daily || listing.hourly;
   const priceLabel = listing.monthly ? "/month" : listing.daily ? "/day" : listing.hourly ? "/hour" : "";
+
+  const durationDays = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 1) : 0;
+  const hasMonthly = !!listing.monthly;
+  const hasDaily = !!listing.daily;
+  const hasHourly = !!listing.hourly;
+  const bestRate: "monthly" | "daily" | "hourly" | null =
+    durationDays >= 30 && hasMonthly ? "monthly"
+    : durationDays >= 1 && hasDaily ? "daily"
+    : hasHourly ? "hourly"
+    : hasDaily ? "daily"
+    : hasMonthly ? "monthly"
+    : null;
+  const unitPrice = bestRate ? Number(listing[bestRate]) : 0;
+  const units = !bestRate ? 0
+    : bestRate === "monthly" ? Math.max(Math.ceil(durationDays / 30), 1)
+    : bestRate === "daily" ? Math.max(durationDays, 1)
+    : Math.max(durationDays * 24, 1);
+  const subtotal = +(unitPrice * units).toFixed(2);
+  const gst = +(subtotal * 0.05).toFixed(2);
+  const qst = +(subtotal * 0.09975).toFixed(2);
+  const total = +(subtotal + gst + qst).toFixed(2);
+
+  const handleBook = () => {
+    if (!startDate || !endDate || !bestRate || !listing) return;
+    navigate(`/booking/confirm`, {
+      state: {
+        listingType: listing.category,
+        listingId: listing.id,
+        title: listing.title,
+        address: `${listing.address}, ${listing.city}`,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        rate: bestRate,
+        unitPrice,
+        units,
+        subtotal,
+        gst,
+        qst,
+        total,
+      },
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -367,20 +416,63 @@ export default function ListingDetail() {
                   </Button>
                 </div>
 
-                {/* Pricing summary */}
+                {/* Booking widget */}
                 {price && (
-                  <div className="pt-4 border-t border-border">
-                    <div className="flex justify-between items-end">
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Starting at</p>
+                      <p className="text-2xl font-bold text-foreground">
+                        ${price}
+                        <span className="text-sm text-muted-foreground ml-1">{priceLabel}</span>
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <p className="text-xs text-muted-foreground">Starting at</p>
-                        <p className="text-2xl font-bold text-foreground">
-                          ${price}
-                          <span className="text-sm text-muted-foreground ml-1">{priceLabel}</span>
-                        </p>
+                        <p className="text-xs text-muted-foreground mb-1">Start</p>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !startDate && "text-muted-foreground")}>
+                              <CalendarIcon className="w-3 h-3 mr-1" />
+                              {startDate ? format(startDate, "MMM d") : "Pick date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); if (endDate && d && d > endDate) setEndDate(undefined); }} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} className="p-3 pointer-events-auto" />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">End</p>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !endDate && "text-muted-foreground")}>
+                              <CalendarIcon className="w-3 h-3 mr-1" />
+                              {endDate ? format(endDate, "MMM d") : "Pick date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(d) => d < (startDate || new Date())} className="p-3 pointer-events-auto" />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
-                    <Button className="w-full mt-4" size="lg">
-                      Request Booking
+
+                    {durationDays > 0 && bestRate && (
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between text-muted-foreground text-xs">
+                          <span><Clock className="w-3 h-3 inline mr-1" />{durationDays} day{durationDays > 1 ? "s" : ""}</span>
+                          <span className="capitalize">{bestRate} rate</span>
+                        </div>
+                        <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground text-xs"><span>GST (5%)</span><span>${gst.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground text-xs"><span>QST (9.975%)</span><span>${qst.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-2"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                      </div>
+                    )}
+
+                    <Button className="w-full" size="lg" disabled={!startDate || !endDate || !bestRate} onClick={handleBook}>
+                      {durationDays > 0 && bestRate ? `Book — $${total.toFixed(2)}` : "Select dates to book"}
                     </Button>
                   </div>
                 )}
