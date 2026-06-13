@@ -92,6 +92,8 @@ export default function ListingDetail() {
   const [showMessages, setShowMessages] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+
+  useEffect(() => {
     const fetchListing = async () => {
       if (!id) return;
 
