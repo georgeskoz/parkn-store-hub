@@ -15,6 +15,8 @@ import ConversationPanel from "@/components/messaging/ConversationPanel";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import SeekerReviewsPanel from "@/components/reviews/SeekerReviewsPanel";
 import ProviderReviewsPanel from "@/components/reviews/ProviderReviewsPanel";
+import SeekerBookingsList from "@/components/dashboard/SeekerBookingsList";
+import ProviderCancelledBookings from "@/components/dashboard/ProviderCancelledBookings";
 
 type ViewMode = "provider" | "seeker";
 
