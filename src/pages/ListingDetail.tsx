@@ -177,6 +177,49 @@ export default function ListingDetail() {
   const price = listing.monthly || listing.daily || listing.hourly;
   const priceLabel = listing.monthly ? "/month" : listing.daily ? "/day" : listing.hourly ? "/hour" : "";
 
+  const durationDays = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 1) : 0;
+  const hasMonthly = !!listing.monthly;
+  const hasDaily = !!listing.daily;
+  const hasHourly = !!listing.hourly;
+  const bestRate: "monthly" | "daily" | "hourly" | null =
+    durationDays >= 30 && hasMonthly ? "monthly"
+    : durationDays >= 1 && hasDaily ? "daily"
+    : hasHourly ? "hourly"
+    : hasDaily ? "daily"
+    : hasMonthly ? "monthly"
+    : null;
+  const unitPrice = bestRate ? Number(listing[bestRate]) : 0;
+  const units = !bestRate ? 0
+    : bestRate === "monthly" ? Math.max(Math.ceil(durationDays / 30), 1)
+    : bestRate === "daily" ? Math.max(durationDays, 1)
+    : Math.max(durationDays * 24, 1);
+  const subtotal = +(unitPrice * units).toFixed(2);
+  const gst = +(subtotal * 0.05).toFixed(2);
+  const qst = +(subtotal * 0.09975).toFixed(2);
+  const total = +(subtotal + gst + qst).toFixed(2);
+
+  const handleBook = () => {
+    if (!startDate || !endDate || !bestRate || !listing) return;
+    navigate(`/booking/confirm`, {
+      state: {
+        listingType: listing.category,
+        listingId: listing.id,
+        title: listing.title,
+        address: `${listing.address}, ${listing.city}`,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        rate: bestRate,
+        unitPrice,
+        units,
+        subtotal,
+        gst,
+        qst,
+        total,
+      },
+    });
+  };
+
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
