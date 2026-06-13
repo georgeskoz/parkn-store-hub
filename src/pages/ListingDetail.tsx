@@ -7,6 +7,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, differenceInDays } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   Carousel,
   CarouselContent,
@@ -14,7 +18,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { MapPin, ArrowLeft, User, Mail, Phone, Check } from "lucide-react";
+import { MapPin, ArrowLeft, User, Mail, Phone, Check, CalendarIcon, Clock } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
