@@ -99,8 +99,6 @@ export default function ListingDetail() {
   const [endOpen, setEndOpen] = useState(false);
   const [tempStart, setTempStart] = useState<Date | undefined>();
   const [tempEnd, setTempEnd] = useState<Date | undefined>();
-  const [startWindows, setStartWindows] = useState<TimeRange[]>([]);
-  const [endWindows, setEndWindows] = useState<TimeRange[]>([]);
 
   useEffect(() => {
     const fetchListing = async () => {
