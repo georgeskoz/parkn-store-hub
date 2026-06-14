@@ -116,10 +116,8 @@ serve(async (req) => {
     const totalCents = Math.round(total * 100);
     const platformFeeCents = Math.round(totalCents * PLATFORM_COMMISSION_PERCENT / 100);
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+
+
 
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
