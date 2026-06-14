@@ -11,3 +11,21 @@ verify_jwt = false
 
 [functions.create-stripe-connect-link]
 verify_jwt = false
+
+[functions.release-booking-payout]
+verify_jwt = false
+
+[functions.charge-overdue]
+verify_jwt = false
+
+[functions.request-extension]
+verify_jwt = false
+
+[functions.respond-extension]
+verify_jwt = false
+
+[functions.complete-rental]
+verify_jwt = false
+
+[functions.open-dispute]
+verify_jwt = false
