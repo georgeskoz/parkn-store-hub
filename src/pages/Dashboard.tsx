@@ -17,6 +17,7 @@ import SeekerReviewsPanel from "@/components/reviews/SeekerReviewsPanel";
 import ProviderReviewsPanel from "@/components/reviews/ProviderReviewsPanel";
 import SeekerBookingsList from "@/components/dashboard/SeekerBookingsList";
 import ProviderCancelledBookings from "@/components/dashboard/ProviderCancelledBookings";
+import ProviderActiveBookings from "@/components/dashboard/ProviderActiveBookings";
 
 type ViewMode = "provider" | "seeker";
 
@@ -256,6 +257,7 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
           </CardContent>
         </Card>
       </div>
+      {userId && <ProviderActiveBookings userId={userId} />}
       {userId && <ProviderCancelledBookings userId={userId} />}
       <MyListings />
     </div>
