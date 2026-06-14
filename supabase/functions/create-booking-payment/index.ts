@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Server-side surge lookup (cannot be bypassed by client)
     const nowIso = new Date().toISOString();
-    const { data: surgeRules } = await supabase
+    const { data: surgeRules } = await admin
       .from("surge_pricing")
       .select("id, label, surge_multiplier, start_at, end_at, category")
       .eq("city", listing.city)
