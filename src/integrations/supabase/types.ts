@@ -670,6 +670,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_available_slots: {
+        Args: { _check_date: string; _listing_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
