@@ -24,7 +24,7 @@ import L from "leaflet";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
-import AvailabilitySlots, { TimeRange } from "@/components/listing/AvailabilitySlots";
+import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
 
 interface DbListing {
   id: string;
