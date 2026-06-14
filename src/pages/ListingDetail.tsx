@@ -490,6 +490,35 @@ export default function ListingDetail() {
                       </div>
                     </div>
 
+                    {startDate && (
+                      <AvailabilitySlots
+                        listingId={listing.id}
+                        date={startDate}
+                        selectedStart={startTime}
+                        selectedEnd={
+                          endDate && startDate.toDateString() === endDate.toDateString()
+                            ? endTime
+                            : undefined
+                        }
+                        onPickSlot={(w) => {
+                          setStartWindows([w]);
+                          setStartTime(w.start);
+                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                        }}
+                      />
+                    )}
+                    {endDate && startDate && endDate.toDateString() !== startDate.toDateString() && (
+                      <AvailabilitySlots
+                        listingId={listing.id}
+                        date={endDate}
+                        selectedEnd={endTime}
+                        onPickSlot={(w) => {
+                          setEndWindows([w]);
+                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                        }}
+                      />
+                    )}
+
                     {durationDays > 0 && bestRate && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between text-muted-foreground text-xs">
@@ -506,6 +535,7 @@ export default function ListingDetail() {
                     <Button className="w-full" size="lg" disabled={!startDate || !endDate || !bestRate} onClick={handleBook}>
                       {durationDays > 0 && bestRate ? `Book — $${total.toFixed(2)}` : "Select dates to book"}
                     </Button>
+
                   </div>
                 )}
               </CardContent>
