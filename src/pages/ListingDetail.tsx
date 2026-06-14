@@ -92,6 +92,12 @@ export default function ListingDetail() {
   const [showMessages, setShowMessages] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [startTime, setStartTime] = useState<string>("09:00");
+  const [endTime, setEndTime] = useState<string>("17:00");
+  const [startOpen, setStartOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  const [tempStart, setTempStart] = useState<Date | undefined>();
+  const [tempEnd, setTempEnd] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -198,6 +204,13 @@ export default function ListingDetail() {
   const qst = +(subtotal * 0.09975).toFixed(2);
   const total = +(subtotal + gst + qst).toFixed(2);
 
+  const applyTime = (d: Date, t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    const x = new Date(d);
+    x.setHours(h || 0, m || 0, 0, 0);
+    return x;
+  };
+
   const handleBook = () => {
     if (!startDate || !endDate || !bestRate || !listing) return;
     navigate(`/booking/confirm`, {
@@ -206,8 +219,8 @@ export default function ListingDetail() {
         listingId: listing.id,
         title: listing.title,
         address: `${listing.address}, ${listing.city}`,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: applyTime(startDate, startTime).toISOString(),
+        endDate: applyTime(endDate, endTime).toISOString(),
         rate: bestRate,
         unitPrice,
         units,
@@ -430,7 +443,7 @@ export default function ListingDetail() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Start</p>
-                        <Popover>
+                        <Popover open={startOpen} onOpenChange={(o) => { setStartOpen(o); if (o) setTempStart(startDate); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !startDate && "text-muted-foreground")}>
                               <CalendarIcon className="w-3 h-3 mr-1" />
@@ -438,13 +451,21 @@ export default function ListingDetail() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); if (endDate && d && d > endDate) setEndDate(undefined); }} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={tempStart} onSelect={setTempStart} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} className="p-3 pointer-events-auto" />
+                            <div className="flex justify-end gap-2 p-3 border-t border-border">
+                              <Button variant="ghost" size="sm" onClick={() => setStartOpen(false)}>Cancel</Button>
+                              <Button size="sm" disabled={!tempStart} onClick={() => { setStartDate(tempStart); if (endDate && tempStart && tempStart > endDate) setEndDate(undefined); setStartOpen(false); }}>Confirm</Button>
+                            </div>
                           </PopoverContent>
                         </Popover>
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground mb-1">Start time</p>
+                          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">End</p>
-                        <Popover>
+                        <Popover open={endOpen} onOpenChange={(o) => { setEndOpen(o); if (o) setTempEnd(endDate); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !endDate && "text-muted-foreground")}>
                               <CalendarIcon className="w-3 h-3 mr-1" />
@@ -452,9 +473,17 @@ export default function ListingDetail() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(d) => d < (startDate || new Date())} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={tempEnd} onSelect={setTempEnd} disabled={(d) => d < (startDate || new Date())} className="p-3 pointer-events-auto" />
+                            <div className="flex justify-end gap-2 p-3 border-t border-border">
+                              <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>Cancel</Button>
+                              <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>Confirm</Button>
+                            </div>
                           </PopoverContent>
                         </Popover>
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground mb-1">End time</p>
+                          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
+                        </div>
                       </div>
                     </div>
 
