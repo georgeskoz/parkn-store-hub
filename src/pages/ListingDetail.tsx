@@ -92,6 +92,12 @@ export default function ListingDetail() {
   const [showMessages, setShowMessages] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [startTime, setStartTime] = useState<string>("09:00");
+  const [endTime, setEndTime] = useState<string>("17:00");
+  const [startOpen, setStartOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  const [tempStart, setTempStart] = useState<Date | undefined>();
+  const [tempEnd, setTempEnd] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchListing = async () => {
