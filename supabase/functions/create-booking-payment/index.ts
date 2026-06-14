@@ -58,12 +58,18 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
     // Look up listing for surge match, provider id, and authoritative pricing
-    const { data: listing } = await supabase
+    const { data: listing, error: listingError } = await admin
       .from("listings")
       .select("city, category, user_id, hourly, daily, weekly, monthly, seasonal")
       .eq("id", listingId)
-      .single();
+      .maybeSingle();
+    if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
     if (!listing) throw new Error("Listing not found");
 
     const rateMap: Record<string, number | null> = {
