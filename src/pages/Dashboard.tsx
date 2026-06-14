@@ -48,7 +48,7 @@ const Dashboard = () => {
             <div className="w-7 h-7 rounded-lg hero-gradient flex items-center justify-center">
               <Car className="w-4 h-4 text-primary-foreground" />
             </div>
-            SpotVault
+            Spotsvault
           </Link>
 
           <div className="flex items-center gap-3">
@@ -76,8 +76,8 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         {roles.length === 0 && (
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to SpotVault!</h1>
-            <p className="text-muted-foreground mb-8">How would you like to use SpotVault? You can always add the other role later.</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spotsvault!</h1>
+            <p className="text-muted-foreground mb-8">How would you like to use Spotsvault? You can always add the other role later.</p>
             <div className="grid md:grid-cols-2 gap-4">
               <Card
                 className="cursor-pointer card-shadow hover:card-shadow-hover transition-shadow border-2 hover:border-primary"
