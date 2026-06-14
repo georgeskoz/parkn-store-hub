@@ -204,6 +204,13 @@ export default function ListingDetail() {
   const qst = +(subtotal * 0.09975).toFixed(2);
   const total = +(subtotal + gst + qst).toFixed(2);
 
+  const applyTime = (d: Date, t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    const x = new Date(d);
+    x.setHours(h || 0, m || 0, 0, 0);
+    return x;
+  };
+
   const handleBook = () => {
     if (!startDate || !endDate || !bestRate || !listing) return;
     navigate(`/booking/confirm`, {
@@ -212,8 +219,8 @@ export default function ListingDetail() {
         listingId: listing.id,
         title: listing.title,
         address: `${listing.address}, ${listing.city}`,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        startDate: applyTime(startDate, startTime).toISOString(),
+        endDate: applyTime(endDate, endTime).toISOString(),
         rate: bestRate,
         unitPrice,
         units,
