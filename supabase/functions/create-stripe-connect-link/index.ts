@@ -45,7 +45,7 @@ serve(async (req) => {
         type: "express",
         email: user.email,
         capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-        business_profile: { name: "SpotVault Provider" },
+        business_profile: { name: "Spotsvault Provider" },
       });
       accountId = account.id;
 

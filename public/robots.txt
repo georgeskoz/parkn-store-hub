@@ -18,4 +18,4 @@ Disallow: /messages
 Disallow: /profile
 Disallow: /booking
 
-Sitemap: https://parkn-store-hub.lovable.app/sitemap.xml
+Sitemap: https://spotsvault.com/sitemap.xml

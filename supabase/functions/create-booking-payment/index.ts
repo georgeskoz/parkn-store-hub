@@ -166,7 +166,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       payment_intent_data: {
-        // Funds land on SpotVault platform account (escrow). Transfer is created
+        // Funds land on Spotsvault platform account (escrow). Transfer is created
         // later by release-booking-payout. transfer_group lets us tie transfers
         // back to this booking.
         transfer_group: `booking_${booking.id}`,

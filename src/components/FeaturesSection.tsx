@@ -54,7 +54,7 @@ const FeaturesSection = () => {
             <span className="text-primary">park & store</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">
-            Whether you're looking for a spot or listing one, SpotVault makes it effortless.
+            Whether you're looking for a spot or listing one, Spotsvault makes it effortless.
           </p>
         </div>
 

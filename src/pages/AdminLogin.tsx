@@ -51,7 +51,7 @@ const AdminLogin = () => {
           <div className="w-10 h-10 rounded-lg bg-destructive flex items-center justify-center">
             <Shield className="w-6 h-6 text-destructive-foreground" />
           </div>
-          SpotVault Admin
+          Spotsvault Admin
         </div>
 
         <Card className="card-shadow">
@@ -63,7 +63,7 @@ const AdminLogin = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="admin@spotvault.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input id="email" type="email" placeholder="admin@spotsvault.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

@@ -1,14 +1,14 @@
 ## Goal
-Add escrow + a complete rental lifecycle on top of the existing booking flow: funds are held by SpotVault until the rental ends, auto-released unless disputed, with in-app extension requests and automatic 2x overdue charges.
+Add escrow + a complete rental lifecycle on top of the existing booking flow: funds are held by Spotsvault until the rental ends, auto-released unless disputed, with in-app extension requests and automatic 2x overdue charges.
 
 ## 1. Stripe model — Destination charges with delayed transfer
 Keep the existing Checkout session, but switch it from a plain charge to a Connect "separate charges and transfers" model:
 - `payment_intent_data.transfer_group = booking_<id>` and `on_behalf_of = provider_stripe_account` (when provider has Connect)
-- NO `transfer_data` on the session → money lands in SpotVault's Stripe balance (escrow)
+- NO `transfer_data` on the session → money lands in Spotsvault's Stripe balance (escrow)
 - A new `release-booking-payout` edge function creates a `stripe.transfers.create({ amount, destination: provider_account, transfer_group })` when escrow is released
 - Refund path (already exists for cancellation) untouched
 
-Providers without completed Connect onboarding can still be booked; their funds stay in SpotVault until they finish onboarding, then the release function transfers.
+Providers without completed Connect onboarding can still be booked; their funds stay in Spotsvault until they finish onboarding, then the release function transfers.
 
 ## 2. Database changes (one migration)
 New columns on `bookings`:

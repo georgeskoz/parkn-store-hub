@@ -368,7 +368,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
               placeholder="Briefly describe the issue"
             />
             <p className="text-xs text-muted-foreground">
-              Funds will be held until SpotVault reviews.
+              Funds will be held until Spotsvault reviews.
             </p>
           </div>
           <DialogFooter>

@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="w-7 h-7 rounded-md hero-gradient flex items-center justify-center">
                 <Car className="w-4 h-4 text-primary-foreground" />
               </div>
-              SpotVault
+              Spotsvault
             </Link>
             <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
               The marketplace for parking and storage spaces. Find or list — your space, your way.
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} SpotVault. All rights reserved.
+          © {new Date().getFullYear()} Spotsvault. All rights reserved.
         </div>
       </div>
     </footer>

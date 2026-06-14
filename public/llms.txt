@@ -1,11 +1,11 @@
-# SpotVault
+# Spotsvault
 
 > Quebec marketplace for parking and storage spaces — find a spot near you or list your space to earn.
 
-SpotVault connects seekers with providers of parking and storage spaces across Quebec. Bookings, payments, and messaging are built in.
+Spotsvault connects seekers with providers of parking and storage spaces across Quebec. Bookings, payments, and messaging are built in.
 
 ## Pages
-- [Home](/): Overview of SpotVault and how the marketplace works
+- [Home](/): Overview of Spotsvault and how the marketplace works
 - [Find a Spot](/find): Unified search for parking and storage with location and distance filters
 - [Find Parking](/parking): Browse parking spaces with map view
 - [Find Storage](/storage): Browse and compare storage spaces by size, price, and city
