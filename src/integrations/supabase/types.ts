@@ -670,10 +670,19 @@ export type Database = {
       }
     }
     Functions: {
-      get_available_slots: {
-        Args: { _check_date: string; _listing_id: string }
-        Returns: Json
-      }
+      get_available_slots:
+        | { Args: { _check_date: string; _listing_id: string }; Returns: Json }
+        | {
+            Args: {
+              end_search: string
+              start_search: string
+              target_listing_id: string
+            }
+            Returns: {
+              available_end: string
+              available_start: string
+            }[]
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
