@@ -24,6 +24,7 @@ import L from "leaflet";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
+import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
 
 interface DbListing {
   id: string;
@@ -487,6 +488,35 @@ export default function ListingDetail() {
                       </div>
                     </div>
 
+                    {startDate && (
+                      <AvailabilitySlots
+                        listingId={listing.id}
+                        date={startDate}
+                        selectedStart={startTime}
+                        selectedEnd={
+                          endDate && startDate.toDateString() === endDate.toDateString()
+                            ? endTime
+                            : undefined
+                        }
+                        onPickSlot={(w) => {
+                          
+                          setStartTime(w.start);
+                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                        }}
+                      />
+                    )}
+                    {endDate && startDate && endDate.toDateString() !== startDate.toDateString() && (
+                      <AvailabilitySlots
+                        listingId={listing.id}
+                        date={endDate}
+                        selectedEnd={endTime}
+                        onPickSlot={(w) => {
+                          
+                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                        }}
+                      />
+                    )}
+
                     {durationDays > 0 && bestRate && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between text-muted-foreground text-xs">
@@ -503,6 +533,7 @@ export default function ListingDetail() {
                     <Button className="w-full" size="lg" disabled={!startDate || !endDate || !bestRate} onClick={handleBook}>
                       {durationDays > 0 && bestRate ? `Book — $${total.toFixed(2)}` : "Select dates to book"}
                     </Button>
+
                   </div>
                 )}
               </CardContent>
