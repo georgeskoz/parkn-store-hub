@@ -24,7 +24,7 @@ import L from "leaflet";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
-import AvailabilitySlots, { fitsInOpenWindow, TimeRange } from "@/components/listing/AvailabilitySlots";
+import AvailabilitySlots, { TimeRange } from "@/components/listing/AvailabilitySlots";
 
 interface DbListing {
   id: string;
@@ -499,7 +499,7 @@ export default function ListingDetail() {
                             : undefined
                         }
                         onPickSlot={(w) => {
-                          setStartWindows([w]);
+                          
                           setStartTime(w.start);
                           setEndTime(w.end === "24:00" ? "23:59" : w.end);
                         }}
@@ -511,7 +511,7 @@ export default function ListingDetail() {
                         date={endDate}
                         selectedEnd={endTime}
                         onPickSlot={(w) => {
-                          setEndWindows([w]);
+                          
                           setEndTime(w.end === "24:00" ? "23:59" : w.end);
                         }}
                       />
