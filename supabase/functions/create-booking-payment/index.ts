@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 const PLATFORM_COMMISSION_PERCENT = 10;
+const AUTO_RELEASE_HOURS = 24;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,16 +45,13 @@ serve(async (req) => {
     }
 
     const allowedRates = ["hourly", "daily", "weekly", "monthly", "seasonal"];
-    if (!allowedRates.includes(rate)) {
-      throw new Error("Invalid rate");
-    }
+    if (!allowedRates.includes(rate)) throw new Error("Invalid rate");
     const unitsNum = Number(units);
     if (!Number.isFinite(unitsNum) || unitsNum <= 0 || unitsNum > 10000) {
       throw new Error("Invalid units");
     }
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
-
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -63,7 +61,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Look up listing for surge match, provider id, and authoritative pricing
     const { data: listing, error: listingError } = await admin
       .from("listings")
       .select("city, category, user_id, hourly, daily, weekly, monthly, seasonal")
@@ -84,7 +81,6 @@ serve(async (req) => {
       throw new Error("Selected rate is not available for this listing");
     }
 
-    // Server-side surge lookup (cannot be bypassed by client)
     const nowIso = new Date().toISOString();
     const { data: surgeRules } = await admin
       .from("surge_pricing")
@@ -114,10 +110,13 @@ serve(async (req) => {
     const originalTotal = +(baseSubtotal * 1.14975).toFixed(2);
 
     const totalCents = Math.round(total * 100);
-    const platformFeeCents = Math.round(totalCents * PLATFORM_COMMISSION_PERCENT / 100);
+    const platformFeeCents = Math.round(
+      totalCents * PLATFORM_COMMISSION_PERCENT / 100,
+    );
 
-
-
+    const autoReleaseAt = new Date(
+      new Date(endDate).getTime() + AUTO_RELEASE_HOURS * 3600 * 1000,
+    ).toISOString();
 
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
@@ -128,6 +127,8 @@ serve(async (req) => {
         start_date: startDate,
         end_date: endDate,
         status: "pending",
+        escrow_status: "pending",
+        auto_release_at: autoReleaseAt,
         total_amount: total,
         original_amount: originalTotal,
         surge_multiplier: surgeMultiplier,
@@ -138,22 +139,25 @@ serve(async (req) => {
       })
       .select("id")
       .single();
-
     if (bookingError) throw new Error(bookingError.message);
 
+    // Reuse or create Stripe customer (needed for off_session overdue charges)
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    const customerId = customers.data[0]?.id;
+    let customerId = customers.data[0]?.id;
+    if (!customerId) {
+      const c = await stripe.customers.create({ email: user.email });
+      customerId = c.id;
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
             currency: "cad",
             product_data: {
               name: title,
-              description: `${listingType} booking: ${address} (${rate} rate × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}`,
+              description: `${listingType} booking: ${address} (${rate} × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}`,
             },
             unit_amount: totalCents,
           },
@@ -161,10 +165,20 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
+      payment_intent_data: {
+        // Funds land on SpotVault platform account (escrow). Transfer is created
+        // later by release-booking-payout. transfer_group lets us tie transfers
+        // back to this booking.
+        transfer_group: `booking_${booking.id}`,
+        setup_future_usage: "off_session",
+        metadata: {
+          booking_id: booking.id,
+        },
+      },
       metadata: {
         booking_id: booking.id,
-        listing_type: listingType,
         listing_id: listingId,
+        listing_type: listingType,
         start_date: startDate,
         end_date: endDate,
         rate,
@@ -184,6 +198,16 @@ serve(async (req) => {
       cancel_url: `${origin}/booking/confirm`,
     });
 
+    // Persist the customer + session right away so off-session overdue charges
+    // can run even if the webhook is delayed.
+    await admin
+      .from("bookings")
+      .update({
+        stripe_customer_id: customerId,
+        stripe_session_id: session.id,
+      })
+      .eq("id", booking.id);
+
     return new Response(
       JSON.stringify({
         url: session.url,
@@ -195,7 +219,10 @@ serve(async (req) => {
         total,
         originalTotal,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
