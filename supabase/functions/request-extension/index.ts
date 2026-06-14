@@ -68,11 +68,11 @@ serve(async (req) => {
       .single();
     if (error) throw error;
 
-    // Drop a system message into the conversation if one exists
+    // Best-effort: drop a system message into the booking's conversation
     const { data: convo } = await admin
       .from("conversations")
       .select("id")
-      .or(`and(participant_one.eq.${booking.seeker_id},participant_two.eq.${booking.provider_id}),and(participant_one.eq.${booking.provider_id},participant_two.eq.${booking.seeker_id})`)
+      .eq("booking_id", bookingId)
       .maybeSingle();
     if (convo?.id) {
       await admin.from("messages").insert({

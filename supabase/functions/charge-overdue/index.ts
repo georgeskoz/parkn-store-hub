@@ -101,7 +101,6 @@ serve(async (req) => {
             .from("overdue_charges")
             .update({ status: "succeeded", payment_intent_id: pi.id })
             .eq("id", row?.id);
-          await admin.rpc("noop").catch(() => {});
           // increment total
           await admin
             .from("bookings")

@@ -88,7 +88,6 @@ serve(async (req) => {
           .update({
             end_date: ext.new_end_date,
             auto_release_at: newRelease,
-            total_amount: undefined, // leave unchanged; extension tracked separately
           })
           .eq("id", ext.booking_id);
         return new Response(JSON.stringify({ status: "paid", paymentIntent: pi.id }), {
