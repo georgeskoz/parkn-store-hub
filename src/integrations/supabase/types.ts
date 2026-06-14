@@ -683,6 +683,17 @@ export type Database = {
               available_start: string
             }[]
           }
+      get_daily_availability: {
+        Args: {
+          range_end: string
+          range_start: string
+          target_listing_id: string
+        }
+        Returns: {
+          day: string
+          status: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
