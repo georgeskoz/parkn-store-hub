@@ -14,75 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_extensions: {
+        Row: {
+          booking_id: string
+          created_at: string
+          extra_amount: number
+          extra_hours: number
+          extra_units: number
+          id: string
+          new_end_date: string
+          paid_at: string | null
+          payment_intent_id: string | null
+          rate: string
+          requested_by: string
+          responded_at: string | null
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          extra_amount: number
+          extra_hours: number
+          extra_units: number
+          id?: string
+          new_end_date: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          rate: string
+          requested_by: string
+          responded_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          extra_amount?: number
+          extra_hours?: number
+          extra_units?: number
+          id?: string
+          new_end_date?: string
+          paid_at?: string | null
+          payment_intent_id?: string | null
+          rate?: string
+          requested_by?: string
+          responded_at?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_extensions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
+          auto_release_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
           category: string | null
           city: string | null
           commission_amount: number
           commission_rate: number
+          completed_by_provider_at: string | null
+          completed_by_seeker_at: string | null
           created_at: string
+          dispute_opened_at: string | null
+          dispute_reason: string | null
           end_date: string
+          escrow_status: string
           id: string
+          last_overdue_charge_at: string | null
           listing_id: string
           original_amount: number | null
+          overdue_charges_total: number
           payment_intent_id: string | null
+          payout_amount: number | null
           provider_id: string
           refund_amount: number
           refund_status: string | null
+          released_at: string | null
+          released_transfer_id: string | null
           seeker_id: string
           start_date: string
           status: string
+          stripe_customer_id: string | null
+          stripe_payment_method_id: string | null
           stripe_refund_id: string | null
+          stripe_session_id: string | null
           surge_multiplier: number
           total_amount: number
           updated_at: string
         }
         Insert: {
+          auto_release_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           category?: string | null
           city?: string | null
           commission_amount?: number
           commission_rate?: number
+          completed_by_provider_at?: string | null
+          completed_by_seeker_at?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
           end_date: string
+          escrow_status?: string
           id?: string
+          last_overdue_charge_at?: string | null
           listing_id: string
           original_amount?: number | null
+          overdue_charges_total?: number
           payment_intent_id?: string | null
+          payout_amount?: number | null
           provider_id: string
           refund_amount?: number
           refund_status?: string | null
+          released_at?: string | null
+          released_transfer_id?: string | null
           seeker_id: string
           start_date: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
+          stripe_session_id?: string | null
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
         }
         Update: {
+          auto_release_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
           category?: string | null
           city?: string | null
           commission_amount?: number
           commission_rate?: number
+          completed_by_provider_at?: string | null
+          completed_by_seeker_at?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
           end_date?: string
+          escrow_status?: string
           id?: string
+          last_overdue_charge_at?: string | null
           listing_id?: string
           original_amount?: number | null
+          overdue_charges_total?: number
           payment_intent_id?: string | null
+          payout_amount?: number | null
           provider_id?: string
           refund_amount?: number
           refund_status?: string | null
+          released_at?: string | null
+          released_transfer_id?: string | null
           seeker_id?: string
           start_date?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
+          stripe_session_id?: string | null
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
@@ -297,6 +401,53 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      overdue_charges: {
+        Row: {
+          amount: number
+          booking_id: string
+          charge_date: string
+          created_at: string
+          error_message: string | null
+          id: string
+          payment_intent_id: string | null
+          rate: number
+          status: string
+          units: number
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          charge_date: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payment_intent_id?: string | null
+          rate: number
+          status?: string
+          units: number
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          charge_date?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payment_intent_id?: string | null
+          rate?: number
+          status?: string
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overdue_charges_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
         ]
