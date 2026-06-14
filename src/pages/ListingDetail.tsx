@@ -25,6 +25,8 @@ import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
 import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
+import StorageAvailabilityCalendar from "@/components/listing/StorageAvailabilityCalendar";
+import { addMonths } from "date-fns";
 
 interface DbListing {
   id: string;
@@ -488,34 +490,52 @@ export default function ListingDetail() {
                       </div>
                     </div>
 
-                    {startDate && (
-                      <AvailabilitySlots
+                    {isParking ? (
+                      <>
+                        {startDate && (
+                          <AvailabilitySlots
+                            listingId={listing.id}
+                            date={startDate}
+                            selectedStart={startTime}
+                            selectedEnd={
+                              endDate && startDate.toDateString() === endDate.toDateString()
+                                ? endTime
+                                : undefined
+                            }
+                            onPickSlot={(w) => {
+                              setStartTime(w.start);
+                              setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                            }}
+                          />
+                        )}
+                        {endDate && startDate && endDate.toDateString() !== startDate.toDateString() && (
+                          <AvailabilitySlots
+                            listingId={listing.id}
+                            date={endDate}
+                            selectedEnd={endTime}
+                            onPickSlot={(w) => {
+                              setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                            }}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <StorageAvailabilityCalendar
                         listingId={listing.id}
-                        date={startDate}
-                        selectedStart={startTime}
-                        selectedEnd={
-                          endDate && startDate.toDateString() === endDate.toDateString()
-                            ? endTime
-                            : undefined
-                        }
-                        onPickSlot={(w) => {
-                          
-                          setStartTime(w.start);
-                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
+                        selectedStart={startDate}
+                        selectedEnd={endDate}
+                        onPickStart={(d) => {
+                          setStartDate(d);
+                          // Default check-out: +1 month (storage minimum rental)
+                          if (!endDate || endDate <= d) {
+                            setEndDate(addMonths(d, 1));
+                          }
+                          setStartTime("09:00");
+                          setEndTime("09:00");
                         }}
                       />
                     )}
-                    {endDate && startDate && endDate.toDateString() !== startDate.toDateString() && (
-                      <AvailabilitySlots
-                        listingId={listing.id}
-                        date={endDate}
-                        selectedEnd={endTime}
-                        onPickSlot={(w) => {
-                          
-                          setEndTime(w.end === "24:00" ? "23:59" : w.end);
-                        }}
-                      />
-                    )}
+
 
                     {durationDays > 0 && bestRate && (
                       <div className="space-y-1 text-sm">
