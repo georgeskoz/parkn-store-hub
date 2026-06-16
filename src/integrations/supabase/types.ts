@@ -281,7 +281,7 @@ export type Database = {
           type: string
           unit: string | null
           updated_at: string
-          user_id: string
+          host_id: string
           weekly: number | null
         }
         Insert: {
@@ -318,7 +318,7 @@ export type Database = {
           type: string
           unit?: string | null
           updated_at?: string
-          user_id: string
+          host_id: string
           weekly?: number | null
         }
         Update: {
@@ -355,7 +355,7 @@ export type Database = {
           type?: string
           unit?: string | null
           updated_at?: string
-          user_id?: string
+          host_id?: string
           weekly?: number | null
         }
         Relationships: []
