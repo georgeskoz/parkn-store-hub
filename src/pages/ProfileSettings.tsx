@@ -19,7 +19,7 @@ export default function ProfileSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
-    display_name: profile?.display_name || "",
+    full_name: profile?.full_name || "",
     bio: profile?.bio || "",
     phone: profile?.phone || "",
     avatar_url: profile?.avatar_url || "",
@@ -62,7 +62,7 @@ export default function ProfileSettings() {
     const { error } = await supabase
       .from("profiles")
       .update({
-        display_name: form.display_name,
+        full_name: form.full_name,
         bio: form.bio,
         phone: form.phone,
         avatar_url: form.avatar_url,
@@ -137,12 +137,12 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="display_name">Display Name</Label>
+              <Label htmlFor="full_name">Display Name</Label>
               <Input
-                id="display_name"
+                id="full_name"
                 placeholder="Your name"
-                value={form.display_name}
-                onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))}
+                value={form.full_name}
+                onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
               />
             </div>
 

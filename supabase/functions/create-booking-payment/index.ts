@@ -63,7 +63,7 @@ serve(async (req) => {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("city, category, user_id, hourly, daily, weekly, monthly, seasonal")
+      .select("city, category, host_id, hourly, daily, weekly, monthly, seasonal")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
@@ -124,12 +124,12 @@ serve(async (req) => {
         listing_id: listingId,
         seeker_id: user.id,
         provider_id: listing.user_id,
-        start_date: startDate,
-        end_date: endDate,
+        start_at: startDate,
+        end_at: endDate,
         status: "pending",
         escrow_status: "pending",
         auto_release_at: autoReleaseAt,
-        total_amount: total,
+        total_price: total,
         original_amount: originalTotal,
         surge_multiplier: surgeMultiplier,
         commission_rate: PLATFORM_COMMISSION_PERCENT,
@@ -179,8 +179,8 @@ serve(async (req) => {
         booking_id: booking.id,
         listing_id: listingId,
         listing_type: listingType,
-        start_date: startDate,
-        end_date: endDate,
+        start_at: startDate,
+        end_at: endDate,
         rate,
         units: String(units),
         subtotal: String(subtotal),

@@ -14,7 +14,7 @@ interface ReviewRow {
   comment: string | null;
   created_at: string;
   reviewer_id: string;
-  profiles?: { display_name: string | null; avatar_url: string | null } | null;
+  profiles?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
 export const useListingRatingSummary = (listingId: string) => {
@@ -59,7 +59,7 @@ export default function ListingReviews({ listingId }: Props) {
       if (ids.length) {
         const { data: profiles } = await (supabase as any)
           .from("profiles_public")
-          .select("id, display_name, avatar_url")
+          .select("id, full_name, avatar_url")
           .in("id", ids);
         const map = new Map((profiles || []).map((p: any) => [p.id, p]));
         rows.forEach((r) => { r.profiles = map.get(r.reviewer_id) as any; });
@@ -81,7 +81,7 @@ export default function ListingReviews({ listingId }: Props) {
         <Card key={r.id}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="font-medium text-foreground">{r.profiles?.display_name || "Anonymous"}</p>
+              <p className="font-medium text-foreground">{r.profiles?.full_name || "Anonymous"}</p>
               <span className="text-xs text-muted-foreground">
                 {new Date(r.created_at).toLocaleDateString()}
               </span>

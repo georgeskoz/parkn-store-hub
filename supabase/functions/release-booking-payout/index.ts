@@ -30,7 +30,7 @@ serve(async (req) => {
     // Find releasable bookings
     let query = admin
       .from("bookings")
-      .select("id, provider_id, total_amount, overdue_charges_total, payment_intent_id, released_transfer_id")
+      .select("id, provider_id, total_price, overdue_charges_total, payment_intent_id, released_transfer_id")
       .eq("escrow_status", "held")
       .lte("auto_release_at", new Date().toISOString())
       .is("released_at", null);
@@ -55,7 +55,7 @@ serve(async (req) => {
         continue;
       }
 
-      const grossCents = Math.round((Number(b.total_amount) + Number(b.overdue_charges_total || 0)) * 100);
+      const grossCents = Math.round((Number(b.total_price) + Number(b.overdue_charges_total || 0)) * 100);
       const feeCents = Math.round(grossCents * PLATFORM_COMMISSION_PERCENT / 100);
       const payoutCents = grossCents - feeCents;
 
