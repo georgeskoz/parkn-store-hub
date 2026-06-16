@@ -90,7 +90,7 @@ export type Database = {
           created_at: string
           dispute_opened_at: string | null
           dispute_reason: string | null
-          end_date: string
+          end_at: string
           escrow_status: string
           id: string
           last_overdue_charge_at: string | null
@@ -105,14 +105,14 @@ export type Database = {
           released_at: string | null
           released_transfer_id: string | null
           seeker_id: string
-          start_date: string
+          start_at: string
           status: string
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           stripe_refund_id: string | null
           stripe_session_id: string | null
           surge_multiplier: number
-          total_amount: number
+          total_price: number
           updated_at: string
         }
         Insert: {
@@ -128,7 +128,7 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
-          end_date: string
+          end_at: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
@@ -143,14 +143,14 @@ export type Database = {
           released_at?: string | null
           released_transfer_id?: string | null
           seeker_id: string
-          start_date: string
+          start_at: string
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
           stripe_session_id?: string | null
           surge_multiplier?: number
-          total_amount?: number
+          total_price?: number
           updated_at?: string
         }
         Update: {
@@ -166,7 +166,7 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
-          end_date?: string
+          end_at?: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
@@ -181,14 +181,14 @@ export type Database = {
           released_at?: string | null
           released_transfer_id?: string | null
           seeker_id?: string
-          start_date?: string
+          start_at?: string
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
           stripe_session_id?: string | null
           surge_multiplier?: number
-          total_amount?: number
+          total_price?: number
           updated_at?: string
         }
         Relationships: [
@@ -281,7 +281,7 @@ export type Database = {
           type: string
           unit: string | null
           updated_at: string
-          user_id: string
+          host_id: string
           weekly: number | null
         }
         Insert: {
@@ -318,7 +318,7 @@ export type Database = {
           type: string
           unit?: string | null
           updated_at?: string
-          user_id: string
+          host_id: string
           weekly?: number | null
         }
         Update: {
@@ -355,7 +355,7 @@ export type Database = {
           type?: string
           unit?: string | null
           updated_at?: string
-          user_id?: string
+          host_id?: string
           weekly?: number | null
         }
         Relationships: []
@@ -363,7 +363,7 @@ export type Database = {
       messages: {
         Row: {
           booking_id: string | null
-          content: string
+          body: string
           conversation_id: string
           created_at: string
           id: string
@@ -372,7 +372,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
-          content: string
+          body: string
           conversation_id: string
           created_at?: string
           id?: string
@@ -381,7 +381,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
-          content?: string
+          body?: string
           conversation_id?: string
           created_at?: string
           id?: string
@@ -457,7 +457,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          display_name: string | null
+          full_name: string | null
           id: string
           phone: string | null
           stripe_account_id: string | null
@@ -468,7 +468,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -479,7 +479,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id?: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -646,7 +646,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
-          display_name: string | null
+          full_name: string | null
           id: string | null
           phone: string | null
         }
@@ -654,7 +654,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
+          full_name?: string | null
           id?: string | null
           phone?: string | null
         }
@@ -662,7 +662,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
+          full_name?: string | null
           id?: string | null
           phone?: string | null
         }
