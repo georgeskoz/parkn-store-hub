@@ -63,7 +63,7 @@ serve(async (req) => {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("city, category, user_id, hourly, daily, weekly, monthly, seasonal")
+      .select("city, category, host_id, hourly, daily, weekly, monthly, seasonal")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);

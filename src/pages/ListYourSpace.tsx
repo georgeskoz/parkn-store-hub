@@ -54,7 +54,7 @@ export default function ListYourSpace() {
     setSubmitting(true);
     try {
       const { error } = await supabase.from("listings").insert({
-        user_id: user.id,
+        host_id: user.id,
         category: form.category,
         type: form.type,
         title: form.title,

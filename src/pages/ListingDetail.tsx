@@ -58,7 +58,7 @@ interface DbListing {
   student_discount_percent: number | null;
   student_universities: string | null;
   nearby_landmarks: string[];
-  user_id: string;
+  host_id: string;
 }
 
 interface UserProfile {
@@ -127,7 +127,7 @@ export default function ListingDetail() {
         const { data: profileData } = await (supabase as any)
           .from("profiles_public")
           .select("full_name, phone, avatar_url, bio")
-          .eq("id", data.user_id)
+          .eq("id", data.host_id)
           .maybeSingle();
 
         if (profileData) {
@@ -564,7 +564,7 @@ export default function ListingDetail() {
               <div className="fixed bottom-4 right-4 z-50">
                 <ConversationPanel
                   listingId={listing.id}
-                  providerId={listing.user_id}
+                  providerId={listing.host_id}
                   onClose={() => setShowMessages(false)}
                 />
               </div>
