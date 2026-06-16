@@ -5,9 +5,9 @@ import { Badge } from "@/components/ui/badge";
 
 type Row = {
   id: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
+  start_at: string;
+  end_at: string;
+  total_price: number;
   refund_amount: number | null;
   refund_status: string | null;
   cancelled_at: string | null;
@@ -24,7 +24,7 @@ const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
       const { data } = await supabase
         .from("bookings")
         .select(
-          "id,start_date,end_date,total_amount,refund_amount,refund_status,cancelled_at,category,city",
+          "id,start_at,end_at,total_price,refund_amount,refund_status,cancelled_at,category,city",
         )
         .eq("provider_id", userId)
         .eq("status", "cancelled")
@@ -51,15 +51,15 @@ const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
                 {r.category} • {r.city}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(r.start_date).toLocaleDateString()} →{" "}
-                {new Date(r.end_date).toLocaleDateString()}
+                {new Date(r.start_at).toLocaleDateString()} →{" "}
+                {new Date(r.end_at).toLocaleDateString()}
                 {r.cancelled_at && (
                   <> • cancelled {new Date(r.cancelled_at).toLocaleDateString()}</>
                 )}
               </p>
             </div>
             <div className="text-right">
-              <p>Total: ${Number(r.total_amount).toFixed(2)}</p>
+              <p>Total: ${Number(r.total_price).toFixed(2)}</p>
               <p className="text-xs">
                 Refund:{" "}
                 <span className="font-medium">

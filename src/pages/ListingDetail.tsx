@@ -62,7 +62,7 @@ interface DbListing {
 }
 
 interface UserProfile {
-  display_name: string;
+  full_name: string;
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -126,7 +126,7 @@ export default function ListingDetail() {
         // Fetch profile info
         const { data: profileData } = await (supabase as any)
           .from("profiles_public")
-          .select("display_name, phone, avatar_url, bio")
+          .select("full_name, phone, avatar_url, bio")
           .eq("id", data.user_id)
           .maybeSingle();
 
@@ -403,7 +403,7 @@ export default function ListingDetail() {
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
-                        alt={profile.display_name}
+                        alt={profile.full_name}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
@@ -411,7 +411,7 @@ export default function ListingDetail() {
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{profile?.display_name || "Unknown Provider"}</p>
+                    <p className="font-semibold text-foreground">{profile?.full_name || "Unknown Provider"}</p>
                     {profile?.bio && <p className="text-xs text-muted-foreground">{profile.bio}</p>}
                   </div>
                 </div>

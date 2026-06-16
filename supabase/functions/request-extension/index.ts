@@ -29,7 +29,7 @@ serve(async (req) => {
 
     const { data: booking } = await admin
       .from("bookings")
-      .select("id, listing_id, seeker_id, provider_id, end_date")
+      .select("id, listing_id, seeker_id, provider_id, end_at")
       .eq("id", bookingId)
       .maybeSingle();
     if (!booking) throw new Error("Booking not found");
@@ -49,7 +49,7 @@ serve(async (req) => {
     const total = +(subtotal + gst + qst).toFixed(2);
 
     const newEnd = new Date(
-      new Date(booking.end_date).getTime() + extraHours * 3600 * 1000,
+      new Date(booking.end_at).getTime() + extraHours * 3600 * 1000,
     ).toISOString();
 
     const { data: ext, error } = await admin

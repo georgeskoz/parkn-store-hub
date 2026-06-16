@@ -21,12 +21,12 @@ serve(async (req) => {
   );
 
   try {
-    // Find held bookings past end_date with no seeker completion
+    // Find held bookings past end_at with no seeker completion
     const { data: bookings, error } = await admin
       .from("bookings")
-      .select("id, listing_id, end_date, stripe_customer_id, stripe_payment_method_id, overdue_charges_total, completed_by_seeker_at, seeker_id")
+      .select("id, listing_id, end_at, stripe_customer_id, stripe_payment_method_id, overdue_charges_total, completed_by_seeker_at, seeker_id")
       .eq("escrow_status", "held")
-      .lt("end_date", new Date().toISOString())
+      .lt("end_at", new Date().toISOString())
       .is("completed_by_seeker_at", null);
     if (error) throw error;
 
@@ -49,7 +49,7 @@ serve(async (req) => {
         continue;
       }
 
-      const endMs = new Date(b.end_date).getTime();
+      const endMs = new Date(b.end_at).getTime();
       const nowMs = Date.now();
       const daysOverdue = Math.min(
         MAX_OVERDUE_DAYS,

@@ -28,9 +28,9 @@ import { Loader2 } from "lucide-react";
 type Booking = {
   id: string;
   listing_id: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
+  start_at: string;
+  end_at: string;
+  total_price: number;
   status: string;
   category: string | null;
   city: string | null;
@@ -76,10 +76,10 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     const { data } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at",
+        "id,listing_id,start_at,end_at,total_price,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at",
       )
       .eq("seeker_id", userId)
-      .order("start_date", { ascending: false });
+      .order("start_at", { ascending: false });
     setBookings((data || []) as Booking[]);
     setLoading(false);
   };
@@ -90,9 +90,9 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   }, [userId]);
 
   const refundPreview = (b: Booking) => {
-    const hours = (new Date(b.start_date).getTime() - Date.now()) / 36e5;
+    const hours = (new Date(b.start_at).getTime() - Date.now()) / 36e5;
     const pct = hours >= 24 ? 100 : hours > 0 ? 50 : 0;
-    return { pct, amount: +(Number(b.total_amount) * (pct / 100)).toFixed(2) };
+    return { pct, amount: +(Number(b.total_price) * (pct / 100)).toFixed(2) };
   };
 
   const confirmCancel = async () => {
@@ -174,12 +174,12 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
 
   const inWindow = (b: Booking) => {
     const now = Date.now();
-    return now >= new Date(b.start_date).getTime() && b.escrow_status === "held";
+    return now >= new Date(b.start_at).getTime() && b.escrow_status === "held";
   };
   const isOverdue = (b: Booking) =>
     b.escrow_status === "held" &&
     !b.completed_by_seeker_at &&
-    Date.now() > new Date(b.end_date).getTime();
+    Date.now() > new Date(b.end_at).getTime();
 
   return (
     <Card className="card-shadow">
@@ -219,8 +219,8 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                     {isOverdue(b) && <Badge variant="destructive">Overdue</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {b.city} • {new Date(b.start_date).toLocaleDateString()} →{" "}
-                    {new Date(b.end_date).toLocaleDateString()}
+                    {b.city} • {new Date(b.start_at).toLocaleDateString()} →{" "}
+                    {new Date(b.end_at).toLocaleDateString()}
                   </p>
                   {Number(b.overdue_charges_total || 0) > 0 && (
                     <p className="text-xs text-destructive mt-1">
@@ -239,7 +239,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                   )}
                 </div>
                 <div className="text-right space-y-1">
-                  <p className="font-semibold">${Number(b.total_amount).toFixed(2)}</p>
+                  <p className="font-semibold">${Number(b.total_price).toFixed(2)}</p>
                   <div className="flex flex-wrap justify-end gap-1">
                     {inWindow(b) && !b.completed_by_seeker_at && (
                       <Button size="sm" onClick={() => completePickup(b)}>

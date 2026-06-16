@@ -9,9 +9,9 @@ const corsHeaders = {
 };
 
 // Cancellation policy:
-//  - 24h+ before start_date → 100% refund
-//  - within 24h of start_date → 50% refund
-//  - after start_date (no-show) → 0% refund
+//  - 24h+ before start_at → 100% refund
+//  - within 24h of start_at → 50% refund
+//  - after start_at (no-show) → 0% refund
 function computeRefundPercent(startDate: Date, now: Date): number {
   const ms = startDate.getTime() - now.getTime();
   const hours = ms / (1000 * 60 * 60);
@@ -97,11 +97,11 @@ serve(async (req) => {
     }
 
     const now = new Date();
-    const startDate = new Date(booking.start_date);
+    const startDate = new Date(booking.start_at);
     let refundPercent = computeRefundPercent(startDate, now);
     if (isAdmin && adminOverrideFullRefund) refundPercent = 100;
 
-    const totalAmount = Number(booking.total_amount) || 0;
+    const totalAmount = Number(booking.total_price) || 0;
     const refundAmount = +(totalAmount * (refundPercent / 100)).toFixed(2);
     const refundCents = Math.round(refundAmount * 100);
 
