@@ -363,7 +363,7 @@ export type Database = {
       messages: {
         Row: {
           booking_id: string | null
-          body: string
+          content: string
           conversation_id: string
           created_at: string
           id: string
@@ -372,7 +372,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
-          body: string
+          content: string
           conversation_id: string
           created_at?: string
           id?: string
@@ -381,7 +381,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
-          body?: string
+          content?: string
           conversation_id?: string
           created_at?: string
           id?: string
