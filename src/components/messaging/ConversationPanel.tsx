@@ -8,7 +8,7 @@ import { Send, X } from "lucide-react";
 interface Message {
   id: string;
   sender_id: string;
-  content: string;
+  body: string;
   created_at: string;
   read_at: string | null;
 }
@@ -140,7 +140,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
     await supabase.from("messages").insert({
       conversation_id: conv.id,
       sender_id: user.id,
-      content: input.trim(),
+      body: input.trim(),
     });
     setInput("");
     setSending(false);
@@ -178,7 +178,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
           return (
             <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
               <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                {msg.content}
+                {msg.body}
               </div>
               {isMe && (
                 <span className="text-[10px] text-muted-foreground mt-1">

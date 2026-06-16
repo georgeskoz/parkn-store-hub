@@ -78,7 +78,7 @@ serve(async (req) => {
       await admin.from("messages").insert({
         conversation_id: convo.id,
         sender_id: user.id,
-        content: `Extension requested: +${extraHours}h for $${total.toFixed(2)} CAD. Awaiting your approval.`,
+        body: `Extension requested: +${extraHours}h for $${total.toFixed(2)} CAD. Awaiting your approval.`,
       });
     }
 
