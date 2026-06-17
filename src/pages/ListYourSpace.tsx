@@ -79,7 +79,6 @@ export default function ListYourSpace() {
           weekly: form.category === "parking" && form.weekly ? parseFloat(form.weekly) : null,
           monthly: form.monthly ? parseFloat(form.monthly) : null,
           seasonal: form.seasonal ? parseFloat(form.seasonal) : null,
-          cancellation: form.cancellation || null,
           student_discount: form.studentDiscount,
           student_discount_percent: form.studentDiscount ? parseInt(form.studentDiscountPercent) : null,
           student_universities: form.studentUniversities || null,
