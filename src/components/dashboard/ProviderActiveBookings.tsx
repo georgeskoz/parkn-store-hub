@@ -18,9 +18,9 @@ type Ext = {
 
 type Booking = {
   id: string;
-  start_at: string;
-  end_at: string;
-  total_price: number;
+  start_date: string;
+  end_date: string;
+  total_amount: number;
   status: string;
   city: string | null;
   category: string | null;
@@ -42,11 +42,11 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       supabase
         .from("bookings")
         .select(
-          "id,start_at,end_at,total_price,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at",
+          "id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at",
         )
         .eq("provider_id", userId)
         .neq("status", "cancelled")
-        .order("end_at", { ascending: false }),
+        .order("end_date", { ascending: false }),
       supabase
         .from("booking_extensions")
         .select("id,booking_id,extra_hours,extra_amount,new_end_date,status,created_at")
@@ -162,7 +162,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                   const overdue =
                     b.escrow_status === "held" &&
                     !b.completed_by_seeker_at &&
-                    Date.now() > new Date(b.end_at).getTime();
+                    Date.now() > new Date(b.end_date).getTime();
                   return (
                     <div
                       key={b.id}
@@ -181,8 +181,8 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {b.city} •{" "}
-                          {new Date(b.start_at).toLocaleDateString()} →{" "}
-                          {new Date(b.end_at).toLocaleDateString()}
+                          {new Date(b.start_date).toLocaleDateString()} →{" "}
+                          {new Date(b.end_date).toLocaleDateString()}
                         </p>
                         {Number(b.overdue_charges_total || 0) > 0 && (
                           <p className="text-xs mt-1">
@@ -193,7 +193,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                       </div>
                       <div className="text-right space-y-1">
                         <p className="font-semibold">
-                          ${Number(b.total_price).toFixed(2)}
+                          ${Number(b.total_amount).toFixed(2)}
                         </p>
                         {b.escrow_status === "held" && !b.completed_by_provider_at && (
                           <Button

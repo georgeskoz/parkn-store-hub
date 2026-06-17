@@ -6,7 +6,7 @@ type AppRole = "provider" | "seeker";
 
 interface Profile {
   id: string;
-  full_name: string | null;
+  display_name: string | null;
   avatar_url: string | null;
   phone: string | null;
   bio: string | null;
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        data: { full_name: displayName },
+        data: { display_name: displayName },
         emailRedirectTo: window.location.origin,
       },
     });

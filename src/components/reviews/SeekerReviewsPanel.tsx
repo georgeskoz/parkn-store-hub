@@ -10,7 +10,7 @@ interface BookingRow {
   id: string;
   listing_id: string;
   provider_id: string;
-  end_at: string;
+  end_date: string;
   listings: { title: string } | null;
 }
 
@@ -33,10 +33,10 @@ export default function SeekerReviewsPanel() {
     setLoading(true);
     const { data: bks } = await supabase
       .from("bookings")
-      .select("id, listing_id, provider_id, end_at, listings(title)")
+      .select("id, listing_id, provider_id, end_date, listings(title)")
       .eq("seeker_id", user.id)
       .eq("status", "completed")
-      .order("end_at", { ascending: false });
+      .order("end_date", { ascending: false });
 
     const rows = (bks || []) as unknown as BookingRow[];
     setBookings(rows);
