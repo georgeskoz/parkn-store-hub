@@ -15,7 +15,7 @@ type Booking = {
   listing_id: string;
   seeker_id: string;
   provider_id: string;
-  total_price: number;
+  total_amount: number;
   commission_amount: number;
   commission_rate: number;
   status: string;
@@ -54,7 +54,7 @@ const AdminPayments = () => {
     await load();
   };
 
-  const totalRevenue = bookings.reduce((s, b) => s + Number(b.total_price), 0);
+  const totalRevenue = bookings.reduce((s, b) => s + Number(b.total_amount), 0);
   const totalCommission = bookings.reduce((s, b) => s + Number(b.commission_amount), 0);
   const avgCommissionRate = bookings.length ? (bookings.reduce((s, b) => s + Number(b.commission_rate), 0) / bookings.length) : 10;
 
@@ -63,7 +63,7 @@ const AdminPayments = () => {
   bookings.forEach((b) => {
     const day = new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
     if (!dailyMap[day]) dailyMap[day] = { revenue: 0, commission: 0 };
-    dailyMap[day].revenue += Number(b.total_price);
+    dailyMap[day].revenue += Number(b.total_amount);
     dailyMap[day].commission += Number(b.commission_amount);
   });
   const dailyData = Object.entries(dailyMap).map(([day, d]) => ({ day, ...d }));
@@ -157,7 +157,7 @@ const AdminPayments = () => {
                       <TableCell className="font-mono text-xs">{b.id.slice(0, 8)}…</TableCell>
                       <TableCell>{b.city || "—"}</TableCell>
                       <TableCell className="capitalize">{b.category || "—"}</TableCell>
-                      <TableCell className="font-medium">${Number(b.total_price).toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">${Number(b.total_amount).toFixed(2)}</TableCell>
                       <TableCell className="text-accent-foreground">${Number(b.commission_amount).toFixed(2)}</TableCell>
                       <TableCell className="text-sm">
                         {Number(b.refund_amount || 0) > 0 ? (

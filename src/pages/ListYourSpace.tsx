@@ -56,7 +56,7 @@ export default function ListYourSpace() {
       const { data: inserted, error } = await supabase
         .from("listings")
         .insert({
-          host_id: user.id,
+          user_id: user.id,
           category: form.category,
           type: form.type,
           title: form.title,

@@ -58,11 +58,11 @@ interface DbListing {
   student_discount_percent: number | null;
   student_universities: string | null;
   nearby_landmarks: string[];
-  host_id: string;
+  user_id: string;
 }
 
 interface UserProfile {
-  full_name: string;
+  display_name: string;
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -126,8 +126,8 @@ export default function ListingDetail() {
         // Fetch profile info
         const { data: profileData } = await (supabase as any)
           .from("profiles_public")
-          .select("full_name, phone, avatar_url, bio")
-          .eq("id", data.host_id)
+          .select("display_name, phone, avatar_url, bio")
+          .eq("id", data.user_id)
           .maybeSingle();
 
         if (profileData) {
@@ -403,7 +403,7 @@ export default function ListingDetail() {
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
-                        alt={profile.full_name}
+                        alt={profile.display_name}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
@@ -411,7 +411,7 @@ export default function ListingDetail() {
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{profile?.full_name || "Unknown Provider"}</p>
+                    <p className="font-semibold text-foreground">{profile?.display_name || "Unknown Provider"}</p>
                     {profile?.bio && <p className="text-xs text-muted-foreground">{profile.bio}</p>}
                   </div>
                 </div>
@@ -564,7 +564,7 @@ export default function ListingDetail() {
               <div className="fixed bottom-4 right-4 z-50">
                 <ConversationPanel
                   listingId={listing.id}
-                  providerId={listing.host_id}
+                  providerId={listing.user_id}
                   onClose={() => setShowMessages(false)}
                 />
               </div>

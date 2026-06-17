@@ -64,7 +64,7 @@ const Dashboard = () => {
             )}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
-              {profile?.full_name || user?.email}
+              {profile?.display_name || user?.email}
             </div>
             <Button variant="ghost" size="icon" onClick={signOut}>
               <LogOut className="w-4 h-4" />
@@ -206,14 +206,14 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
     (async () => {
       const { data } = await supabase
         .from("bookings")
-        .select("status,total_price,commission_amount,created_at")
+        .select("status,total_amount,commission_amount,created_at")
         .eq("provider_id", userId);
       const list = data || [];
       setActiveBookings(list.filter((b) => ["confirmed", "active", "pending"].includes(b.status)).length);
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
       const rev = list
         .filter((b) => new Date(b.created_at) >= startOfMonth && ["confirmed", "active", "completed"].includes(b.status))
-        .reduce((sum, b) => sum + (Number(b.total_price) - Number(b.commission_amount || 0)), 0);
+        .reduce((sum, b) => sum + (Number(b.total_amount) - Number(b.commission_amount || 0)), 0);
       setRevenue(rev);
     })();
   }, [userId]);
@@ -274,7 +274,7 @@ const SeekerView = ({ userId }: { userId?: string }) => {
     (async () => {
       const { data } = await supabase
         .from("bookings")
-        .select("category,total_price,status,created_at")
+        .select("category,total_amount,status,created_at")
         .eq("seeker_id", userId);
       const list = data || [];
       const active = list.filter((b) => ["confirmed", "active", "pending"].includes(b.status));
@@ -283,7 +283,7 @@ const SeekerView = ({ userId }: { userId?: string }) => {
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
       const sp = list
         .filter((b) => new Date(b.created_at) >= startOfMonth && ["confirmed", "active", "completed"].includes(b.status))
-        .reduce((sum, b) => sum + Number(b.total_price), 0);
+        .reduce((sum, b) => sum + Number(b.total_amount), 0);
       setSpent(sp);
     })();
   }, [userId]);

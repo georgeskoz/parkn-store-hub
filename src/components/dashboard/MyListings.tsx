@@ -57,7 +57,7 @@ export default function MyListings() {
       const { data, error } = await supabase
         .from("listings")
         .select("*")
-        .eq("host_id", user.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -81,7 +81,7 @@ export default function MyListings() {
         .from("listings")
         .delete()
         .eq("id", id)
-        .eq("host_id", user?.id);
+        .eq("user_id", user?.id);
 
       if (error) throw error;
 

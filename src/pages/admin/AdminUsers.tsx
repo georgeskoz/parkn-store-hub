@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type UserRow = {
   id: string;
-  full_name: string | null;
+  display_name: string | null;
   phone: string | null;
   created_at: string;
   roles: string[];
@@ -44,7 +44,7 @@ const AdminUsers = () => {
     setUsers(
       (profiles || []).map((p) => ({
         id: p.id,
-        full_name: p.full_name,
+        display_name: p.display_name,
         phone: p.phone,
         created_at: p.created_at,
         roles: roleMap[p.id] || [],
@@ -119,7 +119,7 @@ const AdminUsers = () => {
   };
 
   const filtered = users.filter((u) =>
-    (u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (u.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
     u.id.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -189,7 +189,7 @@ const AdminUsers = () => {
               <TableBody>
                 {filtered.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
+                    <TableCell className="font-medium">{u.display_name || "—"}</TableCell>
                     <TableCell>{u.phone || "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">

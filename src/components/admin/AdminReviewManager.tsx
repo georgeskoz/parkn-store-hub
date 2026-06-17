@@ -41,8 +41,8 @@ export default function AdminReviewManager({ listingId, listingTitle, open, onCl
     const ids = Array.from(new Set(rows.map((r) => r.reviewer_id)));
     if (ids.length) {
       const { data: profs } = await (supabase as any)
-        .from("profiles_public").select("id, full_name").in("id", ids);
-      const m = new Map<string, string>((profs || []).map((p: any) => [p.id, p.full_name]));
+        .from("profiles_public").select("id, display_name").in("id", ids);
+      const m = new Map<string, string>((profs || []).map((p: any) => [p.id, p.display_name]));
       rows.forEach((r) => { r.reviewer_name = m.get(r.reviewer_id) || "Anonymous"; });
     }
     setReviews(rows);

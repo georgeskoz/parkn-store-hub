@@ -11,7 +11,7 @@ interface ReviewRow {
   created_at: string;
   reviewer_id: string;
   listing_id: string;
-  reviewer?: { full_name: string | null } | null;
+  reviewer?: { display_name: string | null } | null;
   listing?: { title: string } | null;
 }
 
@@ -36,7 +36,7 @@ export default function ProviderReviewsPanel() {
 
       if (reviewerIds.length) {
         const { data: profs } = await (supabase as any)
-          .from("profiles_public").select("id, full_name").in("id", reviewerIds);
+          .from("profiles_public").select("id, display_name").in("id", reviewerIds);
         const m = new Map((profs || []).map((p: any) => [p.id, p]));
         rows.forEach((r) => { r.reviewer = m.get(r.reviewer_id) as any; });
       }
@@ -82,7 +82,7 @@ export default function ProviderReviewsPanel() {
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-foreground">{r.reviewer?.full_name || "Anonymous"}</p>
+                  <p className="font-medium text-foreground">{r.reviewer?.display_name || "Anonymous"}</p>
                   <p className="text-xs text-muted-foreground">{r.listing?.title}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">
