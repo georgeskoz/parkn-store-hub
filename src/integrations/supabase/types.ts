@@ -22,7 +22,7 @@ export type Database = {
           extra_hours: number
           extra_units: number
           id: string
-          new_end_at: string
+          new_end_date: string
           paid_at: string | null
           payment_intent_id: string | null
           rate: string
@@ -39,7 +39,7 @@ export type Database = {
           extra_hours: number
           extra_units: number
           id?: string
-          new_end_at: string
+          new_end_date: string
           paid_at?: string | null
           payment_intent_id?: string | null
           rate: string
@@ -56,7 +56,7 @@ export type Database = {
           extra_hours?: number
           extra_units?: number
           id?: string
-          new_end_at?: string
+          new_end_date?: string
           paid_at?: string | null
           payment_intent_id?: string | null
           rate?: string
@@ -90,7 +90,7 @@ export type Database = {
           created_at: string
           dispute_opened_at: string | null
           dispute_reason: string | null
-          end_at: string
+          end_date: string
           escrow_status: string
           id: string
           last_overdue_charge_at: string | null
@@ -105,14 +105,14 @@ export type Database = {
           released_at: string | null
           released_transfer_id: string | null
           seeker_id: string
-          start_at: string
+          start_date: string
           status: string
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           stripe_refund_id: string | null
           stripe_session_id: string | null
           surge_multiplier: number
-          total_price: number
+          total_amount: number
           updated_at: string
         }
         Insert: {
@@ -128,7 +128,7 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
-          end_at: string
+          end_date: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
@@ -143,14 +143,14 @@ export type Database = {
           released_at?: string | null
           released_transfer_id?: string | null
           seeker_id: string
-          start_at: string
+          start_date: string
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
           stripe_session_id?: string | null
           surge_multiplier?: number
-          total_price?: number
+          total_amount?: number
           updated_at?: string
         }
         Update: {
@@ -166,7 +166,7 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
-          end_at?: string
+          end_date?: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
@@ -181,14 +181,14 @@ export type Database = {
           released_at?: string | null
           released_transfer_id?: string | null
           seeker_id?: string
-          start_at?: string
+          start_date?: string
           status?: string
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
           stripe_session_id?: string | null
           surge_multiplier?: number
-          total_price?: number
+          total_amount?: number
           updated_at?: string
         }
         Relationships: [
@@ -289,7 +289,7 @@ export type Database = {
           season_end_month: number | null
           season_start_month: number | null
           seasonal: boolean
-          start_at: string | null
+          start_date: string | null
           updated_at: string
         }
         Insert: {
@@ -299,7 +299,7 @@ export type Database = {
           season_end_month?: number | null
           season_start_month?: number | null
           seasonal?: boolean
-          start_at?: string | null
+          start_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -309,7 +309,7 @@ export type Database = {
           season_end_month?: number | null
           season_start_month?: number | null
           seasonal?: boolean
-          start_at?: string | null
+          start_date?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -457,7 +457,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
-          body?: string
+          content?: string
           conversation_id?: string
           created_at?: string
           id?: string
@@ -533,7 +533,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          full_name: string | null
+          display_name: string | null
           id: string
           phone: string | null
           stripe_account_id: string | null
@@ -544,7 +544,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          full_name?: string | null
+          display_name?: string | null
           id: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -555,7 +555,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          full_name?: string | null
+          display_name?: string | null
           id?: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -722,7 +722,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
-          full_name: string | null
+          display_name: string | null
           id: string | null
           phone: string | null
         }
@@ -730,7 +730,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          full_name?: string | null
+          display_name?: string | null
           id?: string | null
           phone?: string | null
         }
@@ -738,7 +738,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          full_name?: string | null
+          display_name?: string | null
           id?: string | null
           phone?: string | null
         }
