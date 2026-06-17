@@ -53,41 +53,74 @@ export default function ListYourSpace() {
     if (!form.disclaimerAccepted || !user) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("listings").insert({
-        host_id: user.id,
-        category: form.category,
-        type: form.type,
-        title: form.title,
-        description: form.description,
-        address: form.address,
-        unit: form.unit || null,
-        postal_code: form.postalCode || null,
-        city: form.city,
-        province: form.province,
-        country: form.country,
-        region: form.region || null,
-        lat: form.lat ?? 0,
-        lng: form.lng ?? 0,
-        features: form.features,
-        
-        spots: form.category === "parking" ? parseInt(form.spots) || 1 : null,
-        size: form.size || null,
-        sqft: form.sqft ? parseInt(form.sqft) : null,
-        hourly: form.hourly ? parseFloat(form.hourly) : null,
-        daily: form.daily ? parseFloat(form.daily) : null,
-        monthly: form.monthly ? parseFloat(form.monthly) : null,
-        weekly: form.weekly ? parseFloat(form.weekly) : null,
-        seasonal: form.seasonal ? parseFloat(form.seasonal) : null,
-        cancellation: form.cancellation || null,
-        student_discount: form.studentDiscount,
-        student_discount_percent: form.studentDiscount ? parseInt(form.studentDiscountPercent) : null,
-        student_universities: form.studentUniversities || null,
-        nearby_landmarks: form.nearbyLandmarks,
-        photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
-        disclaimer_accepted: form.disclaimerAccepted,
-      });
+      const { data: inserted, error } = await supabase
+        .from("listings")
+        .insert({
+          host_id: user.id,
+          category: form.category,
+          type: form.type,
+          title: form.title,
+          description: form.description,
+          address: form.address,
+          unit: form.unit || null,
+          postal_code: form.postalCode || null,
+          city: form.city,
+          province: form.province,
+          country: form.country,
+          region: form.region || null,
+          lat: form.lat ?? 0,
+          lng: form.lng ?? 0,
+          features: form.features,
+          spots: parseInt(form.spots) || 1,
+          size: form.size || null,
+          sqft: form.sqft ? parseInt(form.sqft) : null,
+          hourly: form.category === "parking" && form.hourly ? parseFloat(form.hourly) : null,
+          daily: form.category === "parking" && form.daily ? parseFloat(form.daily) : null,
+          weekly: form.category === "parking" && form.weekly ? parseFloat(form.weekly) : null,
+          monthly: form.monthly ? parseFloat(form.monthly) : null,
+          seasonal: form.seasonal ? parseFloat(form.seasonal) : null,
+          cancellation: form.cancellation || null,
+          student_discount: form.studentDiscount,
+          student_discount_percent: form.studentDiscount ? parseInt(form.studentDiscountPercent) : null,
+          student_universities: form.studentUniversities || null,
+          nearby_landmarks: form.nearbyLandmarks,
+          photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
+          disclaimer_accepted: form.disclaimerAccepted,
+        })
+        .select("id")
+        .single();
 
       if (error) throw error;
+      const listingId = inserted!.id;
+
+      // Persist parking availability slots
+      if (form.category === "parking" && form.availabilitySlots.length > 0) {
+        const rows = form.availabilitySlots.map((s) => ({
+          listing_id: listingId,
+          day_of_week: s.dayOfWeek,
+          start_time: s.startTime,
+          end_time: s.endTime,
+        }));
+        const { error: slotsErr } = await (supabase as any)
+          .from("listing_availability_slots")
+          .insert(rows);
+        if (slotsErr) throw slotsErr;
+      }
+
+      // Persist storage rental terms
+      if (form.category === "storage") {
+        const { error: termsErr } = await (supabase as any)
+          .from("listing_rental_terms")
+          .insert({
+            listing_id: listingId,
+            min_months: parseInt(form.minMonths) || 1,
+            start_date: form.rentalStartDate || null,
+            seasonal: form.seasonalRental,
+            season_start_month: form.seasonalRental ? parseInt(form.seasonStartMonth) : null,
+            season_end_month: form.seasonalRental ? parseInt(form.seasonEndMonth) : null,
+          });
+        if (termsErr) throw termsErr;
+      }
 
       toast({ title: "Listing created!", description: "Your space is now live on the marketplace." });
       navigate("/dashboard");
@@ -97,6 +130,7 @@ export default function ListYourSpace() {
       setSubmitting(false);
     }
   };
+
 
   if (!user) {
     return (
