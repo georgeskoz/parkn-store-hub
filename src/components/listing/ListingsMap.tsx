@@ -21,9 +21,9 @@ interface DbListing {
   category: string;
   lat: number | string;
   lng: number | string;
-  hourly: number | null;
-  daily: number | null;
-  monthly: number | null;
+  price_hourly: number | null;
+  price_daily: number | null;
+  price_monthly: number | null;
 }
 
 export default function ListingsMap({ listings }: { listings: DbListing[] }) {
@@ -53,8 +53,8 @@ export default function ListingsMap({ listings }: { listings: DbListing[] }) {
       const lat = Number(l.lat);
       const lng = Number(l.lng);
       if (!isFinite(lat) || !isFinite(lng)) return;
-      const price = l.monthly || l.daily || l.hourly;
-      const label = l.monthly ? "/mo" : l.daily ? "/day" : l.hourly ? "/hr" : "";
+      const price = l.price_monthly || l.price_daily || l.price_hourly;
+      const label = l.price_monthly ? "/mo" : l.price_daily ? "/day" : l.price_hourly ? "/hr" : "";
       const marker = L.marker([lat, lng]).bindPopup(
         `<strong>${l.title}</strong><br/>${price ? `$${price}${label}` : "Contact for pricing"}<br/><a href="/listing/${l.id}" style="font-size:12px;color:#0d9488">View listing →</a>`
       );

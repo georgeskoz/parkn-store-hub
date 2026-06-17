@@ -45,10 +45,10 @@ interface DbListing {
   lat: number;
   lng: number;
   // pricing
-  hourly: number | null;
-  daily: number | null;
-  monthly: number | null;
-  weekly: number | null;
+  price_hourly: number | null;
+  price_daily: number | null;
+  price_monthly: number | null;
+  price_weekly: number | null;
   seasonal: number | null;
   // storage
   size: string | null;
@@ -183,13 +183,13 @@ export default function ListingDetail() {
   }
 
   const isParking = listing.category === "parking";
-  const price = listing.monthly || listing.daily || listing.hourly;
-  const priceLabel = listing.monthly ? "/month" : listing.daily ? "/day" : listing.hourly ? "/hour" : "";
+  const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
+  const priceLabel = listing.price_monthly ? "/month" : listing.price_daily ? "/day" : listing.price_hourly ? "/hour" : "";
 
   const durationDays = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 1) : 0;
-  const hasMonthly = !!listing.monthly;
-  const hasDaily = !!listing.daily;
-  const hasHourly = !!listing.hourly;
+  const hasMonthly = !!listing.price_monthly;
+  const hasDaily = !!listing.price_daily;
+  const hasHourly = !!listing.price_hourly;
   const bestRate: "monthly" | "daily" | "hourly" | null =
     durationDays >= 30 && hasMonthly ? "monthly"
     : durationDays >= 1 && hasDaily ? "daily"
@@ -322,28 +322,28 @@ export default function ListingDetail() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-3">Pricing</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {listing.hourly && (
+                {listing.price_hourly && (
                   <div className="p-4 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground">Hourly</p>
-                    <p className="text-xl font-bold text-foreground mt-1">${listing.hourly}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">${listing.price_hourly}</p>
                   </div>
                 )}
-                {listing.daily && (
+                {listing.price_daily && (
                   <div className="p-4 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground">Daily</p>
-                    <p className="text-xl font-bold text-foreground mt-1">${listing.daily}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">${listing.price_daily}</p>
                   </div>
                 )}
-                {listing.weekly && (
+                {listing.price_weekly && (
                   <div className="p-4 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground">Weekly</p>
-                    <p className="text-xl font-bold text-foreground mt-1">${listing.weekly}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">${listing.price_weekly}</p>
                   </div>
                 )}
-                {listing.monthly && (
+                {listing.price_monthly && (
                   <div className="p-4 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground">Monthly</p>
-                    <p className="text-xl font-bold text-foreground mt-1">${listing.monthly}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">${listing.price_monthly}</p>
                   </div>
                 )}
                 {listing.seasonal && (
