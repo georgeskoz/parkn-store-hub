@@ -19,10 +19,10 @@ interface DbListing {
   features: string[];
   photos: { url: string; path: string }[];
   // pricing
-  hourly: number | null;
-  daily: number | null;
-  monthly: number | null;
-  weekly: number | null;
+  price_hourly: number | null;
+  price_daily: number | null;
+  price_monthly: number | null;
+  price_weekly: number | null;
   seasonal: number | null;
   // storage
   size: string | null;
@@ -46,8 +46,8 @@ const availColor: Record<string, string> = {
 
 export default function DbListingCard({ listing, distance }: Props) {
   const isParking = listing.category === "parking";
-  const price = listing.monthly || listing.daily || listing.hourly;
-  const priceLabel = listing.monthly ? "/mo" : listing.daily ? "/day" : listing.hourly ? "/hr" : "";
+  const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
+  const priceLabel = listing.price_monthly ? "/mo" : listing.price_daily ? "/day" : listing.price_hourly ? "/hr" : "";
   const coverPhoto = listing.photos?.[0]?.url || (isParking ? parkingCover : storageCover);
 
   return (

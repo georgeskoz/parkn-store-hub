@@ -20,10 +20,10 @@ interface DbListing {
   province: string;
   availability: string;
   features: string[];
-  hourly: number | null;
-  daily: number | null;
-  monthly: number | null;
-  weekly: number | null;
+  price_hourly: number | null;
+  price_daily: number | null;
+  price_monthly: number | null;
+  price_weekly: number | null;
   seasonal: number | null;
   spots: number | null;
   sqft: number | null;
@@ -104,10 +104,10 @@ export default function MyListings() {
   };
 
   const getPrice = (listing: DbListing): { price: number | null; label: string } => {
-    if (listing.monthly) return { price: listing.monthly, label: "/month" };
-    if (listing.weekly) return { price: listing.weekly, label: "/week" };
-    if (listing.daily) return { price: listing.daily, label: "/day" };
-    if (listing.hourly) return { price: listing.hourly, label: "/hour" };
+    if (listing.price_monthly) return { price: listing.price_monthly, label: "/month" };
+    if (listing.price_weekly) return { price: listing.price_weekly, label: "/week" };
+    if (listing.price_daily) return { price: listing.price_daily, label: "/day" };
+    if (listing.price_hourly) return { price: listing.price_hourly, label: "/hour" };
     return { price: null, label: "" };
   };
 

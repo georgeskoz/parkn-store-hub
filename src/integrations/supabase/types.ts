@@ -331,15 +331,15 @@ export type Database = {
           city: string
           country: string
           created_at: string
-          daily: number | null
+          price_daily: number | null
           description: string
           disclaimer_accepted: boolean
           features: string[] | null
-          hourly: number | null
+          price_hourly: number | null
           id: string
           lat: number
           lng: number
-          monthly: number | null
+          price_monthly: number | null
           nearby_landmarks: string[] | null
           photos: Json | null
           postal_code: string | null
@@ -358,7 +358,7 @@ export type Database = {
           unit: string | null
           updated_at: string
           user_id: string
-          weekly: number | null
+          price_weekly: number | null
         }
         Insert: {
           address: string
@@ -368,15 +368,15 @@ export type Database = {
           city: string
           country: string
           created_at?: string
-          daily?: number | null
+          price_daily?: number | null
           description: string
           disclaimer_accepted?: boolean
           features?: string[] | null
-          hourly?: number | null
+          price_hourly?: number | null
           id?: string
           lat: number
           lng: number
-          monthly?: number | null
+          price_monthly?: number | null
           nearby_landmarks?: string[] | null
           photos?: Json | null
           postal_code?: string | null
@@ -395,7 +395,7 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id: string
-          weekly?: number | null
+          price_weekly?: number | null
         }
         Update: {
           address?: string
@@ -405,15 +405,15 @@ export type Database = {
           city?: string
           country?: string
           created_at?: string
-          daily?: number | null
+          price_daily?: number | null
           description?: string
           disclaimer_accepted?: boolean
           features?: string[] | null
-          hourly?: number | null
+          price_hourly?: number | null
           id?: string
           lat?: number
           lng?: number
-          monthly?: number | null
+          price_monthly?: number | null
           nearby_landmarks?: string[] | null
           photos?: Json | null
           postal_code?: string | null
@@ -432,7 +432,7 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id?: string
-          weekly?: number | null
+          price_weekly?: number | null
         }
         Relationships: []
       }

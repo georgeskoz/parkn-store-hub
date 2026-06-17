@@ -62,10 +62,10 @@ const AdminListings = () => {
   };
 
   const getPrice = (l: Tables<"listings">) => {
-    if (l.hourly) return `$${l.hourly}/hr`;
-    if (l.daily) return `$${l.daily}/day`;
-    if (l.weekly) return `$${l.weekly}/wk`;
-    if (l.monthly) return `$${l.monthly}/mo`;
+    if (l.price_hourly) return `$${l.price_hourly}/hr`;
+    if (l.price_daily) return `$${l.price_daily}/day`;
+    if (l.price_weekly) return `$${l.price_weekly}/wk`;
+    if (l.price_monthly) return `$${l.price_monthly}/mo`;
     return "—";
   };
 
