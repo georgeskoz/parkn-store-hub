@@ -439,7 +439,7 @@ export type Database = {
       messages: {
         Row: {
           booking_id: string | null
-          content: string
+          body: string
           conversation_id: string
           created_at: string
           id: string
@@ -448,7 +448,7 @@ export type Database = {
         }
         Insert: {
           booking_id?: string | null
-          content: string
+          body: string
           conversation_id: string
           created_at?: string
           id?: string
@@ -457,7 +457,7 @@ export type Database = {
         }
         Update: {
           booking_id?: string | null
-          content?: string
+          body?: string
           conversation_id?: string
           created_at?: string
           id?: string
@@ -533,7 +533,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          display_name: string | null
+          full_name: string | null
           id: string
           phone: string | null
           stripe_account_id: string | null
@@ -544,7 +544,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -555,7 +555,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id?: string
           phone?: string | null
           stripe_account_id?: string | null
@@ -722,7 +722,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
-          display_name: string | null
+          full_name: string | null
           id: string | null
           phone: string | null
         }
@@ -730,7 +730,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
+          full_name?: string | null
           id?: string | null
           phone?: string | null
         }
@@ -738,7 +738,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
+          full_name?: string | null
           id?: string | null
           phone?: string | null
         }
