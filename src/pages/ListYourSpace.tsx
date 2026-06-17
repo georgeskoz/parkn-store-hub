@@ -69,7 +69,7 @@ export default function ListYourSpace() {
         lat: form.lat ?? 0,
         lng: form.lng ?? 0,
         features: form.features,
-        availability: form.availability,
+        
         spots: form.category === "parking" ? parseInt(form.spots) || 1 : null,
         size: form.size || null,
         sqft: form.sqft ? parseInt(form.sqft) : null,
