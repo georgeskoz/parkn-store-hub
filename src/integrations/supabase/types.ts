@@ -246,6 +246,82 @@ export type Database = {
           },
         ]
       }
+      listing_availability_slots: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          listing_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          listing_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          listing_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_availability_slots_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_rental_terms: {
+        Row: {
+          created_at: string
+          listing_id: string
+          min_months: number
+          season_end_month: number | null
+          season_start_month: number | null
+          seasonal: boolean
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          listing_id: string
+          min_months?: number
+          season_end_month?: number | null
+          season_start_month?: number | null
+          seasonal?: boolean
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          listing_id?: string
+          min_months?: number
+          season_end_month?: number | null
+          season_start_month?: number | null
+          seasonal?: boolean
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_rental_terms_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           address: string
