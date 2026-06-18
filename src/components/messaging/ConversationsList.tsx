@@ -29,12 +29,16 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("conversations")
         .select("id, listing_id, seeker_id, provider_id, last_message_at, listings(title)")
         .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`)
         .order("last_message_at", { ascending: false });
-      setConversations((data as any) || []);
+      if (error) {
+        setConversations([]);
+      } else {
+        setConversations((data as any) || []);
+      }
       setLoading(false);
     };
     fetch();
