@@ -606,7 +606,7 @@ function ListingTitleBlock({ listing, isParking }: { listing: DbListing; isParki
             ? isParking && listing.spots
               ? `${listing.spots} spots`
               : "Available"
-            : listing.availability.charAt(0).toUpperCase() + listing.availability.slice(1)}
+            : (listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
         </Badge>
         {listing.category === "storage" && listing.size && (
           <span className="text-muted-foreground">{listing.size} ft · {listing.sqft} sqft</span>
