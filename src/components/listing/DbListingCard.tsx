@@ -66,7 +66,7 @@ export default function DbListingCard({ listing, distance }: Props) {
           <Badge className={`text-xs border ${availColor[listing.availability] || availColor.available}`}>
             {listing.availability === "available"
               ? isParking && listing.spots ? `${listing.spots} spots` : "Available"
-              : listing.availability.charAt(0).toUpperCase() + listing.availability.slice(1)}
+              : (listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
           </Badge>
           {distance !== undefined && (
             <Badge className="bg-card/90 backdrop-blur-sm text-foreground border border-border text-[10px]">
