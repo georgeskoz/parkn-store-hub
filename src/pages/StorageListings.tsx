@@ -26,12 +26,13 @@ export default function StorageListings() {
       .from("listings")
       .select("*")
       .eq("status", "approved")
+      .or("category.eq.storage,type.eq.storage")
       .then(({ data }) => {
         const all = (data as any[]) || [];
         const storageOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
           const typ = (l?.type || "").toString().toLowerCase();
-          return cat === "storage" || ["heated", "outdoor", "indoor", "storage", "climate-controlled"].includes(typ);
+          return cat === "storage" || typ === "storage";
         });
         setListings(storageOnly);
         setLoading(false);
