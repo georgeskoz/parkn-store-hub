@@ -23,12 +23,13 @@ export default function ParkingSearch() {
   const [pricingMode, setPricingMode] = useState<PricingMode>("daily");
 
   useEffect(() => {
-    supabase
-      .from("listings")
-      .select("*")
-      .eq("status", "approved")
-      .or("category.eq.parking,type.eq.parking")
-      .then(({ data }) => {
+    const fetchListings = async () => {
+      try {
+        const { data } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("status", "approved")
+          .or("category.eq.parking,type.eq.parking");
         const all = (data as any[]) || [];
         const parkingOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
@@ -36,8 +37,13 @@ export default function ParkingSearch() {
           return cat === "parking" || typ === "parking";
         });
         setListings(parkingOnly);
+      } catch {
+        setListings([]);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchListings();
   }, []);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
