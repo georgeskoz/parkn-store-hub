@@ -48,7 +48,7 @@ export default function FindASpot() {
     if (q !== null) setSearch(q);
   }, [searchParams]);
 
-  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city))).sort(), [listings]);
+  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
@@ -63,9 +63,9 @@ export default function FindASpot() {
 
   const destinationCoords = useMemo(() => {
     if (userCoords) return userCoords;
-    if (!destination.trim()) return null;
-    const q = destination.toLowerCase();
-    const match = listings.find((l) => l.city.toLowerCase().includes(q) || l.address.toLowerCase().includes(q));
+    if (!(destination || "").trim()) return null;
+    const q = (destination || "").toLowerCase();
+    const match = listings.find((l) => (l?.city || "").toLowerCase().includes(q) || (l?.address || "").toLowerCase().includes(q));
     return match ? { lat: Number(match.lat), lng: Number(match.lng) } : null;
   }, [destination, userCoords, listings]);
 
@@ -77,11 +77,19 @@ export default function FindASpot() {
         : undefined,
     }));
 
-    if (category !== "all") items = items.filter((l) => l.category === category);
+    if (category !== "all") {
+      items = items.filter((l) => {
+        const cat = (l?.category || "").toLowerCase();
+        const typ = (l?.type || "").toLowerCase();
+        if (category === "parking") return cat === "parking" || ["outdoor", "indoor", "covered", "underground", "parking"].includes(typ);
+        if (category === "storage") return cat === "storage" || ["heated", "storage", "climate-controlled"].includes(typ);
+        return true;
+      });
+    }
     if (city !== "all") items = items.filter((l) => l.city === city);
     if (search) {
-      const q = search.toLowerCase();
-      items = items.filter((l) => l.title.toLowerCase().includes(q) || l.description.toLowerCase().includes(q));
+      const q = (search || "").toLowerCase();
+      items = items.filter((l) => (l?.title || "").toLowerCase().includes(q) || (l?.description || "").toLowerCase().includes(q));
     }
     if (destinationCoords) {
       items = items.filter((l) => l.distance !== undefined && l.distance <= maxDistanceKm);

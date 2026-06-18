@@ -178,7 +178,7 @@ export default function MyListings() {
                     <Badge
                       className={`text-xs border ${availColor[listing.availability] || availColor.available}`}
                     >
-                      {listing.availability.charAt(0).toUpperCase() + listing.availability.slice(1)}
+                      {(listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
                     </Badge>
                     {listing.type && (
                       <Badge variant="outline" className="text-xs capitalize">

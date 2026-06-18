@@ -25,26 +25,38 @@ export default function StorageListings() {
     supabase
       .from("listings")
       .select("*")
-      .eq("category", "storage")
       .eq("status", "approved")
       .then(({ data }) => {
-        setListings(data || []);
+        const all = (data as any[]) || [];
+        const storageOnly = all.filter((l) => {
+          const cat = (l?.category || "").toString().toLowerCase();
+          const typ = (l?.type || "").toString().toLowerCase();
+          return cat === "storage" || ["heated", "outdoor", "indoor", "storage", "climate-controlled"].includes(typ);
+        });
+        setListings(storageOnly);
         setLoading(false);
       });
   }, []);
 
-  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city))).sort(), [listings]);
+  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
   const filtered = useMemo(() => {
+    const q = (search || "").toLowerCase();
     const results = listings.filter((l) => {
-      const matchesSearch = !search || l.title.toLowerCase().includes(search.toLowerCase()) || l.description.toLowerCase().includes(search.toLowerCase());
+      const title = (l?.title || "").toLowerCase();
+      const desc = (l?.description || "").toLowerCase();
+      const matchesSearch = !q || title.includes(q) || desc.includes(q);
       const matchesCity = city === "all" || l.city === city;
-      const matchesType = type === "all" || l.type === type;
+      const matchesType = type === "all" || (l?.type || "").toLowerCase() === type;
       return matchesSearch && matchesCity && matchesType;
     });
     results.sort((a, b) => {
-      if (sortBy === "price") return (Number(a[duration]) || Infinity) - (Number(b[duration]) || Infinity);
-      return (Number(b.sqft) || 0) - (Number(a.sqft) || 0);
+      if (sortBy === "price") {
+        const pa = Number(a?.[duration] ?? a?.[`price_${duration}`]) || Infinity;
+        const pb = Number(b?.[duration] ?? b?.[`price_${duration}`]) || Infinity;
+        return pa - pb;
+      }
+      return (Number(b?.sqft ?? b?.size_sqft) || 0) - (Number(a?.sqft ?? a?.size_sqft) || 0);
     });
     return results;
   }, [listings, search, city, type, duration, sortBy]);
