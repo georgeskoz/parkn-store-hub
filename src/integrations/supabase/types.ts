@@ -325,28 +325,42 @@ export type Database = {
       listings: {
         Row: {
           address: string
+          amenities: string[] | null
           availability: string
+          avg_rating: number | null
           cancellation: string | null
           category: string
           city: string
           country: string
           created_at: string
-          price_daily: number | null
+          daily: number | null
           description: string
-          disclaimer_accepted: boolean
+          disclaimer_accepted: boolean | null
+          event_pricing: Json | null
+          event_pricing_enabled: boolean | null
           features: string[] | null
-          price_hourly: number | null
+          host_id: string | null
+          hourly: number | null
           id: string
+          instant_book: boolean | null
+          is_active: boolean | null
+          is_approved: boolean | null
           lat: number
           lng: number
-          price_monthly: number | null
+          monthly: number | null
           nearby_landmarks: string[] | null
+          nearby_venues: string[] | null
           photos: Json | null
           postal_code: string | null
+          price_daily: number | null
+          price_hourly: number | null
+          price_monthly: number | null
+          price_weekly: number | null
           province: string
           region: string | null
           seasonal: number | null
           size: string | null
+          size_sqft: number | null
           spots: number | null
           sqft: number | null
           status: string
@@ -358,32 +372,46 @@ export type Database = {
           unit: string | null
           updated_at: string
           user_id: string
-          price_weekly: number | null
+          weekly: number | null
         }
         Insert: {
           address: string
+          amenities?: string[] | null
           availability?: string
+          avg_rating?: number | null
           cancellation?: string | null
           category: string
           city: string
           country: string
           created_at?: string
-          price_daily?: number | null
+          daily?: number | null
           description: string
-          disclaimer_accepted?: boolean
+          disclaimer_accepted?: boolean | null
+          event_pricing?: Json | null
+          event_pricing_enabled?: boolean | null
           features?: string[] | null
-          price_hourly?: number | null
+          host_id?: string | null
+          hourly?: number | null
           id?: string
+          instant_book?: boolean | null
+          is_active?: boolean | null
+          is_approved?: boolean | null
           lat: number
           lng: number
-          price_monthly?: number | null
+          monthly?: number | null
           nearby_landmarks?: string[] | null
+          nearby_venues?: string[] | null
           photos?: Json | null
           postal_code?: string | null
+          price_daily?: number | null
+          price_hourly?: number | null
+          price_monthly?: number | null
+          price_weekly?: number | null
           province: string
           region?: string | null
           seasonal?: number | null
           size?: string | null
+          size_sqft?: number | null
           spots?: number | null
           sqft?: number | null
           status?: string
@@ -395,32 +423,46 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id: string
-          price_weekly?: number | null
+          weekly?: number | null
         }
         Update: {
           address?: string
+          amenities?: string[] | null
           availability?: string
+          avg_rating?: number | null
           cancellation?: string | null
           category?: string
           city?: string
           country?: string
           created_at?: string
-          price_daily?: number | null
+          daily?: number | null
           description?: string
-          disclaimer_accepted?: boolean
+          disclaimer_accepted?: boolean | null
+          event_pricing?: Json | null
+          event_pricing_enabled?: boolean | null
           features?: string[] | null
-          price_hourly?: number | null
+          host_id?: string | null
+          hourly?: number | null
           id?: string
+          instant_book?: boolean | null
+          is_active?: boolean | null
+          is_approved?: boolean | null
           lat?: number
           lng?: number
-          price_monthly?: number | null
+          monthly?: number | null
           nearby_landmarks?: string[] | null
+          nearby_venues?: string[] | null
           photos?: Json | null
           postal_code?: string | null
+          price_daily?: number | null
+          price_hourly?: number | null
+          price_monthly?: number | null
+          price_weekly?: number | null
           province?: string
           region?: string | null
           seasonal?: number | null
           size?: string | null
+          size_sqft?: number | null
           spots?: number | null
           sqft?: number | null
           status?: string
@@ -432,7 +474,7 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id?: string
-          price_weekly?: number | null
+          weekly?: number | null
         }
         Relationships: []
       }
