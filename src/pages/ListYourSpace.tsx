@@ -85,6 +85,22 @@ export default function ListYourSpace() {
       if (error) throw error;
       const listingId = inserted!.id;
 
+      // AI moderation — fire and don't block the user
+      if (inserted?.id) {
+        try {
+          await supabase.functions.invoke("moderate-listing", {
+            body: {
+              listing_id: inserted.id,
+              title: form.title,
+              description: form.description ?? "",
+              photos: form.photos?.map((p) => p.url) ?? [],
+            },
+          });
+        } catch (err) {
+          console.error("AI moderation error:", err);
+        }
+      }
+
       // Persist parking availability slots
       if (form.category === "parking" && form.availabilitySlots.length > 0) {
         const rows = form.availabilitySlots.map((s) => ({
