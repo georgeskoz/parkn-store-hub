@@ -42,32 +42,36 @@ export default function ConversationPanel({ conversationId, listingId, providerI
     if (!user) return;
 
     const load = async () => {
-      if (conversationId) {
-        const { data: c } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("id", conversationId)
-          .single();
-        if (c) setConv(c);
-      } else if (listingId && providerId) {
-        const { data: existing } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("listing_id", listingId)
-          .eq("seeker_id", user.id)
-          .eq("provider_id", providerId)
-          .maybeSingle();
-
-        if (existing) {
-          setConv(existing);
-        } else {
-          const { data: created } = await supabase
+      try {
+        if (conversationId) {
+          const { data: c, error } = await supabase
             .from("conversations")
-            .insert({ listing_id: listingId, seeker_id: user.id, provider_id: providerId })
             .select("*")
+            .eq("id", conversationId)
             .single();
-          if (created) setConv(created);
+          if (!error && c) setConv(c);
+        } else if (listingId && providerId) {
+          const { data: existing, error: existingErr } = await supabase
+            .from("conversations")
+            .select("*")
+            .eq("listing_id", listingId)
+            .eq("seeker_id", user.id)
+            .eq("provider_id", providerId)
+            .maybeSingle();
+
+          if (!existingErr && existing) {
+            setConv(existing);
+          } else {
+            const { data: created, error: createErr } = await supabase
+              .from("conversations")
+              .insert({ listing_id: listingId, seeker_id: user.id, provider_id: providerId })
+              .select("*")
+              .single();
+            if (!createErr && created) setConv(created);
+          }
         }
+      } catch {
+        // gracefully ignore conversation load errors
       }
       setLoading(false);
     };
