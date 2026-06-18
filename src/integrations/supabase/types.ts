@@ -325,6 +325,7 @@ export type Database = {
       listings: {
         Row: {
           address: string
+          ai_moderation: Json | null
           amenities: string[] | null
           availability: string
           avg_rating: number | null
@@ -376,6 +377,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          ai_moderation?: Json | null
           amenities?: string[] | null
           availability?: string
           avg_rating?: number | null
@@ -427,6 +429,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          ai_moderation?: Json | null
           amenities?: string[] | null
           availability?: string
           avg_rating?: number | null
