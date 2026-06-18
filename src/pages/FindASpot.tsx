@@ -48,7 +48,7 @@ export default function FindASpot() {
     if (q !== null) setSearch(q);
   }, [searchParams]);
 
-  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city))).sort(), [listings]);
+  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
