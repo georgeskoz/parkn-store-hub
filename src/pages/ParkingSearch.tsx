@@ -26,25 +26,40 @@ export default function ParkingSearch() {
     supabase
       .from("listings")
       .select("*")
-      .eq("category", "parking")
       .eq("status", "approved")
       .then(({ data }) => {
-        setListings(data || []);
+        const all = (data as any[]) || [];
+        // Tolerate schemas where parking lives under `category` or `type`.
+        const parkingOnly = all.filter((l) => {
+          const cat = (l?.category || "").toString().toLowerCase();
+          const typ = (l?.type || "").toString().toLowerCase();
+          return cat === "parking" || ["outdoor", "indoor", "covered", "underground", "parking"].includes(typ);
+        });
+        setListings(parkingOnly);
         setLoading(false);
       });
   }, []);
 
-  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city))).sort(), [listings]);
+  const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
   const filtered = useMemo(() => {
+    const q = (search || "").toLowerCase();
     return listings
       .filter((l) => {
-        if (search && !l.title.toLowerCase().includes(search.toLowerCase()) && !l.description.toLowerCase().includes(search.toLowerCase())) return false;
+        if (q) {
+          const title = (l?.title || "").toLowerCase();
+          const desc = (l?.description || "").toLowerCase();
+          if (!title.includes(q) && !desc.includes(q)) return false;
+        }
         if (city !== "all" && l.city !== city) return false;
-        if (type !== "all" && l.type !== type) return false;
+        if (type !== "all" && (l?.type || "").toLowerCase() !== type) return false;
         return true;
       })
-      .sort((a, b) => (Number(a[pricingMode]) || Infinity) - (Number(b[pricingMode]) || Infinity));
+      .sort((a, b) => {
+        const pa = Number(a?.[pricingMode] ?? a?.[`price_${pricingMode}`]) || Infinity;
+        const pb = Number(b?.[pricingMode] ?? b?.[`price_${pricingMode}`]) || Infinity;
+        return pa - pb;
+      });
   }, [listings, search, city, type, pricingMode]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
