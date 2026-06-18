@@ -40,6 +40,9 @@ export default function FindASpot() {
     supabase.from("listings").select("*").eq("status", "approved").then(({ data }) => {
       setListings(data || []);
       setLoading(false);
+    }).catch(() => {
+      setListings([]);
+      setLoading(false);
     });
   }, []);
 
