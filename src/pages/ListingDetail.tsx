@@ -208,7 +208,7 @@ export default function ListingDetail() {
   const total = +(subtotal + gst + qst).toFixed(2);
 
   const applyTime = (d: Date, t: string) => {
-    const [h, m] = t.split(":").map(Number);
+    const [h, m] = (t || "").split(":").map(Number);
     const x = new Date(d);
     x.setHours(h || 0, m || 0, 0, 0);
     return x;
