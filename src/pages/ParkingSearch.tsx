@@ -27,13 +27,13 @@ export default function ParkingSearch() {
       .from("listings")
       .select("*")
       .eq("status", "approved")
+      .or("category.eq.parking,type.eq.parking")
       .then(({ data }) => {
         const all = (data as any[]) || [];
-        // Tolerate schemas where parking lives under `category` or `type`.
         const parkingOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
           const typ = (l?.type || "").toString().toLowerCase();
-          return cat === "parking" || ["outdoor", "indoor", "covered", "underground", "parking"].includes(typ);
+          return cat === "parking" || typ === "parking";
         });
         setListings(parkingOnly);
         setLoading(false);

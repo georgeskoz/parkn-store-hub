@@ -81,8 +81,8 @@ export default function FindASpot() {
       items = items.filter((l) => {
         const cat = (l?.category || "").toLowerCase();
         const typ = (l?.type || "").toLowerCase();
-        if (category === "parking") return cat === "parking" || ["outdoor", "indoor", "covered", "underground", "parking"].includes(typ);
-        if (category === "storage") return cat === "storage" || ["heated", "storage", "climate-controlled"].includes(typ);
+        if (category === "parking") return cat === "parking" || typ === "parking";
+        if (category === "storage") return cat === "storage" || typ === "storage";
         return true;
       });
     }
