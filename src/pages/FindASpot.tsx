@@ -37,10 +37,17 @@ export default function FindASpot() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("listings").select("*").eq("status", "approved").then(({ data }) => {
-      setListings(data || []);
-      setLoading(false);
-    });
+    const fetchListings = async () => {
+      try {
+        const { data } = await supabase.from("listings").select("*").eq("status", "approved");
+        setListings(data || []);
+      } catch {
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchListings();
   }, []);
 
   useEffect(() => {

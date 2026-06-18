@@ -14,11 +14,15 @@ export function useUnreadMessages() {
 
     const load = async () => {
       // Fetch conversations the user participates in
-      const { data: convs } = await supabase
+      const { data: convs, error: convErr } = await supabase
         .from("conversations")
         .select("id")
         .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`);
-      const ids = (convs || []).map((c) => c.id);
+      if (convErr || !convs) {
+        setUnread({ total: 0, byConversation: {} });
+        return;
+      }
+      const ids = convs.map((c) => c.id);
       if (ids.length === 0) {
         setUnread({ total: 0, byConversation: {} });
         return;

@@ -22,12 +22,13 @@ export default function StorageListings() {
   const [sortBy, setSortBy] = useState<"price" | "size">("price");
 
   useEffect(() => {
-    supabase
-      .from("listings")
-      .select("*")
-      .eq("status", "approved")
-      .or("category.eq.storage,type.eq.storage")
-      .then(({ data }) => {
+    const fetchListings = async () => {
+      try {
+        const { data } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("status", "approved")
+          .or("category.eq.storage,type.eq.storage");
         const all = (data as any[]) || [];
         const storageOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
@@ -35,8 +36,13 @@ export default function StorageListings() {
           return cat === "storage" || typ === "storage";
         });
         setListings(storageOnly);
+      } catch {
+        setListings([]);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchListings();
   }, []);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
