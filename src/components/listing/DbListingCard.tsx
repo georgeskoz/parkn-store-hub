@@ -8,16 +8,17 @@ import storageCover from "@/assets/storage-cover.jpg";
 
 interface DbListing {
   id: string;
-  category: string;
-  type: string;
-  title: string;
-  description: string;
-  city: string;
-  province: string;
+  category: string | null;
+  type: string | null;
+  title: string | null;
+  description: string | null;
+  city: string | null;
+  province: string | null;
   region: string | null;
-  availability: string;
-  features: string[];
-  photos: { url: string; path: string }[];
+  availability: string | null;
+  amenities?: string[] | null;
+  features?: string[] | null;
+  photos?: ({ url?: string | null; path?: string | null } | string)[] | null;
   // pricing
   price_hourly: number | null;
   price_daily: number | null;
@@ -45,21 +46,30 @@ const availColor: Record<string, string> = {
 };
 
 export default function DbListingCard({ listing, distance }: Props) {
-  const isParking = listing.category === "parking";
+  const category = (listing.category || "").toLowerCase();
+  const type = (listing.type || "").toLowerCase();
+  const isParking = category === "parking" || type === "parking";
   const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
   const priceLabel = listing.price_monthly ? "/mo" : listing.price_daily ? "/day" : listing.price_hourly ? "/hr" : "";
-  const coverPhoto = listing.photos?.[0]?.url || (isParking ? parkingCover : storageCover);
+  const photos = Array.isArray(listing.photos) ? listing.photos : [];
+  const firstPhoto = photos?.[0];
+  const coverPhoto = (typeof firstPhoto === "string" ? firstPhoto : firstPhoto?.url) || (isParking ? parkingCover : storageCover);
+  const amenities = Array.isArray(listing.amenities)
+    ? listing.amenities
+    : Array.isArray(listing.features)
+      ? listing.features
+      : [];
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-200 overflow-hidden">
       <div className="h-40 bg-muted relative overflow-hidden">
-        <img src={coverPhoto} alt={listing.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={coverPhoto} alt={listing.title || "Listing photo"} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
-            {listing.type}
+            {listing.type || "listing"}
           </Badge>
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
-            {listing.category}
+            {listing.category || (isParking ? "parking" : "storage")}
           </Badge>
         </div>
         <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
@@ -77,22 +87,22 @@ export default function DbListingCard({ listing, distance }: Props) {
       </div>
 
       <CardContent className="p-4 space-y-2.5">
-        <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{listing.title}</h3>
+        <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{listing.title || "Untitled listing"}</h3>
         <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <MapPin className="w-3 h-3" /> {listing.region ? `${listing.region}, ` : ""}{listing.city}, {listing.province}
+          <MapPin className="w-3 h-3" /> {listing.region ? `${listing.region}, ` : ""}{[listing.city, listing.province].filter(Boolean).join(", ") || "Quebec"}
         </p>
-        <p className="text-xs text-muted-foreground line-clamp-2">{listing.description}</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">{listing.description || "No description provided."}</p>
 
         {listing.size && (
           <p className="text-xs text-muted-foreground">{listing.size} ft · {listing.sqft} sqft</p>
         )}
 
         <div className="flex flex-wrap gap-1">
-          {listing.features.slice(0, 3).map((f) => (
+          {amenities.slice(0, 3).map((f) => (
             <Badge key={f} variant="outline" className="text-[10px] py-0 px-1.5 font-normal text-muted-foreground">{f}</Badge>
           ))}
-          {listing.features.length > 3 && (
-            <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal text-muted-foreground">+{listing.features.length - 3}</Badge>
+          {amenities.length > 3 && (
+            <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal text-muted-foreground">+{amenities.length - 3}</Badge>
           )}
         </div>
 
