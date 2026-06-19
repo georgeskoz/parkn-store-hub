@@ -18,6 +18,7 @@ import RedirectToListing from "./pages/RedirectToListing";
 import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
+import EditListing from "./pages/EditListing";
 import BookingSuccess from "./pages/BookingSuccess";
 import Messages from "./pages/Messages";
 import AdminLogin from "./pages/AdminLogin";
