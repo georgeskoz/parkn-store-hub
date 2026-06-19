@@ -822,6 +822,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_owns_listing: {
+        Args: { _listing_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "provider" | "seeker" | "admin"
