@@ -85,23 +85,7 @@ export default function ListYourSpace() {
       if (error) throw error;
       const listingId = inserted!.id;
 
-      // AI moderation — fire and don't block the user
-      if (inserted?.id) {
-        try {
-          await supabase.functions.invoke("moderate-listing", {
-            body: {
-              listing_id: inserted.id,
-              title: form.title,
-              description: form.description ?? "",
-              photos: form.photos?.map((p) => p.url) ?? [],
-            },
-          });
-        } catch (err) {
-          console.error("AI moderation error:", err);
-        }
-      }
-
-      // Persist parking availability slots
+      // Persist parking availability slots (must run while user's auth context owns the fresh listing)
       if (form.category === "parking" && form.availabilitySlots.length > 0) {
         const rows = form.availabilitySlots.map((s) => ({
           listing_id: listingId,
@@ -128,6 +112,20 @@ export default function ListYourSpace() {
             season_end_month: form.seasonalRental ? parseInt(form.seasonEndMonth) : null,
           });
         if (termsErr) throw termsErr;
+      }
+
+      // AI moderation — fire after child rows are persisted, non-blocking
+      try {
+        await supabase.functions.invoke("moderate-listing", {
+          body: {
+            listing_id: listingId,
+            title: form.title,
+            description: form.description ?? "",
+            photos: form.photos?.map((p) => p.url) ?? [],
+          },
+        });
+      } catch (err) {
+        console.error("AI moderation error:", err);
       }
 
       toast({ title: "Listing created!", description: "Your space is now live on the marketplace." });
