@@ -18,6 +18,7 @@ import RedirectToListing from "./pages/RedirectToListing";
 import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ListYourSpace from "./pages/ListYourSpace";
+import EditListing from "./pages/EditListing";
 import BookingSuccess from "./pages/BookingSuccess";
 import Messages from "./pages/Messages";
 import AdminLogin from "./pages/AdminLogin";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
             <Route path="/booking/success" element={<BookingSuccess />} />
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />
+            <Route path="/listing/:id/edit" element={<ProtectedRoute><EditListing /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

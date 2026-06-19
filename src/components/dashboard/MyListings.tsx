@@ -200,8 +200,10 @@ export default function MyListings() {
                       <Eye className="w-4 h-4" />
                     </Link>
                   </Button>
-                  <Button variant="ghost" size="icon" disabled title="Edit coming soon">
-                    <Edit className="w-4 h-4" />
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link to={`/listing/${listing.id}/edit`} title="Edit listing">
+                      <Edit className="w-4 h-4" />
+                    </Link>
                   </Button>
                   <Button
                     variant="ghost"
