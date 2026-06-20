@@ -55,7 +55,7 @@ export default function EditListing() {
           navigate("/dashboard");
           return;
         }
-        if ((l as any).user_id !== user.id) {
+        if ((l as any).user_id !== user.id && (l as any).host_id !== user.id) {
           setNotAllowed(true);
           return;
         }
@@ -144,12 +144,13 @@ export default function EditListing() {
           price_monthly: form.monthly ? parseFloat(form.monthly) : null,
           nearby_venues: form.nearbyLandmarks,
           photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
+          host_id: user.id,
           is_approved: false,
           status: "pending",
           ai_moderation: null,
         } as any)
         .eq("id", id)
-        .eq("user_id", user.id);
+        .or(`user_id.eq.${user.id},host_id.eq.${user.id}`);
       if (error) throw error;
 
       // Replace availability slots
