@@ -57,6 +57,7 @@ export default function ListYourSpace() {
         .from("listings")
         .insert({
           user_id: user.id,
+          host_id: user.id,
           category: form.category,
           type: form.type,
           title: form.title,
