@@ -185,8 +185,61 @@ export default function ProfileSettings() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="card-shadow mt-8 border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Permanently disable your account. This cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeleteConfirm(""); }}>
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+              </Button>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete your account?</DialogTitle>
+                  <DialogDescription className="space-y-2 pt-2">
+                    <span className="block">This action is permanent. Once confirmed:</span>
+                    <span className="block">• Your login will be disabled and personal info (name, photo, phone, bio) removed.</span>
+                    <span className="block">• All your listings will be unpublished.</span>
+                    <span className="block">• Bookings, payments, and reviews will be retained for legal and accounting purposes and to preserve other users' records.</span>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-delete">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
+                  <Input
+                    id="confirm-delete"
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    autoComplete="off"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={deleteConfirm !== "DELETE" || deleting}
+                    onClick={handleDeleteAccount}
+                  >
+                    {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                    Permanently delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
       </main>
       <Footer />
     </div>
   );
 }
+
