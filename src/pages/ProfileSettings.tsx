@@ -86,6 +86,30 @@ export default function ProfileSettings() {
     setSaving(false);
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      toast({
+        title: "Account deleted",
+        description: "Your account has been deactivated. We're sorry to see you go.",
+      });
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (e: any) {
+      toast({
+        title: "Could not delete account",
+        description: e?.message || "Please try again or contact support.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
+  };
+
+
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
