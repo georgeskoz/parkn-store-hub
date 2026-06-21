@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -8,14 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { User, Save, Loader2, Upload, Camera } from "lucide-react";
+import { User, Save, Loader2, Upload, Camera, Trash2, AlertTriangle } from "lucide-react";
 
 export default function ProfileSettings() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -77,6 +85,30 @@ export default function ProfileSettings() {
     }
     setSaving(false);
   };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "DELETE") return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      toast({
+        title: "Account deleted",
+        description: "Your account has been deactivated. We're sorry to see you go.",
+      });
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (e: any) {
+      toast({
+        title: "Could not delete account",
+        description: e?.message || "Please try again or contact support.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,8 +209,61 @@ export default function ProfileSettings() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="card-shadow mt-8 border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Permanently disable your account. This cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeleteConfirm(""); }}>
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+              </Button>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete your account?</DialogTitle>
+                  <DialogDescription className="space-y-2 pt-2">
+                    <span className="block">This action is permanent. Once confirmed:</span>
+                    <span className="block">• Your login will be disabled and personal info (name, photo, phone, bio) removed.</span>
+                    <span className="block">• All your listings will be unpublished.</span>
+                    <span className="block">• Bookings, payments, and reviews will be retained for legal and accounting purposes and to preserve other users' records.</span>
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-delete">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
+                  <Input
+                    id="confirm-delete"
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    autoComplete="off"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={deleteConfirm !== "DELETE" || deleting}
+                    onClick={handleDeleteAccount}
+                  >
+                    {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                    Permanently delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
       </main>
       <Footer />
     </div>
   );
 }
+
