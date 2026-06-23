@@ -16,6 +16,7 @@ import StepDetails from "@/components/listing/StepDetails";
 import StepPhotos from "@/components/listing/StepPhotos";
 import StepPricing from "@/components/listing/StepPricing";
 import StepExtras from "@/components/listing/StepExtras";
+import AvailabilityEditor from "@/components/listing/AvailabilityEditor";
 
 export default function EditListing() {
   const { id } = useParams<{ id: string }>();
