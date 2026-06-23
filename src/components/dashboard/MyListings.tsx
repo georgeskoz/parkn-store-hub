@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { Trash2, Edit, Eye, Loader2, MapPin, DollarSign } from "lucide-react";
+import { Trash2, Edit, Eye, Loader2, MapPin, DollarSign, CalendarClock, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import AvailabilityEditor from "@/components/listing/AvailabilityEditor";
 
 interface DbListing {
   id: string;
