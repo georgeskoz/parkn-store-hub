@@ -268,6 +268,17 @@ export default function EditListing() {
             <Card><CardHeader><CardTitle>Pricing & Availability</CardTitle></CardHeader>
               <CardContent><StepPricing form={form} update={update} /></CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability schedule</CardTitle>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Changes here update bookable hours instantly and do not require re-review.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {id && <AvailabilityEditor listingId={id} />}
+              </CardContent>
+            </Card>
             <Card><CardHeader><CardTitle>Extras</CardTitle></CardHeader>
               <CardContent>
                 <StepExtras form={form} update={update} toggleLandmark={toggleLandmark} addCustomLandmark={addCustomLandmark} />
