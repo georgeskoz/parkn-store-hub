@@ -162,65 +162,81 @@ export default function MyListings() {
             return (
               <div
                 key={listing.id}
-                className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                className="rounded-lg border border-border hover:bg-muted/30 transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-3 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{listing.title}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{listing.city}, {listing.province}</span>
-                      </p>
+                <div className="flex items-start justify-between p-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">{listing.title}</h3>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{listing.city}, {listing.province}</span>
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="capitalize shrink-0">{listing.category}</Badge>
                     </div>
-                    <Badge variant="secondary" className="capitalize shrink-0">{listing.category}</Badge>
+
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Badge
+                        className={`text-xs border ${availColor[listing.availability] || availColor.available}`}
+                      >
+                        {(listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
+                      </Badge>
+                      {listing.type && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {listing.type}
+                        </Badge>
+                      )}
+                      {price && (
+                        <Badge variant="outline" className="text-xs">
+                          <DollarSign className="w-3 h-3 mr-1" />
+                          {price}{label}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Badge
-                      className={`text-xs border ${availColor[listing.availability] || availColor.available}`}
+                  <div className="flex items-center gap-2 ml-4 shrink-0">
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to={`/listing/${listing.id}`} title="View listing">
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to={`/listing/${listing.id}/edit`} title="Edit listing">
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteConfirm(listing.id)}
+                      disabled={deleting === listing.id}
+                      title="Delete listing"
                     >
-                      {(listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
-                    </Badge>
-                    {listing.type && (
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {listing.type}
-                      </Badge>
-                    )}
-                    {price && (
-                      <Badge variant="outline" className="text-xs">
-                        <DollarSign className="w-3 h-3 mr-1" />
-                        {price}{label}
-                      </Badge>
-                    )}
+                      {deleting === listing.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4 shrink-0">
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link to={`/listing/${listing.id}`} title="View listing">
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link to={`/listing/${listing.id}/edit`} title="Edit listing">
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeleteConfirm(listing.id)}
-                    disabled={deleting === listing.id}
-                    title="Delete listing"
-                  >
-                    {deleting === listing.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between px-4 py-2 border-t border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group">
+                      <span className="flex items-center gap-2">
+                        <CalendarClock className="w-4 h-4" /> Availability
+                      </span>
+                      <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-4 pt-2 border-t border-border bg-muted/20">
+                    <AvailabilityEditor listingId={listing.id} />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             );
           })}
