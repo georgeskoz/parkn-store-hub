@@ -234,34 +234,28 @@ export default function AvailabilityEditor({ listingId }: Props) {
   };
 
   const modifiers = useMemo(() => {
-    const blockedDates: Date[] = [];
-    const openDates: Date[] = [];
+    const blockedArr: Date[] = [];
+    const openArr: Date[] = [];
     const bookedArr: Date[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const horizon = new Date(today);
     horizon.setMonth(horizon.getMonth() + 6);
-    for (const cur = new Date(today); cur <= horizon; cur.setDate(cur.getDate() + 1)) {
+    const cur = new Date(today);
+    while (cur <= horizon) {
       const key = format(cur, "yyyy-MM-dd");
       const dt = new Date(cur);
-      if (bookedDates.includes(dt)) continue;
-      if (bookedDates_isBooked(key, bookedDatesSetRef.current)) {
+      if (bookedDates.has(key)) {
         bookedArr.push(dt);
-        continue;
+      } else {
+        const isBlocked = (blocked.has(key) && !pendingRemove.has(key)) || pendingAdd.has(key);
+        if (isBlocked) blockedArr.push(dt);
+        else openArr.push(dt);
       }
-      const isBlocked = (blocked.has(key) && !pendingRemove.has(key)) || pendingAdd.has(key);
-      if (isBlocked) blockedDates.push(dt);
-      else openDates.push(dt);
+      cur.setDate(cur.getDate() + 1);
     }
-    return { blocked: blockedDates, open: openDates, booked: bookedArr };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return { blocked: blockedArr, open: openArr, booked: bookedArr };
   }, [blocked, pendingAdd, pendingRemove, bookedDates]);
-
-  // Keep a ref-like for the helper above
-  const bookedDatesSetRef = { current: bookedDates };
-  function bookedDates_isBooked(key: string, set: Set<string>) {
-    return set.has(key);
-  }
 
   const hasBlockChanges = pendingAdd.size > 0 || pendingRemove.size > 0;
 
