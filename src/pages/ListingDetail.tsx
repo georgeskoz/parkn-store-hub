@@ -101,6 +101,8 @@ export default function ListingDetail() {
   const [endOpen, setEndOpen] = useState(false);
   const [tempStart, setTempStart] = useState<Date | undefined>();
   const [tempEnd, setTempEnd] = useState<Date | undefined>();
+  const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
+  const [openDow, setOpenDow] = useState<Set<number> | null>(null);
 
   useEffect(() => {
     const fetchListing = async () => {
