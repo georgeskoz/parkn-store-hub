@@ -135,6 +135,17 @@ export default function ListingDetail() {
         if (profileData) {
           setProfile(profileData as UserProfile);
         }
+
+        // Fetch host availability config
+        const [blocksRes, slotsRes] = await Promise.all([
+          (supabase as any).from("listing_blocked_dates").select("blocked_date").eq("listing_id", id),
+          supabase.from("listing_availability_slots").select("day_of_week").eq("listing_id", id),
+        ]);
+        const b = new Set<string>();
+        for (const r of (blocksRes.data || []) as any[]) b.add(String(r.blocked_date).slice(0, 10));
+        setBlockedDays(b);
+        const slots = (slotsRes.data || []) as any[];
+        setOpenDow(slots.length > 0 ? new Set(slots.map((s) => s.day_of_week as number)) : null);
       } catch (err) {
         console.error("Error fetching listing:", err);
         setError("Failed to load listing");
