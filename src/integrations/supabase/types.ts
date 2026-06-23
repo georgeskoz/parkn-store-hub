@@ -281,6 +281,35 @@ export type Database = {
           },
         ]
       }
+      listing_blocked_dates: {
+        Row: {
+          blocked_date: string
+          created_at: string
+          id: string
+          listing_id: string
+        }
+        Insert: {
+          blocked_date: string
+          created_at?: string
+          id?: string
+          listing_id: string
+        }
+        Update: {
+          blocked_date?: string
+          created_at?: string
+          id?: string
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_blocked_dates_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_rental_terms: {
         Row: {
           created_at: string
