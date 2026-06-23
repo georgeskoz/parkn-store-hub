@@ -29,6 +29,8 @@ export default function StorageAvailabilityCalendar({
   const [viewMonth, setViewMonth] = useState<Date>(startOfMonth(new Date()));
   const [loading, setLoading] = useState(false);
   const [statusByDay, setStatusByDay] = useState<Record<string, DayStatus["status"]>>({});
+  const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
+  const [openDaysOfWeek, setOpenDaysOfWeek] = useState<Set<number> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,19 +41,37 @@ export default function StorageAvailabilityCalendar({
       try {
         const start = format(startOfMonth(viewMonth), "yyyy-MM-dd");
         const end = format(addMonths(startOfMonth(viewMonth), monthsAhead), "yyyy-MM-dd");
-        const { data, error } = await (supabase as any).rpc("get_daily_availability", {
-          target_listing_id: listingId,
-          range_start: start,
-          range_end: end,
-        });
-        if (error) throw error;
+        const [availRes, blockRes, slotsRes] = await Promise.all([
+          (supabase as any).rpc("get_daily_availability", {
+            target_listing_id: listingId,
+            range_start: start,
+            range_end: end,
+          }),
+          (supabase as any).from("listing_blocked_dates")
+            .select("blocked_date")
+            .eq("listing_id", listingId)
+            .gte("blocked_date", start)
+            .lt("blocked_date", end),
+          supabase.from("listing_availability_slots").select("day_of_week").eq("listing_id", listingId),
+        ]);
+        if (availRes.error) throw availRes.error;
         if (cancelled) return;
         const map: Record<string, DayStatus["status"]> = {};
-        for (const row of (data || []) as DayStatus[]) {
-          // PostgREST returns dates as YYYY-MM-DD strings
+        for (const row of (availRes.data || []) as DayStatus[]) {
           map[String(row.day).slice(0, 10)] = row.status;
         }
         setStatusByDay(map);
+
+        const blocked = new Set<string>();
+        for (const r of (blockRes.data || []) as any[]) blocked.add(String(r.blocked_date).slice(0, 10));
+        setBlockedDays(blocked);
+
+        const slots = (slotsRes.data || []) as any[];
+        if (slots.length > 0) {
+          setOpenDaysOfWeek(new Set(slots.map((s) => s.day_of_week as number)));
+        } else {
+          setOpenDaysOfWeek(null); // no schedule defined → open every day
+        }
       } catch (err: any) {
         if (!cancelled) setError(err.message || "Failed to load availability");
       } finally {
