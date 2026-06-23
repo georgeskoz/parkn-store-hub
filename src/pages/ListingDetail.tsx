@@ -495,7 +495,13 @@ export default function ListingDetail() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={tempEnd} onSelect={setTempEnd} disabled={(d) => d < (startDate || new Date())} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={tempEnd} onSelect={setTempEnd} disabled={(d) => {
+                              if (d < (startDate || new Date())) return true;
+                              const key = format(d, "yyyy-MM-dd");
+                              if (blockedDays.has(key)) return true;
+                              if (openDow && !openDow.has(d.getDay())) return true;
+                              return false;
+                            }} className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
                               <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>Cancel</Button>
                               <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>Confirm</Button>
