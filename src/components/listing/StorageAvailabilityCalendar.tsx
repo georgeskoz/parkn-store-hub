@@ -118,23 +118,30 @@ export default function StorageAvailabilityCalendar({
           if (!d) return;
           const key = format(d, "yyyy-MM-dd");
           if (statusByDay[key] === "booked") return;
+          if (blockedDays.has(key)) return;
+          if (openDaysOfWeek && !openDaysOfWeek.has(d.getDay())) return;
           onPickStart?.(d);
         }}
         disabled={(d) => {
           if (d < today) return true;
           const key = format(d, "yyyy-MM-dd");
-          return statusByDay[key] === "booked";
+          if (statusByDay[key] === "booked") return true;
+          if (blockedDays.has(key)) return true;
+          if (openDaysOfWeek && !openDaysOfWeek.has(d.getDay())) return true;
+          return false;
         }}
         modifiers={{
           booked: bookedDates,
           partial: partialDates,
           open: openDates,
+          blocked: Array.from(blockedDays).map((k) => new Date(k + "T00:00:00")),
           rangeEnd: selectedEnd ? [selectedEnd] : [],
         }}
         modifiersClassNames={{
-          booked: "bg-destructive/30 text-destructive line-through",
+          booked: "bg-muted text-muted-foreground line-through",
           partial: "bg-amber-200/70 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200",
           open: "bg-primary/15 text-foreground hover:bg-primary/30",
+          blocked: "bg-destructive/30 text-destructive line-through",
           rangeEnd: "ring-2 ring-primary",
         }}
         className="p-2 pointer-events-auto rounded-md bg-background"
