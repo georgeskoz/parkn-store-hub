@@ -101,6 +101,8 @@ export default function ListingDetail() {
   const [endOpen, setEndOpen] = useState(false);
   const [tempStart, setTempStart] = useState<Date | undefined>();
   const [tempEnd, setTempEnd] = useState<Date | undefined>();
+  const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
+  const [openDow, setOpenDow] = useState<Set<number> | null>(null);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -133,6 +135,17 @@ export default function ListingDetail() {
         if (profileData) {
           setProfile(profileData as UserProfile);
         }
+
+        // Fetch host availability config
+        const [blocksRes, slotsRes] = await Promise.all([
+          (supabase as any).from("listing_blocked_dates").select("blocked_date").eq("listing_id", id),
+          supabase.from("listing_availability_slots").select("day_of_week").eq("listing_id", id),
+        ]);
+        const b = new Set<string>();
+        for (const r of (blocksRes.data || []) as any[]) b.add(String(r.blocked_date).slice(0, 10));
+        setBlockedDays(b);
+        const slots = (slotsRes.data || []) as any[];
+        setOpenDow(slots.length > 0 ? new Set(slots.map((s) => s.day_of_week as number)) : null);
       } catch (err) {
         console.error("Error fetching listing:", err);
         setError("Failed to load listing");
@@ -454,7 +467,13 @@ export default function ListingDetail() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={tempStart} onSelect={setTempStart} disabled={(d) => d < new Date(new Date().setHours(0,0,0,0))} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={tempStart} onSelect={setTempStart} disabled={(d) => {
+                              if (d < new Date(new Date().setHours(0,0,0,0))) return true;
+                              const key = format(d, "yyyy-MM-dd");
+                              if (blockedDays.has(key)) return true;
+                              if (openDow && !openDow.has(d.getDay())) return true;
+                              return false;
+                            }} className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
                               <Button variant="ghost" size="sm" onClick={() => setStartOpen(false)}>Cancel</Button>
                               <Button size="sm" disabled={!tempStart} onClick={() => { setStartDate(tempStart); if (endDate && tempStart && tempStart > endDate) setEndDate(undefined); setStartOpen(false); }}>Confirm</Button>
@@ -476,7 +495,13 @@ export default function ListingDetail() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={tempEnd} onSelect={setTempEnd} disabled={(d) => d < (startDate || new Date())} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={tempEnd} onSelect={setTempEnd} disabled={(d) => {
+                              if (d < (startDate || new Date())) return true;
+                              const key = format(d, "yyyy-MM-dd");
+                              if (blockedDays.has(key)) return true;
+                              if (openDow && !openDow.has(d.getDay())) return true;
+                              return false;
+                            }} className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
                               <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>Cancel</Button>
                               <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>Confirm</Button>

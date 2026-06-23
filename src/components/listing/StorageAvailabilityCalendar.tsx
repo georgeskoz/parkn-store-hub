@@ -29,6 +29,8 @@ export default function StorageAvailabilityCalendar({
   const [viewMonth, setViewMonth] = useState<Date>(startOfMonth(new Date()));
   const [loading, setLoading] = useState(false);
   const [statusByDay, setStatusByDay] = useState<Record<string, DayStatus["status"]>>({});
+  const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
+  const [openDaysOfWeek, setOpenDaysOfWeek] = useState<Set<number> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,19 +41,37 @@ export default function StorageAvailabilityCalendar({
       try {
         const start = format(startOfMonth(viewMonth), "yyyy-MM-dd");
         const end = format(addMonths(startOfMonth(viewMonth), monthsAhead), "yyyy-MM-dd");
-        const { data, error } = await (supabase as any).rpc("get_daily_availability", {
-          target_listing_id: listingId,
-          range_start: start,
-          range_end: end,
-        });
-        if (error) throw error;
+        const [availRes, blockRes, slotsRes] = await Promise.all([
+          (supabase as any).rpc("get_daily_availability", {
+            target_listing_id: listingId,
+            range_start: start,
+            range_end: end,
+          }),
+          (supabase as any).from("listing_blocked_dates")
+            .select("blocked_date")
+            .eq("listing_id", listingId)
+            .gte("blocked_date", start)
+            .lt("blocked_date", end),
+          supabase.from("listing_availability_slots").select("day_of_week").eq("listing_id", listingId),
+        ]);
+        if (availRes.error) throw availRes.error;
         if (cancelled) return;
         const map: Record<string, DayStatus["status"]> = {};
-        for (const row of (data || []) as DayStatus[]) {
-          // PostgREST returns dates as YYYY-MM-DD strings
+        for (const row of (availRes.data || []) as DayStatus[]) {
           map[String(row.day).slice(0, 10)] = row.status;
         }
         setStatusByDay(map);
+
+        const blocked = new Set<string>();
+        for (const r of (blockRes.data || []) as any[]) blocked.add(String(r.blocked_date).slice(0, 10));
+        setBlockedDays(blocked);
+
+        const slots = (slotsRes.data || []) as any[];
+        if (slots.length > 0) {
+          setOpenDaysOfWeek(new Set(slots.map((s) => s.day_of_week as number)));
+        } else {
+          setOpenDaysOfWeek(null); // no schedule defined → open every day
+        }
       } catch (err: any) {
         if (!cancelled) setError(err.message || "Failed to load availability");
       } finally {
@@ -98,23 +118,30 @@ export default function StorageAvailabilityCalendar({
           if (!d) return;
           const key = format(d, "yyyy-MM-dd");
           if (statusByDay[key] === "booked") return;
+          if (blockedDays.has(key)) return;
+          if (openDaysOfWeek && !openDaysOfWeek.has(d.getDay())) return;
           onPickStart?.(d);
         }}
         disabled={(d) => {
           if (d < today) return true;
           const key = format(d, "yyyy-MM-dd");
-          return statusByDay[key] === "booked";
+          if (statusByDay[key] === "booked") return true;
+          if (blockedDays.has(key)) return true;
+          if (openDaysOfWeek && !openDaysOfWeek.has(d.getDay())) return true;
+          return false;
         }}
         modifiers={{
           booked: bookedDates,
           partial: partialDates,
           open: openDates,
+          blocked: Array.from(blockedDays).map((k) => new Date(k + "T00:00:00")),
           rangeEnd: selectedEnd ? [selectedEnd] : [],
         }}
         modifiersClassNames={{
-          booked: "bg-destructive/30 text-destructive line-through",
+          booked: "bg-muted text-muted-foreground line-through",
           partial: "bg-amber-200/70 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200",
           open: "bg-primary/15 text-foreground hover:bg-primary/30",
+          blocked: "bg-destructive/30 text-destructive line-through",
           rangeEnd: "ring-2 ring-primary",
         }}
         className="p-2 pointer-events-auto rounded-md bg-background"

@@ -16,6 +16,7 @@ import StepDetails from "@/components/listing/StepDetails";
 import StepPhotos from "@/components/listing/StepPhotos";
 import StepPricing from "@/components/listing/StepPricing";
 import StepExtras from "@/components/listing/StepExtras";
+import AvailabilityEditor from "@/components/listing/AvailabilityEditor";
 
 export default function EditListing() {
   const { id } = useParams<{ id: string }>();
@@ -266,6 +267,17 @@ export default function EditListing() {
             </Card>
             <Card><CardHeader><CardTitle>Pricing & Availability</CardTitle></CardHeader>
               <CardContent><StepPricing form={form} update={update} /></CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Availability schedule</CardTitle>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Changes here update bookable hours instantly and do not require re-review.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {id && <AvailabilityEditor listingId={id} />}
+              </CardContent>
             </Card>
             <Card><CardHeader><CardTitle>Extras</CardTitle></CardHeader>
               <CardContent>
