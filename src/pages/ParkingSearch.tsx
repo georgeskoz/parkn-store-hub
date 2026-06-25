@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Clock, MapPin } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
+import { useSearchParams } from "react-router-dom";
+import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
+import { filterParkingAvailable } from "@/lib/availabilityFilter";
 
 const ListingsMap = lazy(() => import("@/components/listing/ListingsMap"));
 
@@ -15,12 +18,15 @@ type PricingMode = "hourly" | "daily" | "monthly";
 const parkingTypes = ["outdoor", "indoor", "covered", "underground"] as const;
 
 export default function ParkingSearch() {
+  const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("q") || "");
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [pricingMode, setPricingMode] = useState<PricingMode>("daily");
+  const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "parking"));
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -48,6 +54,17 @@ export default function ParkingSearch() {
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const ids = listings.map((l) => l.id);
+    if (ids.length === 0 || !when.date) { setAvailableIds(null); return; }
+    (async () => {
+      const ok = await filterParkingAvailable(ids, { date: when.date!, start: when.start, end: when.end });
+      if (!cancelled) setAvailableIds(ok);
+    })();
+    return () => { cancelled = true; };
+  }, [listings, when]);
+
   const filtered = useMemo(() => {
     const q = (search || "").toLowerCase();
     return listings
@@ -59,6 +76,7 @@ export default function ParkingSearch() {
         }
         if (city !== "all" && l.city !== city) return false;
         if (type !== "all" && (l?.type || "").toLowerCase() !== type) return false;
+        if (availableIds && !availableIds.has(l.id)) return false;
         return true;
       })
       .sort((a, b) => {
@@ -66,7 +84,7 @@ export default function ParkingSearch() {
         const pb = Number(b?.[pricingMode] ?? b?.[`price_${pricingMode}`]) || Infinity;
         return pa - pb;
       });
-  }, [listings, search, city, type, pricingMode]);
+  }, [listings, search, city, type, pricingMode, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
@@ -108,6 +126,9 @@ export default function ParkingSearch() {
                 <SelectItem value="monthly">Monthly</SelectItem>
               </SelectContent>
             </Select>
+            <div className="min-w-[220px]">
+              <DateTimePicker mode="parking" value={when} onChange={setWhen} />
+            </div>
           </div>
           {activeFilters.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">

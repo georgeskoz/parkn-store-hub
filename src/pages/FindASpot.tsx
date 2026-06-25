@@ -10,6 +10,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Navigation, Car, Warehouse, X } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
+import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
+import { filterParkingAvailable, filterStorageAvailable } from "@/lib/availabilityFilter";
 
 type Category = "all" | "parking" | "storage";
 
@@ -32,6 +34,12 @@ export default function FindASpot() {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const maxDistanceKm = 50;
+  const pickerMode: "parking" | "storage" = category === "storage" ? "storage" : "parking";
+  const [when, setWhen] = useState<DateTimeValue>(() => ({
+    ...readDateTimeFromParams(searchParams, "parking"),
+    ...readDateTimeFromParams(searchParams, "storage"),
+  }));
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +64,26 @@ export default function FindASpot() {
   }, [searchParams]);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
+
+  // Recompute available-listing set when date/time or listings change
+  useEffect(() => {
+    let cancelled = false;
+    const ids = listings.map((l) => l.id);
+    if (ids.length === 0) { setAvailableIds(null); return; }
+    const run = async () => {
+      if (pickerMode === "parking" && when.date) {
+        const ok = await filterParkingAvailable(ids, { date: when.date, start: when.start, end: when.end });
+        if (!cancelled) setAvailableIds(ok);
+      } else if (pickerMode === "storage" && when.checkin && when.checkout) {
+        const ok = await filterStorageAvailable(ids, { checkin: when.checkin, checkout: when.checkout });
+        if (!cancelled) setAvailableIds(ok);
+      } else {
+        setAvailableIds(null);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [listings, when, pickerMode]);
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
@@ -102,8 +130,9 @@ export default function FindASpot() {
       items = items.filter((l) => l.distance !== undefined && l.distance <= maxDistanceKm);
       items.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
     }
+    if (availableIds) items = items.filter((l) => availableIds.has(l.id));
     return items;
-  }, [listings, search, category, city, destinationCoords]);
+  }, [listings, search, category, city, destinationCoords, availableIds]);
 
   const activeFilters = [city !== "all" && city].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setSearch(""); clearLocation(); };
@@ -140,6 +169,9 @@ export default function FindASpot() {
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
+            <div className="min-w-[220px]">
+              <DateTimePicker mode={pickerMode} value={when} onChange={setWhen} />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3 items-center mt-3">

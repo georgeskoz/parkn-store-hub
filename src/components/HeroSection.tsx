@@ -2,18 +2,19 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Calendar } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import DateTimePicker, { DateTimeValue, writeDateTimeToParams } from "@/components/search/DateTimePicker";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
-  const [when, setWhen] = useState("");
+  const [when, setWhen] = useState<DateTimeValue>({});
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (location.trim()) params.set("q", location.trim());
-    if (when.trim()) params.set("when", when.trim());
+    writeDateTimeToParams(params, "parking", when);
     navigate(`/find${params.toString() ? `?${params}` : ""}`);
   };
 
@@ -85,16 +86,8 @@ const HeroSection = () => {
                 className="bg-transparent w-full text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
             </div>
-            <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary/50">
-              <Calendar className="w-5 h-5 text-muted-foreground shrink-0" />
-              <input
-                type="text"
-                placeholder="Date & time"
-                value={when}
-                onChange={(e) => setWhen(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="bg-transparent w-full text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
+            <div className="flex-1">
+              <DateTimePicker mode="parking" value={when} onChange={setWhen} triggerClassName="h-full" />
             </div>
             <Button className="px-8" onClick={handleSearch}>
               Search
