@@ -126,6 +126,9 @@ export default function ParkingSearch() {
                 <SelectItem value="monthly">Monthly</SelectItem>
               </SelectContent>
             </Select>
+            <div className="min-w-[220px]">
+              <DateTimePicker mode="parking" value={when} onChange={setWhen} />
+            </div>
           </div>
           {activeFilters.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
