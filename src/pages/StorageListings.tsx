@@ -8,18 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X, Warehouse } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
+import { filterStorageAvailable } from "@/lib/availabilityFilter";
 
 const storageTypes = ["indoor", "outdoor", "heated", "climate-controlled"] as const;
 type Duration = "daily" | "weekly" | "monthly" | "seasonal";
 
 export default function StorageListings() {
+  const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("q") || "");
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [duration, setDuration] = useState<Duration>("monthly");
   const [sortBy, setSortBy] = useState<"price" | "size">("price");
+  const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "storage"));
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     const fetchListings = async () => {
