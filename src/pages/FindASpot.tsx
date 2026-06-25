@@ -34,6 +34,12 @@ export default function FindASpot() {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const maxDistanceKm = 50;
+  const pickerMode: "parking" | "storage" = category === "storage" ? "storage" : "parking";
+  const [when, setWhen] = useState<DateTimeValue>(() => ({
+    ...readDateTimeFromParams(searchParams, "parking"),
+    ...readDateTimeFromParams(searchParams, "storage"),
+  }));
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
