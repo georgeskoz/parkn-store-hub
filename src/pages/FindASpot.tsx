@@ -130,8 +130,9 @@ export default function FindASpot() {
       items = items.filter((l) => l.distance !== undefined && l.distance <= maxDistanceKm);
       items.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
     }
+    if (availableIds) items = items.filter((l) => availableIds.has(l.id));
     return items;
-  }, [listings, search, category, city, destinationCoords]);
+  }, [listings, search, category, city, destinationCoords, availableIds]);
 
   const activeFilters = [city !== "all" && city].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setSearch(""); clearLocation(); };
