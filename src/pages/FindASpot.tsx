@@ -169,6 +169,9 @@ export default function FindASpot() {
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
+            <div className="min-w-[220px]">
+              <DateTimePicker mode={pickerMode} value={when} onChange={setWhen} />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3 items-center mt-3">
