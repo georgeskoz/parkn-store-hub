@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Clock, MapPin } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
+import { useSearchParams } from "react-router-dom";
+import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
+import { filterParkingAvailable } from "@/lib/availabilityFilter";
 
 const ListingsMap = lazy(() => import("@/components/listing/ListingsMap"));
 
@@ -15,12 +18,15 @@ type PricingMode = "hourly" | "daily" | "monthly";
 const parkingTypes = ["outdoor", "indoor", "covered", "underground"] as const;
 
 export default function ParkingSearch() {
+  const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("q") || "");
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [pricingMode, setPricingMode] = useState<PricingMode>("daily");
+  const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "parking"));
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     const fetchListings = async () => {
