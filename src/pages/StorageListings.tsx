@@ -137,6 +137,9 @@ export default function StorageListings() {
                 <SelectItem value="size">Size</SelectItem>
               </SelectContent>
             </Select>
+            <div className="min-w-[220px]">
+              <DateTimePicker mode="storage" value={when} onChange={setWhen} placeholder="Check-in – Check-out" />
+            </div>
           </div>
 
           {activeFilters.length > 0 && (
