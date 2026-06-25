@@ -65,6 +65,26 @@ export default function FindASpot() {
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
+  // Recompute available-listing set when date/time or listings change
+  useEffect(() => {
+    let cancelled = false;
+    const ids = listings.map((l) => l.id);
+    if (ids.length === 0) { setAvailableIds(null); return; }
+    const run = async () => {
+      if (pickerMode === "parking" && when.date) {
+        const ok = await filterParkingAvailable(ids, { date: when.date, start: when.start, end: when.end });
+        if (!cancelled) setAvailableIds(ok);
+      } else if (pickerMode === "storage" && when.checkin && when.checkout) {
+        const ok = await filterStorageAvailable(ids, { checkin: when.checkin, checkout: when.checkout });
+        if (!cancelled) setAvailableIds(ok);
+      } else {
+        setAvailableIds(null);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [listings, when, pickerMode]);
+
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
     setLocating(true);
