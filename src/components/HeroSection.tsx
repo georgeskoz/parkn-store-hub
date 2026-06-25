@@ -2,18 +2,19 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, Calendar } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import DateTimePicker, { DateTimeValue, writeDateTimeToParams } from "@/components/search/DateTimePicker";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
-  const [when, setWhen] = useState("");
+  const [when, setWhen] = useState<DateTimeValue>({});
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (location.trim()) params.set("q", location.trim());
-    if (when.trim()) params.set("when", when.trim());
+    writeDateTimeToParams(params, "parking", when);
     navigate(`/find${params.toString() ? `?${params}` : ""}`);
   };
 
