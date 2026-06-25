@@ -10,6 +10,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Navigation, Car, Warehouse, X } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
+import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
+import { filterParkingAvailable, filterStorageAvailable } from "@/lib/availabilityFilter";
 
 type Category = "all" | "parking" | "storage";
 
