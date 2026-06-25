@@ -54,6 +54,17 @@ export default function ParkingSearch() {
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const ids = listings.map((l) => l.id);
+    if (ids.length === 0 || !when.date) { setAvailableIds(null); return; }
+    (async () => {
+      const ok = await filterParkingAvailable(ids, { date: when.date!, start: when.start, end: when.end });
+      if (!cancelled) setAvailableIds(ok);
+    })();
+    return () => { cancelled = true; };
+  }, [listings, when]);
+
   const filtered = useMemo(() => {
     const q = (search || "").toLowerCase();
     return listings
@@ -65,6 +76,7 @@ export default function ParkingSearch() {
         }
         if (city !== "all" && l.city !== city) return false;
         if (type !== "all" && (l?.type || "").toLowerCase() !== type) return false;
+        if (availableIds && !availableIds.has(l.id)) return false;
         return true;
       })
       .sort((a, b) => {
@@ -72,7 +84,7 @@ export default function ParkingSearch() {
         const pb = Number(b?.[pricingMode] ?? b?.[`price_${pricingMode}`]) || Infinity;
         return pa - pb;
       });
-  }, [listings, search, city, type, pricingMode]);
+  }, [listings, search, city, type, pricingMode, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
