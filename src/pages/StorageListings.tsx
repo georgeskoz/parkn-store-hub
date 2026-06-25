@@ -53,6 +53,17 @@ export default function StorageListings() {
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const ids = listings.map((l) => l.id);
+    if (ids.length === 0 || !when.checkin || !when.checkout) { setAvailableIds(null); return; }
+    (async () => {
+      const ok = await filterStorageAvailable(ids, { checkin: when.checkin!, checkout: when.checkout! });
+      if (!cancelled) setAvailableIds(ok);
+    })();
+    return () => { cancelled = true; };
+  }, [listings, when]);
+
   const filtered = useMemo(() => {
     const q = (search || "").toLowerCase();
     const results = listings.filter((l) => {
@@ -61,7 +72,8 @@ export default function StorageListings() {
       const matchesSearch = !q || title.includes(q) || desc.includes(q);
       const matchesCity = city === "all" || l.city === city;
       const matchesType = type === "all" || (l?.type || "").toLowerCase() === type;
-      return matchesSearch && matchesCity && matchesType;
+      const matchesAvail = !availableIds || availableIds.has(l.id);
+      return matchesSearch && matchesCity && matchesType && matchesAvail;
     });
     results.sort((a, b) => {
       if (sortBy === "price") {
@@ -72,7 +84,7 @@ export default function StorageListings() {
       return (Number(b?.sqft ?? b?.size_sqft) || 0) - (Number(a?.sqft ?? a?.size_sqft) || 0);
     });
     return results;
-  }, [listings, search, city, type, duration, sortBy]);
+  }, [listings, search, city, type, duration, sortBy, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
