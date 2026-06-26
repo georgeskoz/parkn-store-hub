@@ -23,11 +23,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
+import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 
 type Booking = {
   id: string;
   listing_id: string;
+  provider_id: string;
   start_date: string;
   end_date: string;
   total_amount: number;
@@ -42,7 +44,12 @@ type Booking = {
   overdue_charges_total: number | null;
   completed_by_seeker_at: string | null;
   completed_by_provider_at: string | null;
+  released_at: string | null;
+  updated_at: string | null;
+  listings?: { title: string | null } | null;
 };
+
+const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 const CANCELLABLE = ["pending", "confirmed", "active"];
 
@@ -63,6 +70,7 @@ const escrowBadge = (s: string | null) => {
 
 const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<Booking | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -70,17 +78,30 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [extHours, setExtHours] = useState(1);
   const [disputeBooking, setDisputeBooking] = useState<Booking | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at",
+        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,listings(title)",
       )
       .eq("seeker_id", userId)
       .order("start_date", { ascending: false });
-    setBookings((data || []) as Booking[]);
+    const list = (data || []) as Booking[];
+    setBookings(list);
+    const completedIds = list.filter((b) => b.status === "completed").map((b) => b.id);
+    if (completedIds.length) {
+      const { data: revs } = await supabase
+        .from("reviews")
+        .select("booking_id")
+        .eq("reviewer_id", userId)
+        .in("booking_id", completedIds);
+      setReviewedIds(new Set((revs || []).map((r: any) => r.booking_id)));
+    } else {
+      setReviewedIds(new Set());
+    }
     setLoading(false);
   };
 
@@ -88,6 +109,21 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     if (userId) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  const completionTs = (b: Booking) => {
+    const cs = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at, b.updated_at]
+      .filter(Boolean)
+      .map((s) => new Date(s as string).getTime());
+    return cs.length ? Math.max(...cs) : 0;
+  };
+  const reviewState = (b: Booking): "eligible" | "reviewed" | "expired" | "none" => {
+    if (b.status !== "completed") return "none";
+    if (reviewedIds.has(b.id)) return "reviewed";
+    const ts = completionTs(b);
+    if (!ts) return "none";
+    return Date.now() - ts <= REVIEW_WINDOW_MS ? "eligible" : "expired";
+  };
+
 
   const refundPreview = (b: Booking) => {
     const hours = (new Date(b.start_date).getTime() - Date.now()) / 36e5;
@@ -277,7 +313,33 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                           Cancel
                         </Button>
                       )}
+                    {(() => {
+                      const rs = reviewState(b);
+                      if (rs === "eligible") {
+                        return (
+                          <Button size="sm" variant="default" onClick={() => setReviewBooking(b)}>
+                            <Star className="w-3.5 h-3.5 mr-1" /> Leave a Review
+                          </Button>
+                        );
+                      }
+                      if (rs === "reviewed") {
+                        return (
+                          <Button size="sm" variant="outline" disabled>
+                            Review submitted ✓
+                          </Button>
+                        );
+                      }
+                      if (rs === "expired") {
+                        return (
+                          <span className="text-xs text-muted-foreground self-center">
+                            Review period expired
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
+
                 </div>
               </div>
             ))}
@@ -384,6 +446,18 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {reviewBooking && (
+        <ReviewSubmissionModal
+          open={!!reviewBooking}
+          onOpenChange={(o) => !o && setReviewBooking(null)}
+          bookingId={reviewBooking.id}
+          listingId={reviewBooking.listing_id}
+          revieweeId={reviewBooking.provider_id}
+          listingTitle={reviewBooking.listings?.title || undefined}
+          onSubmitted={load}
+        />
+      )}
     </Card>
   );
 };

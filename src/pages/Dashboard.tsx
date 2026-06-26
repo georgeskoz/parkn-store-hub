@@ -18,6 +18,7 @@ import ProviderReviewsPanel from "@/components/reviews/ProviderReviewsPanel";
 import SeekerBookingsList from "@/components/dashboard/SeekerBookingsList";
 import ProviderCancelledBookings from "@/components/dashboard/ProviderCancelledBookings";
 import ProviderActiveBookings from "@/components/dashboard/ProviderActiveBookings";
+import ReviewPromptBanner from "@/components/reviews/ReviewPromptBanner";
 
 type ViewMode = "provider" | "seeker";
 
@@ -153,6 +154,7 @@ const Dashboard = () => {
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
+                <ReviewPromptBanner userId={user?.id} role={viewMode === "provider" ? "provider" : "seeker"} />
                 {viewMode === "provider" ? <ProviderView profile={profile} userId={user?.id} /> : <SeekerView userId={user?.id} />}
               </TabsContent>
 
