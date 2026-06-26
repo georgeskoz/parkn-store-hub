@@ -446,6 +446,18 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {reviewBooking && (
+        <ReviewSubmissionModal
+          open={!!reviewBooking}
+          onOpenChange={(o) => !o && setReviewBooking(null)}
+          bookingId={reviewBooking.id}
+          listingId={reviewBooking.listing_id}
+          revieweeId={reviewBooking.provider_id}
+          listingTitle={reviewBooking.listings?.title || undefined}
+          onSubmitted={load}
+        />
+      )}
     </Card>
   );
 };
