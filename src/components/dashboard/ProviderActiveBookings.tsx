@@ -41,8 +41,10 @@ const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [extensions, setExtensions] = useState<Ext[]>([]);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -50,7 +52,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       supabase
         .from("bookings")
         .select(
-          "id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at",
+          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,listings(title)",
         )
         .eq("provider_id", userId)
         .neq("status", "cancelled")
@@ -61,8 +63,20 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
         .eq("status", "pending")
         .order("created_at", { ascending: false }),
     ]);
-    setBookings((bks || []) as Booking[]);
+    const list = (bks || []) as Booking[];
+    setBookings(list);
     setExtensions((exts || []) as Ext[]);
+    const completedIds = list.filter((b) => b.status === "completed").map((b) => b.id);
+    if (completedIds.length) {
+      const { data: revs } = await supabase
+        .from("reviews")
+        .select("booking_id")
+        .eq("reviewer_id", userId)
+        .in("booking_id", completedIds);
+      setReviewedIds(new Set((revs || []).map((r: any) => r.booking_id)));
+    } else {
+      setReviewedIds(new Set());
+    }
     setLoading(false);
   };
 
@@ -70,6 +84,21 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
     if (userId) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  const completionTs = (b: Booking) => {
+    const cs = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at, b.updated_at]
+      .filter(Boolean)
+      .map((s) => new Date(s as string).getTime());
+    return cs.length ? Math.max(...cs) : 0;
+  };
+  const reviewState = (b: Booking): "eligible" | "reviewed" | "expired" | "none" => {
+    if (b.status !== "completed") return "none";
+    if (reviewedIds.has(b.id)) return "reviewed";
+    const ts = completionTs(b);
+    if (!ts) return "none";
+    return Date.now() - ts <= REVIEW_WINDOW_MS ? "eligible" : "expired";
+  };
+
 
   const respond = async (ext: Ext, decision: "accept" | "decline") => {
     setBusy(ext.id);
