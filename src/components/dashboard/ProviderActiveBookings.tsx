@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
+import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 
 type Ext = {
   id: string;
@@ -18,6 +19,8 @@ type Ext = {
 
 type Booking = {
   id: string;
+  listing_id: string;
+  seeker_id: string;
   start_date: string;
   end_date: string;
   total_amount: number;
@@ -28,7 +31,12 @@ type Booking = {
   overdue_charges_total: number | null;
   completed_by_provider_at: string | null;
   completed_by_seeker_at: string | null;
+  released_at: string | null;
+  updated_at: string | null;
+  listings?: { title: string | null } | null;
 };
+
+const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
