@@ -313,7 +313,33 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                           Cancel
                         </Button>
                       )}
+                    {(() => {
+                      const rs = reviewState(b);
+                      if (rs === "eligible") {
+                        return (
+                          <Button size="sm" variant="default" onClick={() => setReviewBooking(b)}>
+                            <Star className="w-3.5 h-3.5 mr-1" /> Leave a Review
+                          </Button>
+                        );
+                      }
+                      if (rs === "reviewed") {
+                        return (
+                          <Button size="sm" variant="outline" disabled>
+                            Review submitted ✓
+                          </Button>
+                        );
+                      }
+                      if (rs === "expired") {
+                        return (
+                          <span className="text-xs text-muted-foreground self-center">
+                            Review period expired
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
+
                 </div>
               </div>
             ))}
