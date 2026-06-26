@@ -242,6 +242,31 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                             {overdue ? "Force complete (no-pickup)" : "Mark complete"}
                           </Button>
                         )}
+                        {(() => {
+                          const rs = reviewState(b);
+                          if (rs === "eligible") {
+                            return (
+                              <Button size="sm" onClick={() => setReviewBooking(b)}>
+                                <Star className="w-3.5 h-3.5 mr-1" /> Leave a Review
+                              </Button>
+                            );
+                          }
+                          if (rs === "reviewed") {
+                            return (
+                              <Button size="sm" variant="outline" disabled>
+                                Review submitted ✓
+                              </Button>
+                            );
+                          }
+                          if (rs === "expired") {
+                            return (
+                              <span className="block text-xs text-muted-foreground">
+                                Review period expired
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   );
@@ -251,6 +276,18 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
           </>
         )}
       </CardContent>
+
+      {reviewBooking && (
+        <ReviewSubmissionModal
+          open={!!reviewBooking}
+          onOpenChange={(o) => !o && setReviewBooking(null)}
+          bookingId={reviewBooking.id}
+          listingId={reviewBooking.listing_id}
+          revieweeId={reviewBooking.seeker_id}
+          listingTitle={reviewBooking.listings?.title || undefined}
+          onSubmitted={load}
+        />
+      )}
     </Card>
   );
 };
