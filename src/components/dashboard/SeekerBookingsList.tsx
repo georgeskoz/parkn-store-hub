@@ -25,6 +25,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
+import DisputeControl from "@/components/disputes/DisputeControl";
+import { useDisputes } from "@/hooks/useDisputes";
 
 type Booking = {
   id: string;
@@ -76,9 +78,8 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [submitting, setSubmitting] = useState(false);
   const [extBooking, setExtBooking] = useState<Booking | null>(null);
   const [extHours, setExtHours] = useState(1);
-  const [disputeBooking, setDisputeBooking] = useState<Booking | null>(null);
-  const [disputeReason, setDisputeReason] = useState("");
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
 
   const load = async () => {
     setLoading(true);
@@ -189,24 +190,6 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     }
   };
 
-  const submitDispute = async () => {
-    if (!disputeBooking || !disputeReason.trim()) return;
-    setSubmitting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("open-dispute", {
-        body: { bookingId: disputeBooking.id, reason: disputeReason },
-      });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast({ title: "Dispute opened", description: "Our team will review shortly." });
-      setDisputeBooking(null);
-      setDisputeReason("");
-      await load();
-    } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const inWindow = (b: Booking) => {
     const now = Date.now();
@@ -294,15 +277,17 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                         Request extension
                       </Button>
                     )}
-                    {b.escrow_status === "held" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDisputeBooking(b)}
-                      >
-                        Dispute
-                      </Button>
-                    )}
+                    <DisputeControl
+                      bookingId={b.id}
+                      bookingStatus={b.status}
+                      endDate={b.end_date}
+                      userId={userId}
+                      dispute={disputes[b.id] || null}
+                      onSubmitted={() => {
+                        reloadDisputes();
+                        load();
+                      }}
+                    />
                     {CANCELLABLE.includes(b.status) &&
                       b.escrow_status !== "held" && (
                         <Button
@@ -416,36 +401,6 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!disputeBooking} onOpenChange={(o) => !o && setDisputeBooking(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Open a dispute</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Label htmlFor="dr">Reason</Label>
-            <Input
-              id="dr"
-              value={disputeReason}
-              onChange={(e) => setDisputeReason(e.target.value)}
-              placeholder="Briefly describe the issue"
-            />
-            <p className="text-xs text-muted-foreground">
-              Funds will be held until Spotsvault reviews.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDisputeBooking(null)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={submitDispute}
-              disabled={submitting || !disputeReason.trim()}
-            >
-              {submitting ? "Opening…" : "Open dispute"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {reviewBooking && (
         <ReviewSubmissionModal

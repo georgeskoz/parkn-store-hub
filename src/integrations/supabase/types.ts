@@ -246,6 +246,56 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          admin_notes: string | null
+          booking_id: string
+          created_at: string
+          description: string
+          evidence_urls: string[]
+          id: string
+          raised_by: string
+          reason: Database["public"]["Enums"]["dispute_reason"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["dispute_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_id: string
+          created_at?: string
+          description: string
+          evidence_urls?: string[]
+          id?: string
+          raised_by: string
+          reason: Database["public"]["Enums"]["dispute_reason"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["dispute_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_id?: string
+          created_at?: string
+          description?: string
+          evidence_urls?: string[]
+          id?: string
+          raised_by?: string
+          reason?: Database["public"]["Enums"]["dispute_reason"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["dispute_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_availability_slots: {
         Row: {
           created_at: string
@@ -861,6 +911,19 @@ export type Database = {
     }
     Enums: {
       app_role: "provider" | "seeker" | "admin"
+      dispute_reason:
+        | "item_not_as_described"
+        | "no_show"
+        | "property_damage"
+        | "unauthorized_charge"
+        | "safety_concern"
+        | "other"
+      dispute_status:
+        | "open"
+        | "under_review"
+        | "resolved_seeker"
+        | "resolved_host"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -989,6 +1052,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["provider", "seeker", "admin"],
+      dispute_reason: [
+        "item_not_as_described",
+        "no_show",
+        "property_damage",
+        "unauthorized_charge",
+        "safety_concern",
+        "other",
+      ],
+      dispute_status: [
+        "open",
+        "under_review",
+        "resolved_seeker",
+        "resolved_host",
+        "closed",
+      ],
     },
   },
 } as const

@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
+import DisputeControl from "@/components/disputes/DisputeControl";
+import { useDisputes } from "@/hooks/useDisputes";
 
 type Ext = {
   id: string;
@@ -45,6 +47,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
 
   const load = async () => {
     setLoading(true);
@@ -267,6 +270,19 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                           }
                           return null;
                         })()}
+                        <div className="pt-1 flex justify-end">
+                          <DisputeControl
+                            bookingId={b.id}
+                            bookingStatus={b.status}
+                            endDate={b.end_date}
+                            userId={userId}
+                            dispute={disputes[b.id] || null}
+                            onSubmitted={() => {
+                              reloadDisputes();
+                              load();
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
