@@ -277,15 +277,17 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                         Request extension
                       </Button>
                     )}
-                    {b.escrow_status === "held" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDisputeBooking(b)}
-                      >
-                        Dispute
-                      </Button>
-                    )}
+                    <DisputeControl
+                      bookingId={b.id}
+                      bookingStatus={b.status}
+                      endDate={b.end_date}
+                      userId={userId}
+                      dispute={disputes[b.id] || null}
+                      onSubmitted={() => {
+                        reloadDisputes();
+                        load();
+                      }}
+                    />
                     {CANCELLABLE.includes(b.status) &&
                       b.escrow_status !== "held" && (
                         <Button
@@ -399,36 +401,6 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!disputeBooking} onOpenChange={(o) => !o && setDisputeBooking(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Open a dispute</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Label htmlFor="dr">Reason</Label>
-            <Input
-              id="dr"
-              value={disputeReason}
-              onChange={(e) => setDisputeReason(e.target.value)}
-              placeholder="Briefly describe the issue"
-            />
-            <p className="text-xs text-muted-foreground">
-              Funds will be held until Spotsvault reviews.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDisputeBooking(null)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={submitDispute}
-              disabled={submitting || !disputeReason.trim()}
-            >
-              {submitting ? "Opening…" : "Open dispute"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {reviewBooking && (
         <ReviewSubmissionModal
