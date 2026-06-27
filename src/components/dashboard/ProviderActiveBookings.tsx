@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
+import DisputeControl from "@/components/disputes/DisputeControl";
+import { useDisputes } from "@/hooks/useDisputes";
 
 type Ext = {
   id: string;
@@ -45,8 +47,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
-
-  const load = async () => {
+  const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
     setLoading(true);
     const [{ data: bks }, { data: exts }] = await Promise.all([
       supabase
