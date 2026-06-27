@@ -25,6 +25,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Star } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
+import DisputeControl from "@/components/disputes/DisputeControl";
+import { useDisputes } from "@/hooks/useDisputes";
 
 type Booking = {
   id: string;
@@ -76,9 +78,8 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [submitting, setSubmitting] = useState(false);
   const [extBooking, setExtBooking] = useState<Booking | null>(null);
   const [extHours, setExtHours] = useState(1);
-  const [disputeBooking, setDisputeBooking] = useState<Booking | null>(null);
-  const [disputeReason, setDisputeReason] = useState("");
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
 
   const load = async () => {
     setLoading(true);
@@ -189,24 +190,6 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     }
   };
 
-  const submitDispute = async () => {
-    if (!disputeBooking || !disputeReason.trim()) return;
-    setSubmitting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("open-dispute", {
-        body: { bookingId: disputeBooking.id, reason: disputeReason },
-      });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast({ title: "Dispute opened", description: "Our team will review shortly." });
-      setDisputeBooking(null);
-      setDisputeReason("");
-      await load();
-    } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const inWindow = (b: Booking) => {
     const now = Date.now();
