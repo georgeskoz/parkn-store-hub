@@ -48,6 +48,8 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   const [busy, setBusy] = useState<string | null>(null);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
+
+  const load = async () => {
     setLoading(true);
     const [{ data: bks }, { data: exts }] = await Promise.all([
       supabase
