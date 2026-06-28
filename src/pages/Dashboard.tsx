@@ -261,7 +261,7 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
       </div>
       {userId && <ProviderActiveBookings userId={userId} />}
       {userId && <ProviderCancelledBookings userId={userId} />}
-      <MyListings />
+      <MyListings payoutsConnected={!!profile?.stripe_onboarding_complete} />
     </div>
   );
 };

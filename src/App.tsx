@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import HostnameGuard from "@/components/HostnameGuard";
+import MaintenanceBanner from "@/components/MaintenanceBanner";
+import BroadcastBanner from "@/components/notifications/BroadcastBanner";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -40,6 +42,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <HostnameGuard />
+          <MaintenanceBanner />
+          <BroadcastBanner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
