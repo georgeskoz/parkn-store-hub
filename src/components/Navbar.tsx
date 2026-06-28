@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Menu, X, Car, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,6 +46,7 @@ const Navbar = () => {
                     <Badge className="ml-2 h-5 min-w-5 px-1 text-[10px]">{unreadTotal}</Badge>
                   )}
                 </Button>
+                <NotificationBell />
                 <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
                   Profile
                 </Button>
