@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Loader2, CheckCircle } from "lucide-react";
+import { DollarSign, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface StripeConnectCardProps {
@@ -16,6 +17,20 @@ interface StripeConnectCardProps {
 export default function StripeConnectCard({ stripeAccountId, onboardingComplete, onRefresh }: StripeConnectCardProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("stripe") === "connected") {
+      toast({
+        title: "Bank account connected",
+        description: "You're ready to receive payouts!",
+      });
+      const params = new URLSearchParams(searchParams);
+      params.delete("stripe");
+      setSearchParams(params, { replace: true });
+      onRefresh?.();
+    }
+  }, [searchParams, setSearchParams, onRefresh]);
 
   const handleSetup = async () => {
     if (!user) return;
@@ -40,34 +55,40 @@ export default function StripeConnectCard({ stripeAccountId, onboardingComplete,
 
   if (onboardingComplete) {
     return (
-      <Card className="card-shadow border-green-200/50">
+      <Card className="card-shadow border-green-500/40 bg-green-500/5">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            Payouts Active
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            Payouts active
           </CardTitle>
-          <CardDescription>You're ready to receive earnings.</CardDescription>
+          <CardDescription>Your Stripe account is connected and ready to receive earnings.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Badge variant="outline" className="text-green-600 border-green-200">Stripe Connected</Badge>
+        <CardContent className="space-y-3">
+          <Badge variant="outline" className="text-green-700 border-green-300">Stripe Connected</Badge>
+          <Button variant="outline" size="sm" className="w-full" onClick={handleSetup} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Manage Payouts
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="card-shadow">
+    <Card className="card-shadow border-yellow-500/50 bg-yellow-500/5">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-primary" />
-          Set Up Payouts
+          <AlertTriangle className="w-5 h-5 text-yellow-600" />
+          Set up payouts
         </CardTitle>
-        <CardDescription>Connect your Stripe account to receive payments.</CardDescription>
+        <CardDescription>
+          Set up payouts to receive earnings from your bookings.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Button className="w-full" onClick={handleSetup} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          {stripeAccountId ? "Complete Onboarding" : "Connect Stripe Account"}
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <DollarSign className="w-4 h-4 mr-2" />}
+          {stripeAccountId ? "Complete Onboarding" : "Connect Bank Account"}
         </Button>
       </CardContent>
     </Card>

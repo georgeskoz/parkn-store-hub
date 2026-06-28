@@ -39,7 +39,7 @@ const availColor: Record<string, string> = {
   full: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
-export default function MyListings() {
+export default function MyListings({ payoutsConnected = true }: { payoutsConnected?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [listings, setListings] = useState<DbListing[]>([]);
@@ -192,6 +192,11 @@ export default function MyListings() {
                         <Badge variant="outline" className="text-xs">
                           <DollarSign className="w-3 h-3 mr-1" />
                           {price}{label}
+                        </Badge>
+                      )}
+                      {!payoutsConnected && (
+                        <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-700">
+                          Payouts not set up
                         </Badge>
                       )}
                     </div>
