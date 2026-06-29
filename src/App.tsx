@@ -10,6 +10,7 @@ import MaintenanceBanner from "@/components/MaintenanceBanner";
 import BroadcastBanner from "@/components/notifications/BroadcastBanner";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import StorageListings from "./pages/StorageListings";
@@ -47,6 +48,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/storage" element={<StorageListings />} />
             <Route path="/storage/:id" element={<RedirectToListing />} />
             <Route path="/find" element={<FindASpot />} />
