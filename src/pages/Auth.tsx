@@ -20,6 +20,21 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/auth/callback" },
+    });
+    if (error) {
+      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+      setGoogleLoading(false);
+    }
+    // On success the browser is redirected to Google.
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
