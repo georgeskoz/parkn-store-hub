@@ -10,6 +10,7 @@ import MaintenanceBanner from "@/components/MaintenanceBanner";
 import BroadcastBanner from "@/components/notifications/BroadcastBanner";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import StorageListings from "./pages/StorageListings";
