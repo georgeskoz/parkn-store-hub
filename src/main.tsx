@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 
@@ -42,4 +43,8 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error(errorMessage);
 }
 
-createRoot(root).render(<App />);
+createRoot(root).render(
+  <HelmetProvider>
+    <App />
+  </HelmetProvider>
+);
