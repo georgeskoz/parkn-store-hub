@@ -27,6 +27,7 @@ import StarRating from "@/components/reviews/StarRating";
 import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
 import StorageAvailabilityCalendar from "@/components/listing/StorageAvailabilityCalendar";
 import { addMonths } from "date-fns";
+import SEO from "@/components/SEO";
 
 interface DbListing {
   id: string;
@@ -249,8 +250,24 @@ export default function ListingDetail() {
   };
 
 
+  const seoTitle = `${listing.title} — ${[listing.city, listing.region].filter(Boolean).join(", ")} | SpotsVault`;
+  const amenitiesList = (listing.features || []).slice(0, 3).join(", ");
+  const autoDesc = `Book this ${listing.type || ""} ${listing.category || ""} space in ${listing.city}${listing.region ? ", " + listing.region : ""}${price ? ` starting at $${price}${priceLabel}` : ""}.${amenitiesList ? " Features include " + amenitiesList + "." : ""}`.trim();
+  const seoDesc = (listing.description && listing.description.length > 0)
+    ? listing.description.slice(0, 155)
+    : autoDesc.slice(0, 155);
+  const firstPhoto: any = listing.photos?.[0];
+  const seoImage = (typeof firstPhoto === "string" ? firstPhoto : firstPhoto?.url) || undefined;
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        path={`/listing/${listing.id}`}
+        image={seoImage}
+        type="product"
+      />
       <Navbar />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4 mb-6">
