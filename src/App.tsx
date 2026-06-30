@@ -20,6 +20,7 @@ import ParkingSearch from "./pages/ParkingSearch";
 import RedirectToListing from "./pages/RedirectToListing";
 import FindASpot from "./pages/FindASpot";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import BookingIntake from "./pages/BookingIntake";
 import ListYourSpace from "./pages/ListYourSpace";
 import EditListing from "./pages/EditListing";
 import BookingSuccess from "./pages/BookingSuccess";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/listing/:id" element={<ListingDetail />} />
             <Route path="/parking" element={<ParkingSearch />} />
             <Route path="/parking/:id" element={<RedirectToListing />} />
+            <Route path="/booking/intake" element={<BookingIntake />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
             <Route path="/booking/success" element={<BookingSuccess />} />
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />

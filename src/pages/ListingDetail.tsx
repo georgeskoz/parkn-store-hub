@@ -230,7 +230,8 @@ export default function ListingDetail() {
 
   const handleBook = () => {
     if (!startDate || !endDate || !bestRate || !listing) return;
-    navigate(`/booking/confirm`, {
+    const needsIntake = listing.category === "parking" || listing.category === "storage";
+    navigate(needsIntake ? `/booking/intake` : `/booking/confirm`, {
       state: {
         listingType: listing.category,
         listingId: listing.id,
