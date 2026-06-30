@@ -158,6 +158,7 @@ serve(async (req) => {
         commission_amount: platformFeeCents / 100,
         category: listing.category,
         city: listing.city,
+        ...intakeFields,
       })
       .select("id")
       .single();
