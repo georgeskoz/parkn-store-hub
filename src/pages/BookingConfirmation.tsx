@@ -10,6 +10,27 @@ import { CheckCircle, MapPin, Calendar, ArrowLeft, CreditCard, Loader2, Zap, Sea
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import BookingIntakeDetails from "@/components/booking/BookingIntakeDetails";
+
+type IntakePayload =
+  | {
+      kind: "parking";
+      vehicle_plate: string;
+      vehicle_type: string;
+      vehicle_make: string;
+      vehicle_colour: string;
+      drivers_license: string;
+      license_province_state: string;
+    }
+  | {
+      kind: "storage";
+      storage_items: Record<string, number>;
+      storage_notes: string;
+      storage_size: string;
+      dropoff_date: string;
+      dropoff_time: string;
+    }
+  | { kind: "none" };
 
 interface BookingState {
   listingType: string;
@@ -25,6 +46,7 @@ interface BookingState {
   gst: number;
   qst: number;
   total: number;
+  intake?: IntakePayload;
 }
 
 interface SurgePreview {
