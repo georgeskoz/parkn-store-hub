@@ -67,7 +67,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       supabase
         .from("bookings")
         .select(
-          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,listings(title)",
+          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
         )
         .eq("provider_id", userId)
         .neq("status", "cancelled")
