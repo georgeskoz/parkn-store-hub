@@ -120,10 +120,14 @@ export type Database = {
           created_at: string
           dispute_opened_at: string | null
           dispute_reason: string | null
+          drivers_license: string | null
+          dropoff_date: string | null
+          dropoff_time: string | null
           end_date: string
           escrow_status: string
           id: string
           last_overdue_charge_at: string | null
+          license_province_state: string | null
           listing_id: string
           original_amount: number | null
           overdue_charges_total: number
@@ -137,6 +141,9 @@ export type Database = {
           seeker_id: string
           start_date: string
           status: string
+          storage_items: Json | null
+          storage_notes: string | null
+          storage_size: string | null
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           stripe_refund_id: string | null
@@ -144,6 +151,10 @@ export type Database = {
           surge_multiplier: number
           total_amount: number
           updated_at: string
+          vehicle_colour: string | null
+          vehicle_make: string | null
+          vehicle_plate: string | null
+          vehicle_type: string | null
         }
         Insert: {
           auto_release_at?: string | null
@@ -158,10 +169,14 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
+          drivers_license?: string | null
+          dropoff_date?: string | null
+          dropoff_time?: string | null
           end_date: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
+          license_province_state?: string | null
           listing_id: string
           original_amount?: number | null
           overdue_charges_total?: number
@@ -175,6 +190,9 @@ export type Database = {
           seeker_id: string
           start_date: string
           status?: string
+          storage_items?: Json | null
+          storage_notes?: string | null
+          storage_size?: string | null
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
@@ -182,6 +200,10 @@ export type Database = {
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
+          vehicle_colour?: string | null
+          vehicle_make?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
         }
         Update: {
           auto_release_at?: string | null
@@ -196,10 +218,14 @@ export type Database = {
           created_at?: string
           dispute_opened_at?: string | null
           dispute_reason?: string | null
+          drivers_license?: string | null
+          dropoff_date?: string | null
+          dropoff_time?: string | null
           end_date?: string
           escrow_status?: string
           id?: string
           last_overdue_charge_at?: string | null
+          license_province_state?: string | null
           listing_id?: string
           original_amount?: number | null
           overdue_charges_total?: number
@@ -213,6 +239,9 @@ export type Database = {
           seeker_id?: string
           start_date?: string
           status?: string
+          storage_items?: Json | null
+          storage_notes?: string | null
+          storage_size?: string | null
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_refund_id?: string | null
@@ -220,6 +249,10 @@ export type Database = {
           surge_multiplier?: number
           total_amount?: number
           updated_at?: string
+          vehicle_colour?: string | null
+          vehicle_make?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
         }
         Relationships: [
           {
@@ -709,6 +742,7 @@ export type Database = {
           display_name: string | null
           id: string
           phone: string | null
+          postal_code: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean
           updated_at: string
@@ -721,6 +755,7 @@ export type Database = {
           display_name?: string | null
           id: string
           phone?: string | null
+          postal_code?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean
           updated_at?: string
@@ -733,6 +768,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone?: string | null
+          postal_code?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean
           updated_at?: string
@@ -936,10 +972,14 @@ export type Database = {
           created_at: string
           dispute_opened_at: string | null
           dispute_reason: string | null
+          drivers_license: string | null
+          dropoff_date: string | null
+          dropoff_time: string | null
           end_date: string
           escrow_status: string
           id: string
           last_overdue_charge_at: string | null
+          license_province_state: string | null
           listing_id: string
           original_amount: number | null
           overdue_charges_total: number
@@ -953,6 +993,9 @@ export type Database = {
           seeker_id: string
           start_date: string
           status: string
+          storage_items: Json | null
+          storage_notes: string | null
+          storage_size: string | null
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           stripe_refund_id: string | null
@@ -960,6 +1003,10 @@ export type Database = {
           surge_multiplier: number
           total_amount: number
           updated_at: string
+          vehicle_colour: string | null
+          vehicle_make: string | null
+          vehicle_plate: string | null
+          vehicle_type: string | null
         }[]
         SetofOptions: {
           from: "*"

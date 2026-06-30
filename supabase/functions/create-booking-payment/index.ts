@@ -38,10 +38,32 @@ serve(async (req) => {
       rate,
       units,
       listingType,
+      intake,
     } = body;
 
     if (!listingId || !title || !startDate || !endDate || !rate || !units) {
       throw new Error("Missing booking details");
+    }
+
+    // Normalize intake fields (safe against missing/invalid payload)
+    const intakeFields: Record<string, unknown> = {};
+    if (intake && typeof intake === "object") {
+      if (intake.kind === "parking") {
+        intakeFields.vehicle_plate = String(intake.vehicle_plate || "").toUpperCase().slice(0, 8);
+        intakeFields.vehicle_type = String(intake.vehicle_type || "").slice(0, 40);
+        intakeFields.vehicle_make = String(intake.vehicle_make || "").slice(0, 80);
+        intakeFields.vehicle_colour = String(intake.vehicle_colour || "").slice(0, 40);
+        intakeFields.drivers_license = String(intake.drivers_license || "").slice(0, 32);
+        intakeFields.license_province_state = String(intake.license_province_state || "").slice(0, 16);
+      } else if (intake.kind === "storage") {
+        intakeFields.storage_items = intake.storage_items && typeof intake.storage_items === "object"
+          ? intake.storage_items
+          : {};
+        intakeFields.storage_notes = String(intake.storage_notes || "").slice(0, 500);
+        intakeFields.storage_size = String(intake.storage_size || "").slice(0, 20);
+        intakeFields.dropoff_date = intake.dropoff_date || null;
+        intakeFields.dropoff_time = intake.dropoff_time || null;
+      }
     }
 
     const allowedRates = ["hourly", "daily", "weekly", "monthly", "seasonal"];
@@ -136,6 +158,7 @@ serve(async (req) => {
         commission_amount: platformFeeCents / 100,
         category: listing.category,
         city: listing.city,
+        ...intakeFields,
       })
       .select("id")
       .single();

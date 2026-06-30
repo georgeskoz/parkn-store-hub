@@ -8,6 +8,7 @@ import { Loader2, Star } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
+import BookingIntakeDetails, { hasBookingIntake } from "@/components/booking/BookingIntakeDetails";
 
 type Ext = {
   id: string;
@@ -35,6 +36,17 @@ type Booking = {
   completed_by_seeker_at: string | null;
   released_at: string | null;
   updated_at: string | null;
+  vehicle_plate: string | null;
+  vehicle_type: string | null;
+  vehicle_make: string | null;
+  vehicle_colour: string | null;
+  drivers_license: string | null;
+  license_province_state: string | null;
+  storage_items: Record<string, number> | null;
+  storage_notes: string | null;
+  storage_size: string | null;
+  dropoff_date: string | null;
+  dropoff_time: string | null;
   listings?: { title: string | null } | null;
 };
 
@@ -55,7 +67,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       supabase
         .from("bookings")
         .select(
-          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,listings(title)",
+          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
         )
         .eq("provider_id", userId)
         .neq("status", "cancelled")
@@ -204,10 +216,8 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                     !b.completed_by_seeker_at &&
                     Date.now() > new Date(b.end_date).getTime();
                   return (
-                    <div
-                      key={b.id}
-                      className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border"
-                    >
+                    <div key={b.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex-1 min-w-[180px]">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium capitalize">
@@ -284,6 +294,8 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                           />
                         </div>
                       </div>
+                      </div>
+                      {hasBookingIntake(b) && <BookingIntakeDetails booking={b} />}
                     </div>
                   );
                 })}

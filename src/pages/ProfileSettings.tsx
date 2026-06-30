@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { User, Save, Loader2, Upload, Camera, Trash2, AlertTriangle } from "lucide-react";
+import {
+  validateFullName,
+  validatePhone,
+  normalizePhoneE164,
+  validatePostalCode,
+  formatPostalCode,
+} from "@/lib/validators";
 
 export default function ProfileSettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -30,8 +37,22 @@ export default function ProfileSettings() {
     display_name: profile?.display_name || "",
     bio: profile?.bio || "",
     phone: profile?.phone || "",
+    postal_code: (profile as any)?.postal_code || "",
     avatar_url: profile?.avatar_url || "",
   });
+  const [errors, setErrors] = useState<{ display_name?: string; phone?: string; postal_code?: string }>({});
+
+  const runValidation = (f = form) => {
+    const e: typeof errors = {};
+    const en = validateFullName(f.display_name);
+    if (en) e.display_name = en;
+    const ep = validatePhone(f.phone);
+    if (ep) e.phone = ep;
+    const epc = validatePostalCode(f.postal_code);
+    if (epc) e.postal_code = epc;
+    return e;
+  };
+  const hasErrors = (e: typeof errors) => Object.values(e).some(Boolean);
 
   const handleAvatarFile = async (file: File) => {
     if (!user) return;
@@ -66,20 +87,28 @@ export default function ProfileSettings() {
 
   const handleSave = async () => {
     if (!user) return;
+    const e = runValidation();
+    setErrors(e);
+    if (hasErrors(e)) return;
+
     setSaving(true);
+    const phoneE164 = form.phone.trim() ? normalizePhoneE164(form.phone) : null;
+    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code) : null;
     const { error } = await supabase
       .from("profiles")
       .update({
-        display_name: form.display_name,
+        display_name: form.display_name.trim(),
         bio: form.bio,
-        phone: form.phone,
+        phone: phoneE164,
+        postal_code: postal,
         avatar_url: form.avatar_url,
-      })
+      } as any)
       .eq("id", user.id);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      setErrors({});
       await refreshProfile();
       toast({ title: "Profile updated", description: "Your changes have been saved." });
     }
@@ -169,13 +198,19 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="display_name">Display Name</Label>
+              <Label htmlFor="display_name">Full Name *</Label>
               <Input
                 id="display_name"
                 placeholder="Your name"
                 value={form.display_name}
                 onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))}
+                onBlur={() => setErrors(p => ({ ...p, display_name: validateFullName(form.display_name) || undefined }))}
+                className={errors.display_name ? "border-destructive" : ""}
+                maxLength={100}
               />
+              {errors.display_name && (
+                <p className="text-xs text-destructive mt-1">{errors.display_name}</p>
+              )}
             </div>
 
             <div>
@@ -183,10 +218,40 @@ export default function ProfileSettings() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+1 (555) 000-0000"
+                placeholder="(514) 555-1234"
                 value={form.phone}
                 onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                onBlur={() => setErrors(p => ({ ...p, phone: validatePhone(form.phone) || undefined }))}
+                className={errors.phone ? "border-destructive" : ""}
               />
+              {errors.phone ? (
+                <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Format: (514) 555-1234 or +1-514-555-1234. Stored as +15145551234.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="postal_code">Postal Code / ZIP</Label>
+              <Input
+                id="postal_code"
+                placeholder="A1A 1A1 or 12345"
+                value={form.postal_code}
+                onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))}
+                onBlur={() =>
+                  setForm(p => {
+                    const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code) : "";
+                    setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted) || undefined }));
+                    return { ...p, postal_code: formatted };
+                  })
+                }
+                className={errors.postal_code ? "border-destructive" : ""}
+              />
+              {errors.postal_code && (
+                <p className="text-xs text-destructive mt-1">{errors.postal_code}</p>
+              )}
             </div>
 
             <div>
@@ -201,7 +266,7 @@ export default function ProfileSettings() {
             </div>
 
             <div className="flex items-center gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving || hasErrors(runValidation())}>
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Changes
               </Button>

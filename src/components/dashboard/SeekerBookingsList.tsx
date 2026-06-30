@@ -23,10 +23,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Star } from "lucide-react";
+import { Loader2, Star, ChevronDown, ChevronUp } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
+import BookingIntakeDetails, { hasBookingIntake } from "@/components/booking/BookingIntakeDetails";
 
 type Booking = {
   id: string;
@@ -48,6 +49,17 @@ type Booking = {
   completed_by_provider_at: string | null;
   released_at: string | null;
   updated_at: string | null;
+  vehicle_plate: string | null;
+  vehicle_type: string | null;
+  vehicle_make: string | null;
+  vehicle_colour: string | null;
+  drivers_license: string | null;
+  license_province_state: string | null;
+  storage_items: Record<string, number> | null;
+  storage_notes: string | null;
+  storage_size: string | null;
+  dropoff_date: string | null;
+  dropoff_time: string | null;
   listings?: { title: string | null } | null;
 };
 
@@ -80,13 +92,20 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [extHours, setExtHours] = useState(1);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((p) => {
+      const n = new Set(p);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,listings(title)",
+        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
       )
       .eq("seeker_id", userId)
       .order("start_date", { ascending: false });
@@ -215,10 +234,8 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         ) : (
           <div className="space-y-3">
             {bookings.map((b) => (
-              <div
-                key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border"
-              >
+              <div key={b.id} className="rounded-lg border p-3 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex-1 min-w-[180px]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium capitalize">{b.category || "booking"}</span>
@@ -326,6 +343,23 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                   </div>
 
                 </div>
+                </div>
+                {hasBookingIntake(b) && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(b.id)}
+                      className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                    >
+                      {expanded.has(b.id) ? (
+                        <><ChevronUp className="w-3 h-3" /> Hide details</>
+                      ) : (
+                        <><ChevronDown className="w-3 h-3" /> Show {b.category === "parking" ? "vehicle" : "storage"} details</>
+                      )}
+                    </button>
+                    {expanded.has(b.id) && <BookingIntakeDetails booking={b} className="mt-2" />}
+                  </div>
+                )}
               </div>
             ))}
           </div>
