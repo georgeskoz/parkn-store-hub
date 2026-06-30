@@ -222,6 +222,16 @@ export default function BookingConfirmation() {
               <div className="flex justify-between"><span>Provider payout (90%)</span><span>${providerPayout.toFixed(2)}</span></div>
             </div>
 
+            {state.intake && state.intake.kind !== "none" && (
+              <BookingIntakeDetails
+                booking={{
+                  category: state.listingType,
+                  ...(state.intake as any),
+                }}
+              />
+            )}
+
+
             <Button className="w-full" size="lg" onClick={handlePay} disabled={paying}>
               {paying ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
