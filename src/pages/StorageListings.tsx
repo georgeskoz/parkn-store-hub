@@ -65,12 +65,15 @@ export default function StorageListings() {
   }, [listings, when]);
 
   const filtered = useMemo(() => {
-    const q = (search || "").toLowerCase();
+    const q = (search || "").trim().toLowerCase();
     const results = listings.filter((l) => {
       const title = (l?.title || "").toLowerCase();
       const desc = (l?.description || "").toLowerCase();
-      const matchesSearch = !q || title.includes(q) || desc.includes(q);
-      const matchesCity = city === "all" || l.city === city;
+      const cityV = (l?.city || "").toLowerCase();
+      const region = (l?.region || "").toLowerCase();
+      const address = (l?.address || "").toLowerCase();
+      const matchesSearch = !q || title.includes(q) || desc.includes(q) || cityV.includes(q) || region.includes(q) || address.includes(q);
+      const matchesCity = city === "all" || (l?.city || "").toLowerCase() === city.toLowerCase();
       const matchesType = type === "all" || (l?.type || "").toLowerCase() === type;
       const matchesAvail = !availableIds || availableIds.has(l.id);
       return matchesSearch && matchesCity && matchesType && matchesAvail;
