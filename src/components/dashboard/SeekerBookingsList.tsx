@@ -234,10 +234,8 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         ) : (
           <div className="space-y-3">
             {bookings.map((b) => (
-              <div
-                key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border"
-              >
+              <div key={b.id} className="rounded-lg border p-3 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex-1 min-w-[180px]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium capitalize">{b.category || "booking"}</span>
