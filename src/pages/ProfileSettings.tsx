@@ -87,20 +87,28 @@ export default function ProfileSettings() {
 
   const handleSave = async () => {
     if (!user) return;
+    const e = runValidation();
+    setErrors(e);
+    if (hasErrors(e)) return;
+
     setSaving(true);
+    const phoneE164 = form.phone.trim() ? normalizePhoneE164(form.phone) : null;
+    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code) : null;
     const { error } = await supabase
       .from("profiles")
       .update({
-        display_name: form.display_name,
+        display_name: form.display_name.trim(),
         bio: form.bio,
-        phone: form.phone,
+        phone: phoneE164,
+        postal_code: postal,
         avatar_url: form.avatar_url,
-      })
+      } as any)
       .eq("id", user.id);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      setErrors({});
       await refreshProfile();
       toast({ title: "Profile updated", description: "Your changes have been saved." });
     }
