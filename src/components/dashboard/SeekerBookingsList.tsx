@@ -23,10 +23,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Star } from "lucide-react";
+import { Loader2, Star, ChevronDown, ChevronUp } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
+import BookingIntakeDetails, { hasBookingIntake } from "@/components/booking/BookingIntakeDetails";
 
 type Booking = {
   id: string;
@@ -48,6 +49,17 @@ type Booking = {
   completed_by_provider_at: string | null;
   released_at: string | null;
   updated_at: string | null;
+  vehicle_plate: string | null;
+  vehicle_type: string | null;
+  vehicle_make: string | null;
+  vehicle_colour: string | null;
+  drivers_license: string | null;
+  license_province_state: string | null;
+  storage_items: Record<string, number> | null;
+  storage_notes: string | null;
+  storage_size: string | null;
+  dropoff_date: string | null;
+  dropoff_time: string | null;
   listings?: { title: string | null } | null;
 };
 
