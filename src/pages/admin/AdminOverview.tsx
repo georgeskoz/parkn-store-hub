@@ -19,7 +19,7 @@ const AdminOverview = () => {
       const [profilesRes, listingsRes, bookingsRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("listings").select("*"),
-        supabase.from("bookings").select("*"),
+        supabase.from("bookings").select("id,listing_id,total_amount,commission_amount,status,city,category,created_at"),
       ]);
 
       const listings = listingsRes.data || [];

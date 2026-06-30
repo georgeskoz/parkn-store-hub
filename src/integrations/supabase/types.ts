@@ -921,6 +921,53 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_bookings: {
+        Args: never
+        Returns: {
+          auto_release_at: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          category: string | null
+          city: string | null
+          commission_amount: number
+          commission_rate: number
+          completed_by_provider_at: string | null
+          completed_by_seeker_at: string | null
+          created_at: string
+          dispute_opened_at: string | null
+          dispute_reason: string | null
+          end_date: string
+          escrow_status: string
+          id: string
+          last_overdue_charge_at: string | null
+          listing_id: string
+          original_amount: number | null
+          overdue_charges_total: number
+          payment_intent_id: string | null
+          payout_amount: number | null
+          provider_id: string
+          refund_amount: number
+          refund_status: string | null
+          released_at: string | null
+          released_transfer_id: string | null
+          seeker_id: string
+          start_date: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_payment_method_id: string | null
+          stripe_refund_id: string | null
+          stripe_session_id: string | null
+          surge_multiplier: number
+          total_amount: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_available_slots:
         | { Args: { _check_date: string; _listing_id: string }; Returns: Json }
         | {

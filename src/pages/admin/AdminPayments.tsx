@@ -35,7 +35,7 @@ const AdminPayments = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.rpc("admin_list_bookings");
     setBookings((data || []) as Booking[]);
     setLoading(false);
   };
