@@ -72,9 +72,12 @@ export default function ParkingSearch() {
         if (q) {
           const title = (l?.title || "").toLowerCase();
           const desc = (l?.description || "").toLowerCase();
-          if (!title.includes(q) && !desc.includes(q)) return false;
+          const cityV = (l?.city || "").toLowerCase();
+          const region = (l?.region || "").toLowerCase();
+          const address = (l?.address || "").toLowerCase();
+          if (!title.includes(q) && !desc.includes(q) && !cityV.includes(q) && !region.includes(q) && !address.includes(q)) return false;
         }
-        if (city !== "all" && l.city !== city) return false;
+        if (city !== "all" && (l?.city || "").toLowerCase() !== city.toLowerCase()) return false;
         if (type !== "all" && (l?.type || "").toLowerCase() !== type) return false;
         if (availableIds && !availableIds.has(l.id)) return false;
         return true;

@@ -122,9 +122,15 @@ export default function FindASpot() {
       });
     }
     if (city !== "all") items = items.filter((l) => l.city === city);
-    if (search) {
-      const q = (search || "").toLowerCase();
-      items = items.filter((l) => (l?.title || "").toLowerCase().includes(q) || (l?.description || "").toLowerCase().includes(q));
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      items = items.filter((l) =>
+        (l?.title || "").toLowerCase().includes(q) ||
+        (l?.description || "").toLowerCase().includes(q) ||
+        (l?.city || "").toLowerCase().includes(q) ||
+        (l?.region || "").toLowerCase().includes(q) ||
+        (l?.address || "").toLowerCase().includes(q)
+      );
     }
     if (destinationCoords) {
       items = items.filter((l) => l.distance !== undefined && l.distance <= maxDistanceKm);
