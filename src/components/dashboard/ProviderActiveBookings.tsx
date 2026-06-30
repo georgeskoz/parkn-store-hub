@@ -294,6 +294,8 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                           />
                         </div>
                       </div>
+                      </div>
+                      {hasBookingIntake(b) && <BookingIntakeDetails booking={b} />}
                     </div>
                   );
                 })}
