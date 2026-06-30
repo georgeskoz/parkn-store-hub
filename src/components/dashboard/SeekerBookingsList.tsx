@@ -92,13 +92,20 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [extHours, setExtHours] = useState(1);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((p) => {
+      const n = new Set(p);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,listings(title)",
+        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
       )
       .eq("seeker_id", userId)
       .order("start_date", { ascending: false });
