@@ -343,6 +343,23 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                   </div>
 
                 </div>
+                </div>
+                {hasBookingIntake(b) && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(b.id)}
+                      className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                    >
+                      {expanded.has(b.id) ? (
+                        <><ChevronUp className="w-3 h-3" /> Hide details</>
+                      ) : (
+                        <><ChevronDown className="w-3 h-3" /> Show {b.category === "parking" ? "vehicle" : "storage"} details</>
+                      )}
+                    </button>
+                    {expanded.has(b.id) && <BookingIntakeDetails booking={b} className="mt-2" />}
+                  </div>
+                )}
               </div>
             ))}
           </div>
