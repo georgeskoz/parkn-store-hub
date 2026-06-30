@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { User, Save, Loader2, Upload, Camera, Trash2, AlertTriangle } from "lucide-react";
+import {
+  validateFullName,
+  validatePhone,
+  normalizePhoneE164,
+  validatePostalCode,
+  formatPostalCode,
+} from "@/lib/validators";
 
 export default function ProfileSettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -30,8 +37,22 @@ export default function ProfileSettings() {
     display_name: profile?.display_name || "",
     bio: profile?.bio || "",
     phone: profile?.phone || "",
+    postal_code: (profile as any)?.postal_code || "",
     avatar_url: profile?.avatar_url || "",
   });
+  const [errors, setErrors] = useState<{ display_name?: string; phone?: string; postal_code?: string }>({});
+
+  const runValidation = (f = form) => {
+    const e: typeof errors = {};
+    const en = validateFullName(f.display_name);
+    if (en) e.display_name = en;
+    const ep = validatePhone(f.phone);
+    if (ep) e.phone = ep;
+    const epc = validatePostalCode(f.postal_code);
+    if (epc) e.postal_code = epc;
+    return e;
+  };
+  const hasErrors = (e: typeof errors) => Object.values(e).some(Boolean);
 
   const handleAvatarFile = async (file: File) => {
     if (!user) return;
