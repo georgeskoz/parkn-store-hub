@@ -1,0 +1,2 @@
+CREATE POLICY "Users can insert own seeker/provider role" ON public.user_roles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id AND role IN ('seeker'::app_role, 'provider'::app_role));
+CREATE POLICY "Users can delete own seeker/provider role" ON public.user_roles FOR DELETE TO authenticated USING (auth.uid() = user_id AND role IN ('seeker'::app_role, 'provider'::app_role));
