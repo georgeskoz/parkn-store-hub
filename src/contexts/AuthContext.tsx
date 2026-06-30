@@ -129,7 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addRole = async (role: AppRole) => {
     if (!user) return;
-    await supabase.from("user_roles").insert({ user_id: user.id, role });
+    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
+    if (error && (error as any).code !== "23505") throw error;
     await fetchRoles(user.id);
   };
 

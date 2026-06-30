@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Car, Warehouse, LogOut, User, Plus, ArrowLeftRight, MessageSquare, LayoutDashboard, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MyListings from "@/components/dashboard/MyListings";
 import StripeConnectCard from "@/components/dashboard/StripeConnectCard";
@@ -25,18 +25,33 @@ type ViewMode = "provider" | "seeker";
 const Dashboard = () => {
   const { user, profile, roles, signOut, addRole } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { total: unreadTotal } = useUnreadMessages();
   const [viewMode, setViewMode] = useState<ViewMode>(
     roles.includes("provider") ? "provider" : "seeker"
   );
+  const [savingRole, setSavingRole] = useState<"provider" | "seeker" | null>(null);
 
   const handleAddRole = async (role: "provider" | "seeker") => {
-    await addRole(role);
-    setViewMode(role);
-    toast({
-      title: `${role === "provider" ? "Provider" : "Seeker"} role activated`,
-      description: `You can now ${role === "provider" ? "list spaces" : "search and book spaces"}.`,
-    });
+    if (savingRole) return;
+    setSavingRole(role);
+    try {
+      await addRole(role);
+      setViewMode(role);
+      toast({
+        title: `${role === "provider" ? "Provider" : "Seeker"} role activated`,
+        description: `You can now ${role === "provider" ? "list spaces" : "search and book spaces"}.`,
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (e: any) {
+      toast({
+        title: "Could not set role",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingRole(null);
+    }
   };
 
   const hasRole = (role: "provider" | "seeker") => roles.includes(role);
