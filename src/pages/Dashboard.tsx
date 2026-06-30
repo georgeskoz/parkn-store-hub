@@ -96,30 +96,46 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spotsvault!</h1>
             <p className="text-muted-foreground mb-8">How would you like to use Spotsvault? You can always add the other role later.</p>
             <div className="grid md:grid-cols-2 gap-4">
-              <Card
-                className="cursor-pointer card-shadow hover:card-shadow-hover transition-shadow border-2 hover:border-primary"
+              <button
+                type="button"
+                disabled={savingRole !== null}
                 onClick={() => handleAddRole("seeker")}
+                className="text-left disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <CardHeader className="text-center">
-                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <Car className="w-7 h-7 text-primary" />
-                  </div>
-                  <CardTitle>I'm looking for spaces</CardTitle>
-                  <CardDescription>Find and book parking spots or storage near you</CardDescription>
-                </CardHeader>
-              </Card>
-              <Card
-                className="cursor-pointer card-shadow hover:card-shadow-hover transition-shadow border-2 hover:border-accent"
+                <Card className="cursor-pointer card-shadow hover:card-shadow-hover transition-shadow border-2 hover:border-primary">
+                  <CardHeader className="text-center">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                      {savingRole === "seeker" ? (
+                        <Loader2 className="w-7 h-7 text-primary animate-spin" />
+                      ) : (
+                        <Car className="w-7 h-7 text-primary" />
+                      )}
+                    </div>
+                    <CardTitle>I'm looking for spaces</CardTitle>
+                    <CardDescription>Find and book parking spots or storage near you</CardDescription>
+                  </CardHeader>
+                </Card>
+              </button>
+              <button
+                type="button"
+                disabled={savingRole !== null}
                 onClick={() => handleAddRole("provider")}
+                className="text-left disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <CardHeader className="text-center">
-                  <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2">
-                    <Warehouse className="w-7 h-7 text-accent" />
-                  </div>
-                  <CardTitle>I have spaces to list</CardTitle>
-                  <CardDescription>Rent out your parking spots or storage spaces</CardDescription>
-                </CardHeader>
-              </Card>
+                <Card className="cursor-pointer card-shadow hover:card-shadow-hover transition-shadow border-2 hover:border-accent">
+                  <CardHeader className="text-center">
+                    <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2">
+                      {savingRole === "provider" ? (
+                        <Loader2 className="w-7 h-7 text-accent animate-spin" />
+                      ) : (
+                        <Warehouse className="w-7 h-7 text-accent" />
+                      )}
+                    </div>
+                    <CardTitle>I have spaces to list</CardTitle>
+                    <CardDescription>Rent out your parking spots or storage spaces</CardDescription>
+                  </CardHeader>
+                </Card>
+              </button>
             </div>
           </div>
         )}
