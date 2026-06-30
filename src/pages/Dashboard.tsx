@@ -44,6 +44,7 @@ const Dashboard = () => {
       });
       navigate("/dashboard", { replace: true });
     } catch (e: any) {
+      console.error("Failed to set role:", e);
       toast({
         title: "Could not set role",
         description: e?.message || "Please try again.",
