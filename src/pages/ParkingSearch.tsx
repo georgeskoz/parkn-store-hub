@@ -143,7 +143,7 @@ export default function ParkingSearch() {
   }, [listings, search, city, type, pricingMode, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
-  const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
+  const clearAll = () => { setCity("all"); setType("all"); setSearchInput(""); setSearch(""); };
 
   return (
     <div className="min-h-screen bg-background">
