@@ -27,7 +27,10 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
 
 export default function FindASpot() {
   const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
+  const runSearch = () => setSearch(searchInput);
   const [category, setCategory] = useState<Category>("all");
   const [city, setCity] = useState("all");
   const [destination, setDestination] = useState("");
