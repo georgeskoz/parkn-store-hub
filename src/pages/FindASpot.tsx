@@ -63,7 +63,7 @@ export default function FindASpot() {
 
   useEffect(() => {
     const q = searchParams.get("q");
-    if (q !== null) setSearch(q);
+    if (q !== null) { setSearchInput(q); setSearch(q); }
   }, [searchParams]);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
