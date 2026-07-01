@@ -30,4 +30,34 @@
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
+  <url>
+    <loc>https://spotsvault.com/listing/b4891082-7b4a-4e31-9ca8-ed0a297bc595</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://spotsvault.com/listing/74ac355a-2021-4a31-b715-30becaed48f9</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://spotsvault.com/listing/d60e38c4-5a3d-47ae-96f3-0e62d27572d8</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://spotsvault.com/listing/bc6aea9c-db2a-4f0f-b3ef-3bfda432482e</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://spotsvault.com/listing/4404ad1f-0514-44e6-b578-5b707904a852</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>

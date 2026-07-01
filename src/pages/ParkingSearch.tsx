@@ -17,6 +17,29 @@ const ListingsMap = lazy(() => import("@/components/listing/ListingsMap"));
 type PricingMode = "hourly" | "daily" | "monthly";
 const parkingTypes = ["outdoor", "indoor", "covered", "underground"] as const;
 
+const hasSelectedParkingDate = (value: DateTimeValue) => Boolean(value?.date);
+
+const buildParkingListingsDebugQuery = (location: string, hasDate: boolean) => {
+  const q = location.trim();
+  const filters = ["status = 'approved'"];
+  const restFilters = ["status=eq.approved"];
+
+  if (q) {
+    filters.push(`city ilike '%${q}%' OR region ilike '%${q}%' OR address ilike '%${q}%'`);
+    restFilters.push(`or=(city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%)`);
+  }
+
+  return {
+    table: "listings",
+    select: "*",
+    supabaseJs: `supabase.from("listings").select("*").eq("status", "approved")${q ? `.or("city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%")` : ""}`,
+    restPath: `/rest/v1/listings?select=*&${restFilters.join("&")}`,
+    filters,
+    availabilityFilter: hasDate ? "applied after listings query" : "skipped - no date selected",
+    note: "No category filter is sent to the database; parking/storage matching is applied client-side against category/type when present.",
+  };
+};
+
 export default function ParkingSearch() {
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
@@ -30,27 +53,53 @@ export default function ParkingSearch() {
 
   useEffect(() => {
     const fetchListings = async () => {
+      const q = (search || "").trim();
+      const hasDate = hasSelectedParkingDate(when);
+      const shouldDebugOttawa = !hasDate && q.toLowerCase() === "ottawa";
+
       try {
-        const { data } = await supabase
+        let query = supabase
           .from("listings")
           .select("*")
-          .eq("status", "approved")
-          .or("category.eq.parking,type.eq.parking");
+          .eq("status", "approved");
+
+        if (q) {
+          query = query.or(`city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%`);
+        }
+
+        if (shouldDebugOttawa) {
+          console.log("[ParkingSearch] Supabase query", buildParkingListingsDebugQuery(q, hasDate));
+        }
+
+        const { data, error } = await query;
+
+        if (shouldDebugOttawa) {
+          console.log("[ParkingSearch] Raw Supabase listings results", data || []);
+          console.log("[ParkingSearch] Raw Supabase listings results JSON", JSON.stringify(data || [], null, 2));
+        }
+
+        if (error) {
+          console.error("[ParkingSearch] Supabase listings query failed", error);
+          setListings([]);
+          return;
+        }
+
         const all = (data as any[]) || [];
         const parkingOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
           const typ = (l?.type || "").toString().toLowerCase();
-          return cat === "parking" || typ === "parking";
+          return cat === "parking" || typ === "parking" || (!cat && !typ);
         });
         setListings(parkingOnly);
-      } catch {
+      } catch (error) {
+        console.error("[ParkingSearch] Unexpected listings fetch failure", error);
         setListings([]);
       } finally {
         setLoading(false);
       }
     };
     fetchListings();
-  }, []);
+  }, [search, when]);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
 
