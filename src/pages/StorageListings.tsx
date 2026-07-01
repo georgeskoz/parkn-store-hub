@@ -33,16 +33,16 @@ export default function StorageListings() {
         const { data } = await supabase
           .from("listings")
           .select("*")
-          .eq("status", "approved")
-          .or("category.eq.storage,type.eq.storage");
+          .eq("status", "approved");
         const all = (data as any[]) || [];
         const storageOnly = all.filter((l) => {
           const cat = (l?.category || "").toString().toLowerCase();
           const typ = (l?.type || "").toString().toLowerCase();
-          return cat === "storage" || typ === "storage";
+          return cat === "storage" || typ === "storage" || (!cat && !typ);
         });
         setListings(storageOnly);
-      } catch {
+      } catch (error) {
+        console.error("[StorageListings] Supabase listings query failed", error);
         setListings([]);
       } finally {
         setLoading(false);
