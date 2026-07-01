@@ -167,20 +167,22 @@ export default function FindASpot() {
 
         <section className="container mx-auto px-4 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search listings…"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
-                className="pl-9"
-              />
+            <div className="flex items-stretch gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-md">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search listings…"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                  className="pl-9 h-10"
+                />
+              </div>
+              <Button onClick={runSearch} disabled={loading} variant="accent" className="shrink-0 h-10 px-6 gap-1.5">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Search
+              </Button>
             </div>
-            <Button onClick={runSearch} disabled={loading} className="gap-1.5">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Search
-            </Button>
             <Select value={city} onValueChange={setCity}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="City" /></SelectTrigger>
               <SelectContent>
