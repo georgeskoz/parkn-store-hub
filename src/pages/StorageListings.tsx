@@ -105,24 +105,32 @@ export default function StorageListings() {
           <p className="text-muted-foreground">Browse verified storage spaces across Quebec</p>
         </section>
 
+        <section className="container mx-auto px-4 mb-4">
+          <div className="flex gap-2 w-full">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by city or address..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                className="w-full border border-input bg-background rounded-lg pl-9 pr-4 py-2 h-11 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <button
+              onClick={runSearch}
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 h-11 rounded-lg font-medium whitespace-nowrap inline-flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+        </section>
+
         <section className="container mx-auto px-4 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex items-stretch gap-2 w-full sm:w-auto sm:flex-1 sm:max-w-md">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search listings…"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
-                  className="pl-9 h-10"
-                />
-              </div>
-              <Button onClick={runSearch} disabled={loading} variant="accent" className="shrink-0 h-10 px-6 gap-1.5">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Search
-              </Button>
-            </div>
             <Select value={city} onValueChange={setCity}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="City" /></SelectTrigger>
               <SelectContent>
