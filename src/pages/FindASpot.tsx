@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, Navigation, Car, Warehouse, X } from "lucide-react";
+import { Search, MapPin, Navigation, Car, Warehouse, X, Loader2 } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
