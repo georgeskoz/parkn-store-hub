@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Clock, MapPin } from "lucide-react";
+import { Search, Clock, MapPin, Loader2 } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
@@ -44,15 +44,20 @@ export default function ParkingSearch() {
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [pricingMode, setPricingMode] = useState<PricingMode>("daily");
   const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "parking"));
   const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
+  const runSearch = () => setSearch(searchInput);
+
   useEffect(() => {
     const fetchListings = async () => {
+      setLoading(true);
       const q = (search || "").trim();
       const hasDate = hasSelectedParkingDate(when);
       const shouldDebugOttawa = !hasDate && q.toLowerCase() === "ottawa";
@@ -75,7 +80,6 @@ export default function ParkingSearch() {
 
         if (shouldDebugOttawa) {
           console.log("[ParkingSearch] Raw Supabase listings results", data || []);
-          console.log("[ParkingSearch] Raw Supabase listings results JSON", JSON.stringify(data || [], null, 2));
         }
 
         if (error) {
@@ -139,7 +143,7 @@ export default function ParkingSearch() {
   }, [listings, search, city, type, pricingMode, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
-  const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
+  const clearAll = () => { setCity("all"); setType("all"); setSearchInput(""); setSearch(""); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,8 +158,18 @@ export default function ParkingSearch() {
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search parking…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input
+                placeholder="Search parking…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                className="pl-9"
+              />
             </div>
+            <Button onClick={runSearch} disabled={loading} className="gap-1.5">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Search
+            </Button>
             <Select value={city} onValueChange={setCity}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="City" /></SelectTrigger>
               <SelectContent>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, Navigation, Car, Warehouse, X } from "lucide-react";
+import { Search, MapPin, Navigation, Car, Warehouse, X, Loader2 } from "lucide-react";
 import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
@@ -27,7 +27,10 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
 
 export default function FindASpot() {
   const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
+  const runSearch = () => setSearch(searchInput);
   const [category, setCategory] = useState<Category>("all");
   const [city, setCity] = useState("all");
   const [destination, setDestination] = useState("");
@@ -60,7 +63,7 @@ export default function FindASpot() {
 
   useEffect(() => {
     const q = searchParams.get("q");
-    if (q !== null) setSearch(q);
+    if (q !== null) { setSearchInput(q); setSearch(q); }
   }, [searchParams]);
 
   const cities = useMemo(() => Array.from(new Set(listings.map((l) => l.city).filter(Boolean))).sort(), [listings]);
@@ -141,7 +144,7 @@ export default function FindASpot() {
   }, [listings, search, category, city, destinationCoords, availableIds]);
 
   const activeFilters = [city !== "all" && city].filter(Boolean) as string[];
-  const clearAll = () => { setCity("all"); setSearch(""); clearLocation(); };
+  const clearAll = () => { setCity("all"); setSearchInput(""); setSearch(""); clearLocation(); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,8 +169,18 @@ export default function FindASpot() {
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search listings…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input
+                placeholder="Search listings…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                className="pl-9"
+              />
             </div>
+            <Button onClick={runSearch} disabled={loading} className="gap-1.5">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Search
+            </Button>
             <Select value={city} onValueChange={setCity}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="City" /></SelectTrigger>
               <SelectContent>

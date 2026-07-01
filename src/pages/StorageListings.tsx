@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal, X, Warehouse } from "lucide-react";
+import { Search, SlidersHorizontal, X, Warehouse, Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
 import { filterStorageAvailable } from "@/lib/availabilityFilter";
@@ -19,13 +19,17 @@ export default function StorageListings() {
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [duration, setDuration] = useState<Duration>("monthly");
   const [sortBy, setSortBy] = useState<"price" | "size">("price");
   const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "storage"));
   const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
+
+  const runSearch = () => setSearch(searchInput);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -90,7 +94,7 @@ export default function StorageListings() {
   }, [listings, search, city, type, duration, sortBy, availableIds]);
 
   const activeFilters = [city !== "all" && city, type !== "all" && type].filter(Boolean) as string[];
-  const clearAll = () => { setCity("all"); setType("all"); setSearch(""); };
+  const clearAll = () => { setCity("all"); setType("all"); setSearchInput(""); setSearch(""); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,8 +109,18 @@ export default function StorageListings() {
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search listings…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input
+                placeholder="Search listings…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                className="pl-9"
+              />
             </div>
+            <Button onClick={runSearch} disabled={loading} className="gap-1.5">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Search
+            </Button>
             <Select value={city} onValueChange={setCity}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="City" /></SelectTrigger>
               <SelectContent>
