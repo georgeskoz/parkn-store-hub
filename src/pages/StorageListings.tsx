@@ -19,13 +19,17 @@ export default function StorageListings() {
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [duration, setDuration] = useState<Duration>("monthly");
   const [sortBy, setSortBy] = useState<"price" | "size">("price");
   const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "storage"));
   const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
+
+  const runSearch = () => setSearch(searchInput);
 
   useEffect(() => {
     const fetchListings = async () => {
