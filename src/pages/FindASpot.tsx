@@ -144,7 +144,7 @@ export default function FindASpot() {
   }, [listings, search, category, city, destinationCoords, availableIds]);
 
   const activeFilters = [city !== "all" && city].filter(Boolean) as string[];
-  const clearAll = () => { setCity("all"); setSearch(""); clearLocation(); };
+  const clearAll = () => { setCity("all"); setSearchInput(""); setSearch(""); clearLocation(); };
 
   return (
     <div className="min-h-screen bg-background">
