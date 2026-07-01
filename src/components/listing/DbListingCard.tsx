@@ -49,8 +49,24 @@ export default function DbListingCard({ listing, distance }: Props) {
   const category = (listing.category || "").toLowerCase();
   const type = (listing.type || "").toLowerCase();
   const isParking = category === "parking" || type === "parking";
-  const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
-  const priceLabel = listing.price_monthly ? "/mo" : listing.price_daily ? "/day" : listing.price_hourly ? "/hr" : "";
+  const l: any = listing;
+  const hourly = listing.price_hourly ?? l.hourly ?? null;
+  const daily = listing.price_daily ?? l.daily ?? null;
+  const weekly = listing.price_weekly ?? l.weekly ?? null;
+  const monthly = listing.price_monthly ?? l.monthly ?? null;
+  let price: number | null = null;
+  let priceLabel = "";
+  if (isParking) {
+    if (hourly != null) { price = hourly; priceLabel = "/hr"; }
+    else if (daily != null) { price = daily; priceLabel = "/day"; }
+    else if (weekly != null) { price = weekly; priceLabel = "/wk"; }
+    else if (monthly != null) { price = monthly; priceLabel = "/mo"; }
+  } else {
+    if (monthly != null) { price = monthly; priceLabel = "/mo"; }
+    else if (weekly != null) { price = weekly; priceLabel = "/wk"; }
+    else if (daily != null) { price = daily; priceLabel = "/day"; }
+    else if (hourly != null) { price = hourly; priceLabel = "/hr"; }
+  }
   const photos = Array.isArray(listing.photos) ? listing.photos : [];
   const firstPhoto = photos?.[0];
   const coverPhoto = (typeof firstPhoto === "string" ? firstPhoto : firstPhoto?.url) || (isParking ? parkingCover : storageCover);
