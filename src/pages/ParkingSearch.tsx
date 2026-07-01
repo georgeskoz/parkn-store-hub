@@ -44,15 +44,20 @@ export default function ParkingSearch() {
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const initialQ = searchParams.get("q") || "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
   const [city, setCity] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const [pricingMode, setPricingMode] = useState<PricingMode>("daily");
   const [when, setWhen] = useState<DateTimeValue>(() => readDateTimeFromParams(searchParams, "parking"));
   const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
 
+  const runSearch = () => setSearch(searchInput);
+
   useEffect(() => {
     const fetchListings = async () => {
+      setLoading(true);
       const q = (search || "").trim();
       const hasDate = hasSelectedParkingDate(when);
       const shouldDebugOttawa = !hasDate && q.toLowerCase() === "ottawa";
@@ -75,7 +80,6 @@ export default function ParkingSearch() {
 
         if (shouldDebugOttawa) {
           console.log("[ParkingSearch] Raw Supabase listings results", data || []);
-          console.log("[ParkingSearch] Raw Supabase listings results JSON", JSON.stringify(data || [], null, 2));
         }
 
         if (error) {
