@@ -30,8 +30,10 @@ function timeToMin(t: string) {
   return h * 60 + (m || 0);
 }
 
-/** Returns the subset of listingIds that are available for the given parking window. */
-export async function filterParkingAvailable(listingIds: string[], win: ParkingWindow): Promise<Set<string>> {
+/** Returns the subset of listingIds that are available for the given parking window.
+ *  If no date is provided, returns null (caller should skip filtering entirely). */
+export async function filterParkingAvailable(listingIds: string[], win: ParkingWindow): Promise<Set<string> | null> {
+  if (!win?.date) return null;
   const { slots, blocks } = await fetchAvailability(listingIds);
   const slotsBy = groupBy(slots, (s) => s.listing_id);
   const blocksBy = groupBy(blocks, (b) => b.listing_id);
@@ -44,11 +46,13 @@ export async function filterParkingAvailable(listingIds: string[], win: ParkingW
   for (const id of listingIds) {
     const blocked = (blocksBy[id] || []).some((b) => b.blocked_date === win.date);
     if (blocked) continue;
-    const daySlots = (slotsBy[id] || []).filter((s) => s.day_of_week === dow);
-    // If no recurring slots configured at all, treat as always available.
-    const hasAny = (slotsBy[id] || []).length > 0;
-    if (hasAny && daySlots.length === 0) continue;
-    if (startMin !== null && endMin !== null && hasAny) {
+    const listingSlots = slotsBy[id] || [];
+    const hasAny = listingSlots.length > 0;
+    // Listings with no recurring slots are treated as available anytime.
+    if (!hasAny) { ok.add(id); continue; }
+    const daySlots = listingSlots.filter((s) => s.day_of_week === dow);
+    if (daySlots.length === 0) continue;
+    if (startMin !== null && endMin !== null) {
       const covered = daySlots.some(
         (s) => timeToMin(s.start_time) <= startMin && timeToMin(s.end_time) >= endMin,
       );
@@ -59,8 +63,10 @@ export async function filterParkingAvailable(listingIds: string[], win: ParkingW
   return ok;
 }
 
-/** Returns the subset of listingIds available across the full storage date range. */
-export async function filterStorageAvailable(listingIds: string[], win: StorageWindow): Promise<Set<string>> {
+/** Returns the subset of listingIds available across the full storage date range.
+ *  If check-in or check-out is missing, returns null (caller should skip filtering). */
+export async function filterStorageAvailable(listingIds: string[], win: StorageWindow): Promise<Set<string> | null> {
+  if (!win?.checkin || !win?.checkout) return null;
   const { slots, blocks } = await fetchAvailability(listingIds);
   const slotsBy = groupBy(slots, (s) => s.listing_id);
   const blocksBy = groupBy(blocks, (b) => b.listing_id);
@@ -79,9 +85,11 @@ export async function filterStorageAvailable(listingIds: string[], win: StorageW
     let good = true;
     for (const d of days) {
       if (blockedSet.has(d.iso)) { good = false; break; }
+      // No slots configured → always open for that day.
       if (hasAny && !openDows.has(d.dow)) { good = false; break; }
     }
     if (good) ok.add(id);
   }
   return ok;
 }
+
