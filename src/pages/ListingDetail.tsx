@@ -211,7 +211,7 @@ export default function ListingDetail() {
     : hasDaily ? "daily"
     : hasMonthly ? "monthly"
     : null;
-  const unitPrice = bestRate ? Number(listing[bestRate]) : 0;
+  const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
   const units = !bestRate ? 0
     : bestRate === "monthly" ? Math.max(Math.ceil(durationDays / 30), 1)
     : bestRate === "daily" ? Math.max(durationDays, 1)
