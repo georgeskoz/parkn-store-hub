@@ -85,23 +85,26 @@ serve(async (req) => {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("city, category, host_id, hourly, daily, weekly, monthly, seasonal")
+      .select("city, category, host_id, user_id, hourly, daily, weekly, monthly, seasonal, price_hourly, price_daily, price_weekly, price_monthly")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
     if (!listing) throw new Error("Listing not found");
 
+    const l = listing as any;
     const rateMap: Record<string, number | null> = {
-      hourly: (listing as any).hourly ?? null,
-      daily: (listing as any).daily ?? null,
-      weekly: (listing as any).weekly ?? null,
-      monthly: (listing as any).monthly ?? null,
-      seasonal: (listing as any).seasonal ?? null,
+      hourly: l.price_hourly ?? l.hourly ?? null,
+      daily: l.price_daily ?? l.daily ?? null,
+      weekly: l.price_weekly ?? l.weekly ?? null,
+      monthly: l.price_monthly ?? l.monthly ?? null,
+      seasonal: l.seasonal ?? null,
     };
     const unitPrice = rateMap[rate];
     if (unitPrice == null || Number(unitPrice) <= 0) {
       throw new Error("Selected rate is not available for this listing");
     }
+    const providerId = l.user_id ?? l.host_id;
+    if (!providerId) throw new Error("Listing has no provider");
 
     const nowIso = new Date().toISOString();
     const { data: surgeRules } = await admin
@@ -145,13 +148,13 @@ serve(async (req) => {
       .insert({
         listing_id: listingId,
         seeker_id: user.id,
-        provider_id: listing.user_id,
-        start_at: startDate,
-        end_at: endDate,
+        provider_id: providerId,
+        start_date: startDate,
+        end_date: endDate,
         status: "pending",
         escrow_status: "pending",
         auto_release_at: autoReleaseAt,
-        total_price: total,
+        total_amount: total,
         original_amount: originalTotal,
         surge_multiplier: surgeMultiplier,
         commission_rate: PLATFORM_COMMISSION_PERCENT,

@@ -97,11 +97,11 @@ serve(async (req) => {
     }
 
     const now = new Date();
-    const startDate = new Date(booking.start_at);
+    const startDate = new Date(booking.start_date);
     let refundPercent = computeRefundPercent(startDate, now);
     if (isAdmin && adminOverrideFullRefund) refundPercent = 100;
 
-    const totalAmount = Number(booking.total_price) || 0;
+    const totalAmount = Number(booking.total_amount) || 0;
     const refundAmount = +(totalAmount * (refundPercent / 100)).toFixed(2);
     const refundCents = Math.round(refundAmount * 100);
 
