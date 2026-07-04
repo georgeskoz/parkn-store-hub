@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { recordUserAgreementIfMissing } from "@/lib/userAgreements";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -42,6 +43,9 @@ export default function AuthCallback() {
       } catch {
         // Non-fatal — profile may already exist via trigger.
       }
+
+      // Record Terms/Privacy acceptance on first OAuth login (no-op if already recorded).
+      await recordUserAgreementIfMissing(session.user.id);
 
       navigate("/dashboard", { replace: true });
     };
