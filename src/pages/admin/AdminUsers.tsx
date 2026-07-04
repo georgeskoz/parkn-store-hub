@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, UserPlus, Trash2 } from "lucide-react";
+import { Search, UserPlus, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import UserDetailsDialog from "@/components/admin/UserDetailsDialog";
 
 type UserRow = {
   id: string;
@@ -29,6 +30,7 @@ const AdminUsers = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const { toast } = useToast();
+  const [detailsUser, setDetailsUser] = useState<UserRow | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -206,18 +208,23 @@ const AdminUsers = () => {
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Select onValueChange={(role) => addRole(u.id, role)}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Add role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["provider", "seeker", "admin"]
-                            .filter((r) => !u.roles.includes(r))
-                            .map((r) => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setDetailsUser(u)}>
+                          <Eye className="w-4 h-4 mr-1" /> View
+                        </Button>
+                        <Select onValueChange={(role) => addRole(u.id, role)}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Add role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["provider", "seeker", "admin"]
+                              .filter((r) => !u.roles.includes(r))
+                              .map((r) => (
+                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -229,6 +236,13 @@ const AdminUsers = () => {
           )}
         </CardContent>
       </Card>
+
+      <UserDetailsDialog
+        userId={detailsUser?.id ?? null}
+        userName={detailsUser?.display_name ?? null}
+        open={!!detailsUser}
+        onOpenChange={(open) => !open && setDetailsUser(null)}
+      />
     </div>
   );
 };

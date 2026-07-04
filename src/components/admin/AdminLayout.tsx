@@ -3,7 +3,7 @@ import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Users, CreditCard, MapPin, Tags, TrendingUp,
-  Shield, LogOut, Menu, X, ChevronRight
+  Shield, LogOut, Menu, X, ChevronRight, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const navItems = [
   { label: "Bookings & Payments", icon: CreditCard, path: "/admin/payments" },
   { label: "Analytics", icon: TrendingUp, path: "/admin/analytics" },
   { label: "Surge Pricing", icon: MapPin, path: "/admin/surge" },
+  { label: "Content Pages", icon: FileText, path: "/admin/content-pages" },
 ];
 
 const AdminLayout = () => {
