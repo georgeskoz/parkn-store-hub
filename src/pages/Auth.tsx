@@ -59,15 +59,12 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } else {
-      const { error, data } = await signUp(email, password, displayName);
+      const { error } = await signUp(email, password, displayName);
       if (error) {
         toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       } else {
-        // Record Terms/Privacy acceptance for the new user (if signed in immediately).
-        const userId =
-          data?.user?.id ??
-          (await supabase.auth.getUser()).data.user?.id ??
-          null;
+        // Record Terms/Privacy acceptance for the new user (if a session was created immediately).
+        const userId = (await supabase.auth.getUser()).data.user?.id ?? null;
         if (userId) await recordUserAgreement(userId);
 
         toast({
