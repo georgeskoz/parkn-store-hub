@@ -33,6 +33,7 @@ import AdminListings from "./pages/admin/AdminListings";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSurge from "./pages/admin/AdminSurge";
+import AdminContentPages from "./pages/admin/AdminContentPages";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
