@@ -998,6 +998,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_agreements: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          privacy_version: string | null
+          terms_version: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string | null
+          terms_version?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
