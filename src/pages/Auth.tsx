@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { recordUserAgreement } from "@/lib/userAgreements";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +19,7 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -24,6 +27,14 @@ const Auth = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogle = async () => {
+    if (!isLogin && !agreed) {
+      toast({
+        title: "Agreement required",
+        description: "Please accept the Terms and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
     setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -33,11 +44,11 @@ const Auth = () => {
       toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
       setGoogleLoading(false);
     }
-    // On success the browser is redirected to Google.
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLogin && !agreed) return;
     setSubmitting(true);
 
     if (isLogin) {
@@ -52,6 +63,10 @@ const Auth = () => {
       if (error) {
         toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       } else {
+        // Record Terms/Privacy acceptance for the new user (if a session was created immediately).
+        const userId = (await supabase.auth.getUser()).data.user?.id ?? null;
+        if (userId) await recordUserAgreement(userId);
+
         toast({
           title: "Check your email",
           description: "We sent you a confirmation link to verify your account.",
@@ -60,6 +75,30 @@ const Auth = () => {
     }
     setSubmitting(false);
   };
+
+  const disableSignupActions = !isLogin && !agreed;
+
+  const AgreementCheckbox = (
+    <div className="flex items-start gap-2">
+      <Checkbox
+        id="agree"
+        checked={agreed}
+        onCheckedChange={(v) => setAgreed(v === true)}
+        className="mt-0.5"
+      />
+      <Label htmlFor="agree" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
+        I agree to the{" "}
+        <Link to="/terms" target="_blank" rel="noopener" className="text-primary hover:underline">
+          Terms and Conditions
+        </Link>{" "}
+        and{" "}
+        <Link to="/privacy" target="_blank" rel="noopener" className="text-primary hover:underline">
+          Privacy Policy
+        </Link>
+        .
+      </Label>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -79,12 +118,14 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!isLogin && <div className="mb-4">{AgreementCheckbox}</div>}
+
             <Button
               type="button"
               variant="outline"
               className="w-full bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
               onClick={handleGoogle}
-              disabled={googleLoading || submitting}
+              disabled={googleLoading || submitting || disableSignupActions}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -149,7 +190,11 @@ const Auth = () => {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting || disableSignupActions}
+              >
                 {submitting ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
               </Button>
             </form>
