@@ -84,6 +84,7 @@ const App = () => (
               <Route path="payments" element={<AdminPayments />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="surge" element={<AdminSurge />} />
+              <Route path="content-pages" element={<AdminContentPages />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
