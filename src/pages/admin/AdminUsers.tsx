@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, UserPlus, Trash2 } from "lucide-react";
+import { Search, UserPlus, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import UserDetailsDialog from "@/components/admin/UserDetailsDialog";
 
 type UserRow = {
   id: string;
@@ -29,6 +30,7 @@ const AdminUsers = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const { toast } = useToast();
+  const [detailsUser, setDetailsUser] = useState<UserRow | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
