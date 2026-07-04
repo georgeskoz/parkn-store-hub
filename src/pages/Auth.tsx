@@ -79,20 +79,33 @@ const Auth = () => {
   const disableSignupActions = !isLogin && !agreed;
 
   const AgreementCheckbox = (
-    <div className="flex items-start gap-2">
+    <div className="rounded-md border border-border bg-muted/40 p-3 flex items-start gap-3">
       <Checkbox
         id="agree"
         checked={agreed}
         onCheckedChange={(v) => setAgreed(v === true)}
         className="mt-0.5"
       />
-      <Label htmlFor="agree" className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer">
+      <Label
+        htmlFor="agree"
+        className="text-sm font-normal text-foreground leading-snug cursor-pointer"
+      >
         I agree to the{" "}
-        <Link to="/terms" target="_blank" rel="noopener" className="text-primary hover:underline">
+        <Link
+          to="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
+        >
           Terms and Conditions
         </Link>{" "}
         and{" "}
-        <Link to="/privacy" target="_blank" rel="noopener" className="text-primary hover:underline">
+        <Link
+          to="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
+        >
           Privacy Policy
         </Link>
         .
