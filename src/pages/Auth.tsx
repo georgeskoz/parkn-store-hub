@@ -49,9 +49,11 @@ const Auth = () => {
       return;
     }
     setGoogleLoading(true);
+    const callback = window.location.origin + "/auth/callback" +
+      (redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : "");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/auth/callback" },
+      options: { redirectTo: callback },
     });
     if (error) {
       toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
