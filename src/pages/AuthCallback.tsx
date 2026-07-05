@@ -47,6 +47,20 @@ export default function AuthCallback() {
       // Record Terms/Privacy acceptance on first OAuth login (no-op if already recorded).
       await recordUserAgreementIfMissing(session.user.id);
 
+      const redirect = new URLSearchParams(window.location.search).get("redirect");
+      if (redirect) {
+        try {
+          const raw = sessionStorage.getItem("pendingBookingState");
+          if (raw) {
+            const pending = JSON.parse(raw);
+            sessionStorage.removeItem("pendingBookingState");
+            navigate(pending.target || redirect, { replace: true, state: pending.state });
+            return;
+          }
+        } catch {}
+        navigate(redirect, { replace: true });
+        return;
+      }
       navigate("/dashboard", { replace: true });
     };
 
