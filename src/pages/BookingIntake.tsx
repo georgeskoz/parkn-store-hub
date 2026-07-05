@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,30 @@ const TIMES = buildTimeSlots(30);
 export default function BookingIntake() {
   const { state } = useLocation() as { state: IncomingState | null };
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      if (state) {
+        try {
+          sessionStorage.setItem(
+            "pendingBookingState",
+            JSON.stringify({ target: "/booking/intake", state }),
+          );
+        } catch {}
+      }
+      navigate(`/auth?redirect=${encodeURIComponent("/booking/intake")}`, { replace: true });
+    }
+  }, [user, loading, state, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const isParking = state?.listingType === "parking";
   const isStorage = state?.listingType === "storage";

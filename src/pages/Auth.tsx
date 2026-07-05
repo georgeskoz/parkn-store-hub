@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,19 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+
+  const consumePendingBooking = (): { target: string; state: any } | null => {
+    try {
+      const raw = sessionStorage.getItem("pendingBookingState");
+      if (!raw) return null;
+      sessionStorage.removeItem("pendingBookingState");
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
 
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -36,9 +49,11 @@ const Auth = () => {
       return;
     }
     setGoogleLoading(true);
+    const callback = window.location.origin + "/auth/callback" +
+      (redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : "");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/auth/callback" },
+      options: { redirectTo: callback },
     });
     if (error) {
       toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
@@ -56,7 +71,14 @@ const Auth = () => {
       if (error) {
         toast({ title: "Login failed", description: error.message, variant: "destructive" });
       } else {
-        navigate("/dashboard");
+        const pending = consumePendingBooking();
+        if (pending) {
+          navigate(pending.target, { state: pending.state, replace: true });
+        } else if (redirectParam) {
+          navigate(redirectParam, { replace: true });
+        } else {
+          navigate("/dashboard");
+        }
       }
     } else {
       const { error } = await signUp(email, password, displayName);

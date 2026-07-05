@@ -231,23 +231,32 @@ export default function ListingDetail() {
   const handleBook = () => {
     if (!startDate || !endDate || !bestRate || !listing) return;
     const needsIntake = listing.category === "parking" || listing.category === "storage";
-    navigate(needsIntake ? `/booking/intake` : `/booking/confirm`, {
-      state: {
-        listingType: listing.category,
-        listingId: listing.id,
-        title: listing.title,
-        address: `${listing.address}, ${listing.city}`,
-        startDate: applyTime(startDate, startTime).toISOString(),
-        endDate: applyTime(endDate, endTime).toISOString(),
-        rate: bestRate,
-        unitPrice,
-        units,
-        subtotal,
-        gst,
-        qst,
-        total,
-      },
-    });
+    const target = needsIntake ? `/booking/intake` : `/booking/confirm`;
+    const bookingState = {
+      listingType: listing.category,
+      listingId: listing.id,
+      title: listing.title,
+      address: `${listing.address}, ${listing.city}`,
+      startDate: applyTime(startDate, startTime).toISOString(),
+      endDate: applyTime(endDate, endTime).toISOString(),
+      rate: bestRate,
+      unitPrice,
+      units,
+      subtotal,
+      gst,
+      qst,
+      total,
+    };
+
+    if (!user) {
+      try {
+        sessionStorage.setItem("pendingBookingState", JSON.stringify({ target, state: bookingState }));
+      } catch {}
+      navigate(`/auth?redirect=${encodeURIComponent(target)}`);
+      return;
+    }
+
+    navigate(target, { state: bookingState });
   };
 
 
