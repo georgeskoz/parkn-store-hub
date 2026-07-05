@@ -71,7 +71,14 @@ const Auth = () => {
       if (error) {
         toast({ title: "Login failed", description: error.message, variant: "destructive" });
       } else {
-        navigate("/dashboard");
+        const pending = consumePendingBooking();
+        if (pending) {
+          navigate(pending.target, { state: pending.state, replace: true });
+        } else if (redirectParam) {
+          navigate(redirectParam, { replace: true });
+        } else {
+          navigate("/dashboard");
+        }
       }
     } else {
       const { error } = await signUp(email, password, displayName);
