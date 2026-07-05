@@ -23,6 +23,19 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+
+  const consumePendingBooking = (): { target: string; state: any } | null => {
+    try {
+      const raw = sessionStorage.getItem("pendingBookingState");
+      if (!raw) return null;
+      sessionStorage.removeItem("pendingBookingState");
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
 
   const [googleLoading, setGoogleLoading] = useState(false);
 
