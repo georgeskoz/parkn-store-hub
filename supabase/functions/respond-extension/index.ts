@@ -86,10 +86,11 @@ serve(async (req) => {
         await admin
           .from("bookings")
           .update({
-            end_at: ext.new_end_date,
+            end_date: ext.new_end_date,
             auto_release_at: newRelease,
           })
           .eq("id", ext.booking_id);
+
         return new Response(JSON.stringify({ status: "paid", paymentIntent: pi.id }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
