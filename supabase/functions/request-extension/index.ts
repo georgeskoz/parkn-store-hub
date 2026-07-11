@@ -49,8 +49,9 @@ serve(async (req) => {
     const total = +(subtotal + gst + qst).toFixed(2);
 
     const newEnd = new Date(
-      new Date(booking.end_at).getTime() + extraHours * 3600 * 1000,
+      new Date(booking.end_date).getTime() + extraHours * 3600 * 1000,
     ).toISOString();
+
 
     const { data: ext, error } = await admin
       .from("booking_extensions")
