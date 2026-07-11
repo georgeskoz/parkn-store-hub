@@ -56,29 +56,6 @@ export default function BookingIntake() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      if (state) {
-        try {
-          sessionStorage.setItem(
-            "pendingBookingState",
-            JSON.stringify({ target: "/booking/intake", state }),
-          );
-        } catch {}
-      }
-      navigate(`/auth?redirect=${encodeURIComponent("/booking/intake")}`, { replace: true });
-    }
-  }, [user, loading, state, navigate]);
-
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   const isParking = state?.listingType === "parking";
   const isStorage = state?.listingType === "storage";
 
@@ -104,6 +81,30 @@ export default function BookingIntake() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      if (state) {
+        try {
+          sessionStorage.setItem(
+            "pendingBookingState",
+            JSON.stringify({ target: "/booking/intake", state }),
+          );
+        } catch {}
+      }
+      navigate(`/auth?redirect=${encodeURIComponent("/booking/intake")}`, { replace: true });
+    }
+  }, [user, loading, state, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
 
   if (!state) {
     return (
