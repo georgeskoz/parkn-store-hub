@@ -29,7 +29,7 @@ serve(async (req) => {
 
     const { data: booking } = await admin
       .from("bookings")
-      .select("id, listing_id, seeker_id, provider_id, end_at")
+      .select("id, listing_id, seeker_id, provider_id, end_date")
       .eq("id", bookingId)
       .maybeSingle();
     if (!booking) throw new Error("Booking not found");
