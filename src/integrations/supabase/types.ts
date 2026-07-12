@@ -1162,6 +1162,28 @@ export type Database = {
           status: string
         }[]
       }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          deleted_at: string | null
+          display_name: string | null
+          id: string
+          phone: string | null
+          postal_code: string | null
+          stripe_account_id: string | null
+          stripe_onboarding_complete: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
