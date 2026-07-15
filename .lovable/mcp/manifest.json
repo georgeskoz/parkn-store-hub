@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://skfaqjatbqrmfkojtqsz.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "spotvault-mcp",
+      "version": "0.1.0",
+      "title": "SpotVault MCP"
+    },
+    "tools": [
+      {
+        "name": "get_my_profile",
+        "title": "Get my profile",
+        "description": "Return the signed-in user's public SpotVault profile fields and OAuth email address.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": null,
+        "outputSchema": null
+      },
+      {
+        "name": "search_approved_listings",
+        "title": "Search approved listings",
+        "description": "Search public, approved SpotVault parking and storage listings by city, type, category, and price.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name to match, such as Montreal or Quebec City."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "parking",
+                "storage"
+              ],
+              "description": "Listing type to return."
+            },
+            "category": {
+              "type": "string",
+              "description": "Listing category to match."
+            },
+            "max_price": {
+              "type": "number",
+              "description": "Maximum matching hourly, daily, weekly, or monthly price."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of listings to return."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_listings",
+        "title": "List my listings",
+        "description": "List parking and storage listings owned by the signed-in SpotVault user, including approval and activity status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Optional listing status filter."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of listings to return."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_bookings",
+        "title": "List my bookings",
+        "description": "List the signed-in user's SpotVault bookings without exposing payment tokens, IDs, or private vehicle/license details.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Optional booking status filter."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of bookings to return."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
