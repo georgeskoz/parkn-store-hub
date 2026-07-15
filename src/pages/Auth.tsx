@@ -24,7 +24,20 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectParam = searchParams.get("redirect");
+  const redirectParam = searchParams.get("redirect") ?? searchParams.get("next");
+
+  const getSafeRelativeRedirect = (value: string | null) => {
+    if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+    try {
+      const parsed = new URL(value, window.location.origin);
+      if (parsed.origin !== window.location.origin) return null;
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return null;
+    }
+  };
+
+  const safeRedirect = getSafeRelativeRedirect(redirectParam);
 
   const consumePendingBooking = (): { target: string; state: any } | null => {
     try {
@@ -50,7 +63,7 @@ const Auth = () => {
     }
     setGoogleLoading(true);
     const callback = window.location.origin + "/auth/callback" +
-      (redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : "");
+      (safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : "");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: callback },
@@ -74,14 +87,16 @@ const Auth = () => {
         const pending = consumePendingBooking();
         if (pending) {
           navigate(pending.target, { state: pending.state, replace: true });
-        } else if (redirectParam) {
-          navigate(redirectParam, { replace: true });
+        } else if (safeRedirect) {
+          navigate(safeRedirect, { replace: true });
         } else {
           navigate("/dashboard");
         }
       }
     } else {
-      const { error } = await signUp(email, password, displayName);
+      const emailRedirectTo = window.location.origin + "/auth/callback" +
+        (safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : "");
+      const { error } = await signUp(email, password, displayName, emailRedirectTo);
       if (error) {
         toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
       } else {

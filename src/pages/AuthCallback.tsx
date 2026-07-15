@@ -7,6 +7,17 @@ import { recordUserAgreementIfMissing } from "@/lib/userAgreements";
 export default function AuthCallback() {
   const navigate = useNavigate();
 
+  const getSafeRelativeRedirect = (value: string | null) => {
+    if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+    try {
+      const parsed = new URL(value, window.location.origin);
+      if (parsed.origin !== window.location.origin) return null;
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -18,7 +29,8 @@ export default function AuthCallback() {
       if (cancelled) return;
 
       if (!session?.user) {
-        navigate("/auth", { replace: true });
+        const safeRedirect = getSafeRelativeRedirect(new URLSearchParams(window.location.search).get("redirect"));
+        navigate(safeRedirect ? `/auth?redirect=${encodeURIComponent(safeRedirect)}` : "/auth", { replace: true });
         return;
       }
 
@@ -47,7 +59,7 @@ export default function AuthCallback() {
       // Record Terms/Privacy acceptance on first OAuth login (no-op if already recorded).
       await recordUserAgreementIfMissing(session.user.id);
 
-      const redirect = new URLSearchParams(window.location.search).get("redirect");
+      const redirect = getSafeRelativeRedirect(new URLSearchParams(window.location.search).get("redirect"));
       if (redirect) {
         try {
           const raw = sessionStorage.getItem("pendingBookingState");
