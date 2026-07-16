@@ -63,10 +63,6 @@ serve(async (req) => {
     const onboardingComplete = account.charges_enabled && account.payouts_enabled;
 
     if (onboardingComplete) {
-      const admin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
       await admin
         .from("profiles")
         .update({ stripe_onboarding_complete: true })
