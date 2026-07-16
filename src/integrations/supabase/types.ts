@@ -768,40 +768,55 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
           avatar_url: string | null
           bio: string | null
+          city: string | null
+          country: string | null
           created_at: string
           deleted_at: string | null
           display_name: string | null
           id: string
           phone: string | null
           postal_code: string | null
+          province: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean
           updated_at: string
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
           id: string
           phone?: string | null
           postal_code?: string | null
+          province?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean
           updated_at?: string
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           deleted_at?: string | null
           display_name?: string | null
           id?: string
           phone?: string | null
           postal_code?: string | null
+          province?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean
           updated_at?: string
@@ -1165,14 +1180,19 @@ export type Database = {
       get_my_profile: {
         Args: never
         Returns: {
+          address_line1: string | null
+          address_line2: string | null
           avatar_url: string | null
           bio: string | null
+          city: string | null
+          country: string | null
           created_at: string
           deleted_at: string | null
           display_name: string | null
           id: string
           phone: string | null
           postal_code: string | null
+          province: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean
           updated_at: string
