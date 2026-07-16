@@ -147,7 +147,7 @@ export default function ProfileSettings() {
 
     setSaving(true);
     const phoneE164 = form.phone.trim() ? normalizePhoneE164(form.phone) : null;
-    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code) : null;
+    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code, form.country) : null;
     const { error } = await supabase
       .from("profiles")
       .update({
