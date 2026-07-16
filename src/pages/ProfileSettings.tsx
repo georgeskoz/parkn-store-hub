@@ -99,7 +99,7 @@ export default function ProfileSettings() {
     if (en) e.display_name = en;
     const ep = validatePhone(f.phone);
     if (ep) e.phone = ep;
-    const epc = validatePostalCode(f.postal_code);
+    const epc = validatePostalCode(f.postal_code, f.country);
     if (epc) e.postal_code = epc;
     if (!f.address_line1.trim()) e.address_line1 = "Address is required";
     if (!f.city.trim()) e.city = "City is required";
