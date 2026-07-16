@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +25,38 @@ import {
   formatPostalCode,
 } from "@/lib/validators";
 
+const CA_PROVINCES: Array<{ code: string; name: string }> = [
+  { code: "AB", name: "Alberta" },
+  { code: "BC", name: "British Columbia" },
+  { code: "MB", name: "Manitoba" },
+  { code: "NB", name: "New Brunswick" },
+  { code: "NL", name: "Newfoundland and Labrador" },
+  { code: "NS", name: "Nova Scotia" },
+  { code: "NT", name: "Northwest Territories" },
+  { code: "NU", name: "Nunavut" },
+  { code: "ON", name: "Ontario" },
+  { code: "PE", name: "Prince Edward Island" },
+  { code: "QC", name: "Quebec" },
+  { code: "SK", name: "Saskatchewan" },
+  { code: "YT", name: "Yukon" },
+];
+
+const US_STATES: Array<{ code: string; name: string }> = [
+  ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"],
+  ["CA", "California"], ["CO", "Colorado"], ["CT", "Connecticut"], ["DE", "Delaware"],
+  ["DC", "District of Columbia"], ["FL", "Florida"], ["GA", "Georgia"], ["HI", "Hawaii"],
+  ["ID", "Idaho"], ["IL", "Illinois"], ["IN", "Indiana"], ["IA", "Iowa"],
+  ["KS", "Kansas"], ["KY", "Kentucky"], ["LA", "Louisiana"], ["ME", "Maine"],
+  ["MD", "Maryland"], ["MA", "Massachusetts"], ["MI", "Michigan"], ["MN", "Minnesota"],
+  ["MS", "Mississippi"], ["MO", "Missouri"], ["MT", "Montana"], ["NE", "Nebraska"],
+  ["NV", "Nevada"], ["NH", "New Hampshire"], ["NJ", "New Jersey"], ["NM", "New Mexico"],
+  ["NY", "New York"], ["NC", "North Carolina"], ["ND", "North Dakota"], ["OH", "Ohio"],
+  ["OK", "Oklahoma"], ["OR", "Oregon"], ["PA", "Pennsylvania"], ["RI", "Rhode Island"],
+  ["SC", "South Carolina"], ["SD", "South Dakota"], ["TN", "Tennessee"], ["TX", "Texas"],
+  ["UT", "Utah"], ["VT", "Vermont"], ["VA", "Virginia"], ["WA", "Washington"],
+  ["WV", "West Virginia"], ["WI", "Wisconsin"], ["WY", "Wyoming"],
+].map(([code, name]) => ({ code, name }));
+
 export default function ProfileSettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -33,14 +68,30 @@ export default function ProfileSettings() {
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const p = profile as any;
   const [form, setForm] = useState({
     display_name: profile?.display_name || "",
     bio: profile?.bio || "",
     phone: profile?.phone || "",
-    postal_code: (profile as any)?.postal_code || "",
+    postal_code: p?.postal_code || "",
+    address_line1: p?.address_line1 || "",
+    address_line2: p?.address_line2 || "",
+    city: p?.city || "",
+    province: p?.province || "",
+    country: (p?.country as "CA" | "US") || "CA",
     avatar_url: profile?.avatar_url || "",
   });
-  const [errors, setErrors] = useState<{ display_name?: string; phone?: string; postal_code?: string }>({});
+  const [errors, setErrors] = useState<{
+    display_name?: string;
+    phone?: string;
+    postal_code?: string;
+    address_line1?: string;
+    city?: string;
+    province?: string;
+  }>({});
+
+  const regionOptions = form.country === "US" ? US_STATES : CA_PROVINCES;
+  const regionLabel = form.country === "US" ? "State" : "Province";
 
   const runValidation = (f = form) => {
     const e: typeof errors = {};
@@ -50,6 +101,9 @@ export default function ProfileSettings() {
     if (ep) e.phone = ep;
     const epc = validatePostalCode(f.postal_code);
     if (epc) e.postal_code = epc;
+    if (!f.address_line1.trim()) e.address_line1 = "Address is required";
+    if (!f.city.trim()) e.city = "City is required";
+    if (!f.province.trim()) e.province = `${f.country === "US" ? "State" : "Province"} is required`;
     return e;
   };
   const hasErrors = (e: typeof errors) => Object.values(e).some(Boolean);
@@ -101,6 +155,11 @@ export default function ProfileSettings() {
         bio: form.bio,
         phone: phoneE164,
         postal_code: postal,
+        address_line1: form.address_line1.trim(),
+        address_line2: form.address_line2.trim() || null,
+        city: form.city.trim(),
+        province: form.province,
+        country: form.country,
         avatar_url: form.avatar_url,
       } as any)
       .eq("id", user.id);
@@ -136,8 +195,6 @@ export default function ProfileSettings() {
       setDeleting(false);
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,6 +255,12 @@ export default function ProfileSettings() {
             </div>
 
             <div>
+              <Label>Email</Label>
+              <Input value={user?.email ?? ""} readOnly disabled />
+              <p className="text-xs text-muted-foreground mt-1">Email cannot be edited here.</p>
+            </div>
+
+            <div>
               <Label htmlFor="display_name">Full Name *</Label>
               <Input
                 id="display_name"
@@ -234,24 +297,115 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="postal_code">Postal Code / ZIP</Label>
+              <Label htmlFor="address_line1">Address Line 1 *</Label>
               <Input
-                id="postal_code"
-                placeholder="A1A 1A1 or 12345"
-                value={form.postal_code}
-                onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))}
-                onBlur={() =>
-                  setForm(p => {
-                    const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code) : "";
-                    setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted) || undefined }));
-                    return { ...p, postal_code: formatted };
-                  })
-                }
-                className={errors.postal_code ? "border-destructive" : ""}
+                id="address_line1"
+                placeholder="123 Main St"
+                value={form.address_line1}
+                onChange={e => setForm(p => ({ ...p, address_line1: e.target.value }))}
+                onBlur={() => setErrors(p => ({ ...p, address_line1: form.address_line1.trim() ? undefined : "Address is required" }))}
+                className={errors.address_line1 ? "border-destructive" : ""}
+                maxLength={200}
               />
-              {errors.postal_code && (
-                <p className="text-xs text-destructive mt-1">{errors.postal_code}</p>
+              {errors.address_line1 && (
+                <p className="text-xs text-destructive mt-1">{errors.address_line1}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="address_line2">Address Line 2</Label>
+              <Input
+                id="address_line2"
+                placeholder="Apt, suite, unit (optional)"
+                value={form.address_line2}
+                onChange={e => setForm(p => ({ ...p, address_line2: e.target.value }))}
+                maxLength={200}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  placeholder="Montreal"
+                  value={form.city}
+                  onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
+                  onBlur={() => setErrors(p => ({ ...p, city: form.city.trim() ? undefined : "City is required" }))}
+                  className={errors.city ? "border-destructive" : ""}
+                  maxLength={100}
+                />
+                {errors.city && (
+                  <p className="text-xs text-destructive mt-1">{errors.city}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Select
+                  value={form.country}
+                  onValueChange={(v) => setForm(p => ({ ...p, country: v as "CA" | "US", province: "" }))}
+                >
+                  <SelectTrigger id="country">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CA">Canada</SelectItem>
+                    <SelectItem value="US">United States</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="province">{regionLabel} *</Label>
+                <Select
+                  value={form.province}
+                  onValueChange={(v) => {
+                    setForm(p => ({ ...p, province: v }));
+                    setErrors(p => ({ ...p, province: undefined }));
+                  }}
+                >
+                  <SelectTrigger
+                    id="province"
+                    className={errors.province ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder={`Select ${regionLabel.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regionOptions.map(o => (
+                      <SelectItem key={o.code} value={o.code}>{o.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.province && (
+                  <p className="text-xs text-destructive mt-1">{errors.province}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="postal_code">
+                  {form.country === "US" ? "ZIP Code" : "Postal Code"}
+                </Label>
+                <Input
+                  id="postal_code"
+                  placeholder={form.country === "US" ? "12345" : "A1A 1A1"}
+                  value={form.postal_code}
+                  onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))}
+                  onBlur={() =>
+                    setForm(p => {
+                      const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code) : "";
+                      setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted) || undefined }));
+                      return { ...p, postal_code: formatted };
+                    })
+                  }
+                  className={errors.postal_code ? "border-destructive" : ""}
+                />
+                {errors.postal_code && (
+                  <p className="text-xs text-destructive mt-1">{errors.postal_code}</p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -270,7 +424,6 @@ export default function ProfileSettings() {
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Changes
               </Button>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
           </CardContent>
         </Card>
@@ -331,4 +484,3 @@ export default function ProfileSettings() {
     </div>
   );
 }
-
