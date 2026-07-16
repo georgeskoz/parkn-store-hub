@@ -99,7 +99,7 @@ export default function ProfileSettings() {
     if (en) e.display_name = en;
     const ep = validatePhone(f.phone);
     if (ep) e.phone = ep;
-    const epc = validatePostalCode(f.postal_code);
+    const epc = validatePostalCode(f.postal_code, f.country);
     if (epc) e.postal_code = epc;
     if (!f.address_line1.trim()) e.address_line1 = "Address is required";
     if (!f.city.trim()) e.city = "City is required";
@@ -147,7 +147,7 @@ export default function ProfileSettings() {
 
     setSaving(true);
     const phoneE164 = form.phone.trim() ? normalizePhoneE164(form.phone) : null;
-    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code) : null;
+    const postal = form.postal_code.trim() ? formatPostalCode(form.postal_code, form.country) : null;
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -395,8 +395,9 @@ export default function ProfileSettings() {
                   onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))}
                   onBlur={() =>
                     setForm(p => {
-                      const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code) : "";
-                      setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted) || undefined }));
+                      const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code, form.country) : "";
+                      setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted, form.country) || undefined }));
+
                       return { ...p, postal_code: formatted };
                     })
                   }

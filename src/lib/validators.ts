@@ -39,21 +39,30 @@ export function detectPostalKind(v: string): "ca" | "us" | "unknown" {
   return /[A-Za-z]/.test(s) ? "ca" : "us";
 }
 
-export function formatPostalCode(v: string): string {
+export function formatPostalCode(v: string, country?: "CA" | "US"): string {
   const s = (v || "").trim();
-  if (CA_POSTAL.test(s)) {
+  if (country === "US") return s;
+  if (country === "CA" || CA_POSTAL.test(s)) {
     const compact = s.replace(/[ -]/g, "").toUpperCase();
-    return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+    if (compact.length >= 4) return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+    return compact;
   }
   return s;
 }
 
-export function validatePostalCode(v: string): string | null {
+export function validatePostalCode(v: string, country?: "CA" | "US"): string | null {
   if (!v || !v.trim()) return null;
   const s = v.trim();
+  if (country === "CA") {
+    return CA_POSTAL.test(s) ? null : "Enter a valid Canadian postal code (A1A 1A1)";
+  }
+  if (country === "US") {
+    return US_ZIP.test(s) ? null : "Enter a valid US ZIP code (12345 or 12345-6789)";
+  }
   if (CA_POSTAL.test(s) || US_ZIP.test(s)) return null;
   return "Enter a valid postal code (A1A 1A1) or ZIP (12345 or 12345-6789)";
 }
+
 
 /** License plate: alphanumeric, 1–8 chars, uppercase. */
 export function validatePlate(v: string): string | null {
