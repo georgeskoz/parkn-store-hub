@@ -395,8 +395,9 @@ export default function ProfileSettings() {
                   onChange={e => setForm(p => ({ ...p, postal_code: e.target.value }))}
                   onBlur={() =>
                     setForm(p => {
-                      const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code) : "";
-                      setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted) || undefined }));
+                      const formatted = p.postal_code.trim() ? formatPostalCode(p.postal_code, form.country) : "";
+                      setErrors(prev => ({ ...prev, postal_code: validatePostalCode(formatted, form.country) || undefined }));
+
                       return { ...p, postal_code: formatted };
                     })
                   }
