@@ -17,6 +17,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
   );
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   try {
     const authHeader = req.headers.get("Authorization")!;
@@ -30,12 +34,14 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Look up existing account
-    const { data: profile } = await supabase
+    // Look up existing account (use service role to bypass column-level RLS restrictions)
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("stripe_account_id, stripe_onboarding_complete")
       .eq("id", user.id)
       .maybeSingle();
+
+    if (profileError) throw profileError;
 
     let accountId = profile?.stripe_account_id;
 
@@ -49,10 +55,6 @@ serve(async (req) => {
       });
       accountId = account.id;
 
-      const admin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
       await admin.from("profiles").update({ stripe_account_id: accountId }).eq("id", user.id);
     }
 
@@ -61,10 +63,6 @@ serve(async (req) => {
     const onboardingComplete = account.charges_enabled && account.payouts_enabled;
 
     if (onboardingComplete) {
-      const admin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
       await admin
         .from("profiles")
         .update({ stripe_onboarding_complete: true })
