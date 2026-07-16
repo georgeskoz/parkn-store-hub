@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public safe profile fields readable" ON public.profiles;
