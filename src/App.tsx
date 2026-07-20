@@ -8,6 +8,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import HostnameGuard from "@/components/HostnameGuard";
 import MaintenanceBanner from "@/components/MaintenanceBanner";
 import BroadcastBanner from "@/components/notifications/BroadcastBanner";
+import ScrollToTop from "@/components/ScrollToTop";
+
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
@@ -50,6 +52,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ScrollToTop />
+
           <HostnameGuard />
           <MaintenanceBanner />
           <BroadcastBanner />
