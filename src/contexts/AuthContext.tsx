@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-
-type AppRole = "provider" | "seeker";
+import { appRoleToDb, dbRoleToApp, type AppRole } from "@/lib/roleMapping";
 
 interface Profile {
   id: string;
