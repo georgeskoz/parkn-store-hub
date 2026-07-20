@@ -372,7 +372,7 @@ export default function ProfileSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="province">{regionLabel} *</Label>
+                <Label htmlFor="province">{regionLabel}</Label>
                 <Select
                   value={form.province}
                   onValueChange={(v) => {
