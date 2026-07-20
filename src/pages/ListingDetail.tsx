@@ -418,10 +418,10 @@ export default function ListingDetail() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-3">Location</h2>
               <div className="h-80 rounded-lg overflow-hidden border border-border">
-                <MapContainer center={[listing.lat, listing.lng]} zoom={15} style={{ height: "100%" }}>
+                <MapContainer center={[listing.lat, listing.lng]} zoom={15} style={{ height: "100%", width: "100%" }}>
                   <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                   />
                   <Marker position={[listing.lat, listing.lng]} icon={defaultMarkerIcon}>
                     <Popup>{listing.title}</Popup>
