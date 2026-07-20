@@ -310,7 +310,7 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="address_line1">Address Line 1 *</Label>
+              <Label htmlFor="address_line1">Address Line 1</Label>
               <Input
                 id="address_line1"
                 placeholder="123 Main St"
