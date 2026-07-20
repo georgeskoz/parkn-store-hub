@@ -11,7 +11,7 @@ interface Review {
   id: string;
   rating: number;
   comment: string | null;
-  created_at: string;
+  submitted_at: string;
   visible: boolean;
   reviewer_id: string;
   reviewer_name?: string;
@@ -34,9 +34,9 @@ export default function AdminReviewManager({ listingId, listingTitle, open, onCl
     setLoading(true);
     const { data } = await supabase
       .from("reviews")
-      .select("id, rating, comment, created_at, visible, reviewer_id")
+      .select("id, rating, comment, submitted_at, visible, reviewer_id")
       .eq("listing_id", listingId)
-      .order("created_at", { ascending: false });
+      .order("submitted_at", { ascending: false });
     const rows = (data || []) as Review[];
     const ids = Array.from(new Set(rows.map((r) => r.reviewer_id)));
     if (ids.length) {
@@ -81,7 +81,7 @@ export default function AdminReviewManager({ listingId, listingTitle, open, onCl
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground text-sm">{r.reviewer_name}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(r.submitted_at).toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Visible</span>

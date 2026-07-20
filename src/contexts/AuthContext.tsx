@@ -43,9 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (_userId: string) => {
-    const { data } = await (supabase as any).rpc("get_my_profile");
-    setProfile(data ?? null);
+  const fetchProfile = async (userId: string) => {
+    const { data } = await (supabase as any)
+      .from("profiles_public")
+      .select("id, display_name, avatar_url, bio, phone")
+      .eq("id", userId)
+      .maybeSingle();
+    setProfile(
+      data
+        ? { ...data, stripe_account_id: null, stripe_onboarding_complete: false }
+        : null,
+    );
   };
 
   // DB stores roles as 'renter'/'host'; app uses 'seeker'/'provider'.

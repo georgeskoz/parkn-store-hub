@@ -828,6 +828,7 @@ export type Database = {
           booking_id: string
           comment: string | null
           created_at: string
+          submitted_at: string
           id: string
           listing_id: string
           rating: number
@@ -840,6 +841,7 @@ export type Database = {
           booking_id: string
           comment?: string | null
           created_at?: string
+          submitted_at?: string
           id?: string
           listing_id: string
           rating: number
@@ -852,6 +854,7 @@ export type Database = {
           booking_id?: string
           comment?: string | null
           created_at?: string
+          submitted_at?: string
           id?: string
           listing_id?: string
           rating?: number
