@@ -217,7 +217,7 @@ const AdminUsers = () => {
                         <Button variant="ghost" size="sm" onClick={() => setDetailsUser(u)}>
                           <Eye className="w-4 h-4 mr-1" /> View
                         </Button>
-                        <Select onValueChange={(role) => addRole(u.id, role)}>
+                        <Select onValueChange={(role) => addRole(u.id, role as UiRole)}>
                           <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Add role" />
                           </SelectTrigger>
