@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-
-type AppRole = "provider" | "seeker";
+import { appRoleToDb, dbRoleToApp, type AppRole } from "@/lib/roleMapping";
 
 interface Profile {
   id: string;
@@ -56,17 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  // DB stores 'renter'/'host'/'user'/'admin'. App uses 'seeker'/'provider'.
-  const APP_TO_DB: Record<AppRole, string> = { seeker: "renter", provider: "host" };
-  const DB_TO_APP: Record<string, AppRole | undefined> = { renter: "seeker", host: "provider" };
-
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
     setRoles((data || [])
-      .map((r: any) => DB_TO_APP[r.role as string])
+      .map((r: any) => dbRoleToApp(r.role as string))
       .filter((r): r is AppRole => r === "seeker" || r === "provider"));
   };
 
@@ -141,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role];
+    const dbRole = appRoleToDb(role);
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: dbRole as any });
     if (error && (error as any).code !== "23505") throw error;
     await fetchRoles(user.id);
@@ -149,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const removeRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role];
+    const dbRole = appRoleToDb(role);
     await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", dbRole as any);
     await fetchRoles(user.id);
   };
