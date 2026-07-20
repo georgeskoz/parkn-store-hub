@@ -96,13 +96,13 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base truncate">{c.listings?.title || "Listing"}</CardTitle>
+                <CardTitle className="text-base truncate">{c.bookings?.listings?.title || "Listing"}</CardTitle>
                 <div className="flex items-center gap-1 shrink-0">
                   {unread > 0 && (
                     <Badge className="text-xs">{unread}</Badge>
                   )}
                   <Badge variant="outline" className="text-xs">
-                    {c.seeker_id === user?.id ? "Provider" : "Seeker"}
+                    {c.bookings?.renter_id === user?.id ? "Provider" : "Seeker"}
                   </Badge>
                 </div>
               </div>
