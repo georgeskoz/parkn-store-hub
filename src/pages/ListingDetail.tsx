@@ -21,6 +21,7 @@ import {
 import { MapPin, ArrowLeft, User, Mail, Phone, Check, CalendarIcon, Clock } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
