@@ -99,11 +99,24 @@ export default function ProfileSettings() {
     if (en) e.display_name = en;
     const ep = validatePhone(f.phone);
     if (ep) e.phone = ep;
-    const epc = validatePostalCode(f.postal_code, f.country);
-    if (epc) e.postal_code = epc;
-    if (!f.address_line1.trim()) e.address_line1 = "Address is required";
-    if (!f.city.trim()) e.city = "City is required";
-    if (!f.province.trim()) e.province = `${f.country === "US" ? "State" : "Province"} is required`;
+    // Address fields are optional; only validate format when the user has
+    // started filling them in. If any address field is provided, require the
+    // full set so we store a coherent postal address.
+    const anyAddress = !!(
+      f.address_line1.trim() ||
+      f.city.trim() ||
+      f.province.trim() ||
+      f.postal_code.trim()
+    );
+    if (f.postal_code.trim()) {
+      const epc = validatePostalCode(f.postal_code, f.country);
+      if (epc) e.postal_code = epc;
+    }
+    if (anyAddress) {
+      if (!f.address_line1.trim()) e.address_line1 = "Address is required";
+      if (!f.city.trim()) e.city = "City is required";
+      if (!f.province.trim()) e.province = `${f.country === "US" ? "State" : "Province"} is required`;
+    }
     return e;
   };
   const hasErrors = (e: typeof errors) => Object.values(e).some(Boolean);
