@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role];
+    const dbRole = appRoleToDb(role);
     const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: dbRole as any });
     if (error && (error as any).code !== "23505") throw error;
     await fetchRoles(user.id);
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const removeRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role];
+    const dbRole = appRoleToDb(role);
     await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", dbRole as any);
     await fetchRoles(user.id);
   };
