@@ -41,7 +41,9 @@ const AdminUsers = () => {
     const roleMap: Record<string, string[]> = {};
     (roles || []).forEach((r) => {
       if (!roleMap[r.user_id]) roleMap[r.user_id] = [];
-      roleMap[r.user_id].push(r.role);
+      // Translate DB role ('host'/'renter'/'admin') to UI role for display + filter parity.
+      const uiRole = dbRoleToApp(r.role as string);
+      if (uiRole) roleMap[r.user_id].push(uiRole);
     });
 
     setUsers(
@@ -58,8 +60,9 @@ const AdminUsers = () => {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const addRole = async (userId: string, role: string) => {
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
+  const addRole = async (userId: string, role: UiRole) => {
+    const dbRole = appRoleToDb(role);
+    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: dbRole as any });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
@@ -69,7 +72,8 @@ const AdminUsers = () => {
   };
 
   const removeRole = async (userId: string, role: string) => {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role as any);
+    const dbRole = appRoleToDb(role as UiRole);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", dbRole as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
