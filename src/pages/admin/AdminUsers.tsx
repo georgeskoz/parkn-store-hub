@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Search, UserPlus, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import UserDetailsDialog from "@/components/admin/UserDetailsDialog";
+import { appRoleToDb, dbRoleToApp, type UiRole } from "@/lib/roleMapping";
 
 type UserRow = {
   id: string;
