@@ -56,19 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  // DB stores roles as 'renter'/'host'; app uses 'seeker'/'provider'.
-  const APP_TO_DB: Record<AppRole, string> = { seeker: "renter", provider: "host" };
-  const DB_TO_APP: Record<string, AppRole> = { renter: "seeker", host: "provider", seeker: "seeker", provider: "provider" };
-
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
     setRoles((data || [])
-      .map((r: any) => DB_TO_APP[r.role as string])
-      .filter(Boolean) as AppRole[]);
+      .map((r: any) => r.role as AppRole)
+      .filter((r) => r === "seeker" || r === "provider") as AppRole[]);
   };
+
 
 
   const refreshProfile = async () => {
@@ -140,18 +137,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role] ?? role;
-    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: dbRole as any });
+    const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role });
     if (error && (error as any).code !== "23505") throw error;
     await fetchRoles(user.id);
   };
 
   const removeRole = async (role: AppRole) => {
     if (!user) return;
-    const dbRole = APP_TO_DB[role] ?? role;
-    await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", dbRole as any);
+    await supabase.from("user_roles").delete().eq("user_id", user.id).eq("role", role);
     await fetchRoles(user.id);
   };
+
 
 
   return (
