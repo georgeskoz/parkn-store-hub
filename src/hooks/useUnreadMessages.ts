@@ -13,11 +13,19 @@ export function useUnreadMessages() {
     if (!user) return;
 
     const load = async () => {
-      // Fetch conversations the user participates in
+      // Find user's bookings, then conversations linked to them
+      const { data: bks, error: bkErr } = await supabase
+        .from("bookings")
+        .select("id")
+        .or(`renter_id.eq.${user.id},host_id.eq.${user.id}`);
+      if (bkErr || !bks || bks.length === 0) {
+        setUnread({ total: 0, byConversation: {} });
+        return;
+      }
       const { data: convs, error: convErr } = await supabase
         .from("conversations")
         .select("id")
-        .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`);
+        .in("booking_id", bks.map((b: any) => b.id));
       if (convErr || !convs) {
         setUnread({ total: 0, byConversation: {} });
         return;

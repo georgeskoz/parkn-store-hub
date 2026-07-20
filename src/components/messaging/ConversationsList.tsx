@@ -8,11 +8,13 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface ConversationRow {
   id: string;
-  listing_id: string;
-  seeker_id: string;
-  provider_id: string;
+  booking_id: string;
   last_message_at: string;
-  listings: { title: string } | null;
+  bookings?: {
+    renter_id: string;
+    host_id: string;
+    listings: { title: string } | null;
+  } | null;
 }
 
 interface Props {
@@ -29,10 +31,21 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
+      // First find user's bookings
+      const { data: bks } = await supabase
+        .from("bookings")
+        .select("id")
+        .or(`renter_id.eq.${user.id},host_id.eq.${user.id}`);
+      const bookingIds = (bks || []).map((b: any) => b.id);
+      if (bookingIds.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("conversations")
-        .select("id, listing_id, seeker_id, provider_id, last_message_at, listings(title)")
-        .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`)
+        .select("id, booking_id, last_message_at, bookings(renter_id, host_id, listings(title))")
+        .in("booking_id", bookingIds)
         .order("last_message_at", { ascending: false });
       if (error) {
         setConversations([]);
