@@ -48,13 +48,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(data ?? null);
   };
 
+  // DB stores roles as 'renter'/'host'; app uses 'seeker'/'provider'.
+  const APP_TO_DB: Record<AppRole, string> = { seeker: "renter", provider: "host" };
+  const DB_TO_APP: Record<string, AppRole> = { renter: "seeker", host: "provider", seeker: "seeker", provider: "provider" };
+
   const fetchRoles = async (userId: string) => {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    setRoles((data || []).map((r: any) => r.role as AppRole));
+    setRoles((data || [])
+      .map((r: any) => DB_TO_APP[r.role as string])
+      .filter(Boolean) as AppRole[]);
   };
+
 
   const refreshProfile = async () => {
     if (user) {
