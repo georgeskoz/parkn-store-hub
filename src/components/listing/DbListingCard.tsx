@@ -78,7 +78,7 @@ export default function DbListingCard({ listing, distance }: Props) {
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-200 overflow-hidden">
-      <div className="h-40 bg-muted relative overflow-hidden">
+      <Link to={`/listing/${listing.id}`} className="block h-40 bg-muted relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring" aria-label={`View ${listing.title || "listing"}`}>
         <img src={coverPhoto} alt={listing.title || "Listing photo"} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
@@ -100,7 +100,8 @@ export default function DbListingCard({ listing, distance }: Props) {
             </Badge>
           )}
         </div>
-      </div>
+      </Link>
+
 
       <CardContent className="p-4 space-y-2.5">
         <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{listing.title || "Untitled listing"}</h3>
