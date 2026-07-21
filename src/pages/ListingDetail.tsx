@@ -201,22 +201,50 @@ export default function ListingDetail() {
   const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
   const priceLabel = listing.price_monthly ? "/month" : listing.price_daily ? "/day" : listing.price_hourly ? "/hour" : "";
 
-  const durationDays = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 1) : 0;
+  // Compute duration using actual start/end times (not just calendar dates) so
+  // partial-day parking bookings pick the hourly rate, not a whole day.
+  const applyTimeInline = (d: Date, t: string) => {
+    const [h, m] = (t || "00:00").split(":").map(Number);
+    const x = new Date(d);
+    x.setHours(h || 0, m || 0, 0, 0);
+    return x;
+  };
+  const startDT = startDate ? applyTimeInline(startDate, isParking ? startTime : "00:00") : null;
+  const endDT = endDate ? applyTimeInline(endDate, isParking ? endTime : "00:00") : null;
+  const durationMs = startDT && endDT ? Math.max(endDT.getTime() - startDT.getTime(), 0) : 0;
+  const durationHours = durationMs / 3600000;
+  const durationDays = durationMs > 0
+    ? (isParking ? durationHours / 24 : Math.max(differenceInDays(endDate!, startDate!), 1))
+    : 0;
+
   const hasMonthly = !!listing.price_monthly;
   const hasDaily = !!listing.price_daily;
   const hasHourly = !!listing.price_hourly;
-  const bestRate: "monthly" | "daily" | "hourly" | null =
-    durationDays >= 30 && hasMonthly ? "monthly"
-    : durationDays >= 1 && hasDaily ? "daily"
-    : hasHourly ? "hourly"
-    : hasDaily ? "daily"
-    : hasMonthly ? "monthly"
-    : null;
+
+  // Pick the cheapest applicable rate for the actual duration.
+  const bestRate: "monthly" | "daily" | "hourly" | null = (() => {
+    if (!durationMs) return null;
+    if (isParking) {
+      // Compare candidate totals
+      const candidates: { rate: "hourly" | "daily" | "monthly"; total: number }[] = [];
+      if (hasHourly) candidates.push({ rate: "hourly", total: Number(listing.price_hourly) * Math.max(Math.ceil(durationHours), 1) });
+      if (hasDaily) candidates.push({ rate: "daily", total: Number(listing.price_daily) * Math.max(Math.ceil(durationHours / 24), 1) });
+      if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(durationHours / (24 * 30)), 1) });
+      if (!candidates.length) return hasDaily ? "daily" : hasMonthly ? "monthly" : null;
+      candidates.sort((a, b) => a.total - b.total);
+      return candidates[0].rate;
+    }
+    // Storage: day/month granularity
+    if (durationDays >= 30 && hasMonthly) return "monthly";
+    if (durationDays >= 1 && hasDaily) return "daily";
+    return hasMonthly ? "monthly" : hasDaily ? "daily" : hasHourly ? "hourly" : null;
+  })();
+
   const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
   const units = !bestRate ? 0
-    : bestRate === "monthly" ? Math.max(Math.ceil(durationDays / 30), 1)
-    : bestRate === "daily" ? Math.max(durationDays, 1)
-    : Math.max(durationDays * 24, 1);
+    : bestRate === "monthly" ? Math.max(Math.ceil(durationHours / (24 * 30)), 1)
+    : bestRate === "daily" ? Math.max(Math.ceil(durationHours / 24), 1)
+    : Math.max(Math.ceil(durationHours), 1);
   const subtotal = +(unitPrice * units).toFixed(2);
   const gst = +(subtotal * 0.05).toFixed(2);
   const qst = +(subtotal * 0.09975).toFixed(2);
