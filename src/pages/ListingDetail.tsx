@@ -621,7 +621,7 @@ export default function ListingDetail() {
                     {durationDays > 0 && bestRate && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between text-muted-foreground text-xs">
-                          <span><Clock className="w-3 h-3 inline mr-1" />{durationDays} day{durationDays > 1 ? "s" : ""}</span>
+                          <span><Clock className="w-3 h-3 inline mr-1" />{units} {bestRate === "hourly" ? (units === 1 ? "hour" : "hours") : bestRate === "daily" ? (units === 1 ? "day" : "days") : (units === 1 ? "month" : "months")}</span>
                           <span className="capitalize">{bestRate} rate</span>
                         </div>
                         <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
