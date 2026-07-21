@@ -143,6 +143,21 @@ serve(async (req) => {
       new Date(endDate).getTime() + AUTO_RELEASE_HOURS * 3600 * 1000,
     ).toISOString();
 
+    // Prevent double-booking: reject if any active booking overlaps this range.
+    const { data: overlaps, error: overlapErr } = await admin
+      .from("bookings")
+      .select("id")
+      .eq("listing_id", listingId)
+      .in("escrow_status", ["pending", "held", "released", "completed"])
+      .neq("status", "cancelled")
+      .lt("start_date", endDate)
+      .gt("end_date", startDate)
+      .limit(1);
+    if (overlapErr) throw new Error(`Availability check failed: ${overlapErr.message}`);
+    if (overlaps && overlaps.length > 0) {
+      throw new Error("This time slot was just booked by someone else. Please pick another time.");
+    }
+
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
