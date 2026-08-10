@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { MapPin } from "lucide-react";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function StepLocation({ form, update }: Props) {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -76,56 +78,56 @@ export default function StepLocation({ form, update }: Props) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-primary mb-2">
         <MapPin className="w-5 h-5" />
-        <span className="font-semibold text-foreground">Location & Address</span>
+        <span className="font-semibold text-foreground">{t("listingWizard.locationAndAddress")}</span>
       </div>
 
       <div>
-        <Label>Listing Title</Label>
-        <Input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Downtown Heated Garage" />
+        <Label>{t("listingWizard.listingTitle")}</Label>
+        <Input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder={t("listingWizard.listingTitlePlaceholder")} />
       </div>
 
       <div>
-        <Label>Street Address</Label>
+        <Label>{t("listingWizard.streetAddress")}</Label>
         <Input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="123 Rue Example" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>Unit / Suite (optional)</Label>
+          <Label>{t("listingWizard.unitSuiteOptional")}</Label>
           <Input value={form.unit} onChange={(e) => update("unit", e.target.value)} placeholder="Apt 4B" />
         </div>
         <div>
-          <Label>Postal / Zip Code</Label>
+          <Label>{t("listingWizard.postalZipCode")}</Label>
           <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="H2X 1Y4" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>City</Label>
+          <Label>{t("search.city")}</Label>
           <Input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Montreal" />
         </div>
         <div>
-          <Label>Region / Neighbourhood</Label>
+          <Label>{t("listingWizard.regionNeighbourhood")}</Label>
           <Input value={form.region} onChange={(e) => update("region", e.target.value)} placeholder="Downtown" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>Province / State</Label>
+          <Label>{t("listingWizard.provinceState")}</Label>
           <Input value={form.province} onChange={(e) => update("province", e.target.value)} placeholder="Quebec" />
         </div>
         <div>
-          <Label>Country</Label>
+          <Label>{t("listingWizard.country")}</Label>
           <Input value={form.country} onChange={(e) => update("country", e.target.value)} placeholder="Canada" />
         </div>
       </div>
 
       {/* Map */}
       <div>
-        <Label className="mb-1 block">Pin Your Exact Location</Label>
-        <p className="text-xs text-muted-foreground mb-2">Click on the map or drag the pin to set the exact spot.</p>
+        <Label className="mb-1 block">{t("listingWizard.pinExactLocation")}</Label>
+        <p className="text-xs text-muted-foreground mb-2">{t("listingWizard.pinExactLocationHint")}</p>
         <div ref={mapRef} className="h-64 rounded-lg border border-border overflow-hidden" />
         {form.lat && form.lng && (
           <p className="text-xs text-muted-foreground mt-1">

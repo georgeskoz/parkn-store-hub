@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,7 @@ const buildParkingListingsDebugQuery = (location: string, hasDate: boolean) => {
 };
 
 export default function ParkingSearch() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,8 +152,8 @@ export default function ParkingSearch() {
       <Navbar />
       <main className="pt-20 pb-16">
         <section className="container mx-auto px-4 mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-1">Find Parking</h1>
-          <p className="text-muted-foreground">Search verified parking spots across Quebec</p>
+          <h1 className="text-3xl font-bold text-foreground mb-1">{t("search.findParkingTitle")}</h1>
+          <p className="text-muted-foreground">{t("search.searchVerifiedParking")}</p>
         </section>
 
         <section className="container mx-auto px-4 mb-4">
@@ -160,7 +162,7 @@ export default function ParkingSearch() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by city or address..."
+                placeholder={t("search.searchByCityOrAddress")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
@@ -173,7 +175,7 @@ export default function ParkingSearch() {
               className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 h-11 rounded-lg font-medium whitespace-nowrap inline-flex items-center gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {loading ? "Searching..." : "Search"}
+              {loading ? t("search.searching") : t("search.search")}
             </button>
           </div>
         </section>
@@ -181,25 +183,25 @@ export default function ParkingSearch() {
         <section className="container mx-auto px-4 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
             <Select value={city} onValueChange={setCity}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="City" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder={t("search.city")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
+                <SelectItem value="all">{t("search.allCities")}</SelectItem>
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder={t("search.type")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {parkingTypes.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
+                <SelectItem value="all">{t("search.allTypes")}</SelectItem>
+                {parkingTypes.map((pt) => <SelectItem key={pt} value={pt} className="capitalize">{t(`search.parkingType.${pt}`)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={pricingMode} onValueChange={(v) => setPricingMode(v as PricingMode)}>
               <SelectTrigger className="w-[120px]"><Clock className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="hourly">Hourly</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="hourly">{t("search.hourly")}</SelectItem>
+                <SelectItem value="daily">{t("search.daily")}</SelectItem>
+                <SelectItem value="monthly">{t("search.monthly")}</SelectItem>
               </SelectContent>
             </Select>
             <div className="min-w-[220px]">
@@ -209,7 +211,7 @@ export default function ParkingSearch() {
           {activeFilters.length > 0 && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {activeFilters.map((f) => <Badge key={f} variant="secondary" className="gap-1 text-xs capitalize">{f}</Badge>)}
-              <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAll}>Clear all</Button>
+              <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAll}>{t("search.clearAll")}</Button>
             </div>
           )}
         </section>
@@ -218,15 +220,15 @@ export default function ParkingSearch() {
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <p className="text-sm text-muted-foreground mb-4">
-                {loading ? "Loading…" : `${filtered.length} spot${filtered.length !== 1 ? "s" : ""} found`}
+                {loading ? t("common.loading") : t("search.spotsFound", { count: filtered.length })}
               </p>
               {!loading && filtered.length === 0 ? (
                 <div className="text-center py-20 border border-dashed border-border rounded-xl">
                   <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                  <p className="text-foreground font-medium">No listings found</p>
-                  <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or check back soon.</p>
+                  <p className="text-foreground font-medium">{t("search.noListingsFound")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("search.tryAdjustingFilters")}</p>
                   {activeFilters.length > 0 && (
-                    <Button variant="outline" className="mt-4" onClick={clearAll}>Reset Filters</Button>
+                    <Button variant="outline" className="mt-4" onClick={clearAll}>{t("search.resetFilters")}</Button>
                   )}
                 </div>
               ) : (
@@ -237,7 +239,7 @@ export default function ParkingSearch() {
             </div>
             <div className="hidden lg:block">
               <div className="sticky top-24 h-[calc(100vh-8rem)] rounded-xl overflow-hidden border border-border">
-                <Suspense fallback={<div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">Loading map…</div>}>
+                <Suspense fallback={<div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">{t("search.loadingMap")}</div>}>
                   <ListingsMap listings={filtered} />
                 </Suspense>
               </div>

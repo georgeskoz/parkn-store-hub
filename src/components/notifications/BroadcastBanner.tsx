@@ -1,8 +1,10 @@
 import { X, Megaphone } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 export default function BroadcastBanner() {
   const { visible, dismiss } = useAdminNotifications();
+  const { t } = useTranslation();
 
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const active = visible.find(
@@ -22,7 +24,7 @@ export default function BroadcastBanner() {
         <button
           onClick={() => dismiss(active.id)}
           className="text-muted-foreground hover:text-foreground shrink-0"
-          aria-label="Dismiss banner"
+          aria-label={t("chrome.dismissBanner")}
         >
           <X className="w-4 h-4" />
         </button>

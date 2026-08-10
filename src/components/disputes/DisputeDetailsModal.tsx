@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -7,15 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { DisputeRow } from "@/hooks/useDisputes";
 import DisputeStatusBadge, { DisputeStatus } from "./DisputeStatusBadge";
-
-const REASON_LABELS: Record<string, string> = {
-  item_not_as_described: "Item not as described",
-  no_show: "No show",
-  property_damage: "Property damage",
-  unauthorized_charge: "Unauthorized charge",
-  safety_concern: "Safety concern",
-  other: "Other",
-};
+import { getIntlLocale } from "@/lib/dateLocale";
 
 const DisputeDetailsModal = ({
   open,
@@ -26,35 +19,36 @@ const DisputeDetailsModal = ({
   onOpenChange: (o: boolean) => void;
   dispute: DisputeRow | null;
 }) => {
+  const { t } = useTranslation();
   if (!dispute) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Dispute details</DialogTitle>
+          <DialogTitle>{t("disputes.disputeDetails")}</DialogTitle>
           <DialogDescription>
-            Submitted {new Date(dispute.created_at).toLocaleString()}
+            {t("disputes.submittedAt", { datetime: new Date(dispute.created_at).toLocaleString(getIntlLocale()) })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Status:</span>
+            <span className="text-muted-foreground">{t("disputes.statusLabel")}</span>
             <DisputeStatusBadge status={dispute.status as DisputeStatus} />
           </div>
           <div>
-            <p className="text-muted-foreground">Reason</p>
+            <p className="text-muted-foreground">{t("disputes.reason")}</p>
             <p className="font-medium">
-              {REASON_LABELS[dispute.reason] || dispute.reason}
+              {t(`disputes.reasonOption.${dispute.reason}`, { defaultValue: dispute.reason })}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Description</p>
+            <p className="text-muted-foreground">{t("common.description")}</p>
             <p className="whitespace-pre-wrap">{dispute.description}</p>
           </div>
           {dispute.evidence_urls?.length > 0 && (
             <div>
-              <p className="text-muted-foreground mb-2">Evidence</p>
+              <p className="text-muted-foreground mb-2">{t("disputes.evidence")}</p>
               <div className="flex flex-wrap gap-2">
                 {dispute.evidence_urls.map((url, i) => (
                   <a
@@ -66,7 +60,7 @@ const DisputeDetailsModal = ({
                   >
                     <img
                       src={url}
-                      alt={`Evidence ${i + 1}`}
+                      alt={t("disputes.evidenceAlt", { number: i + 1 })}
                       className="w-full h-full object-cover"
                     />
                   </a>
@@ -76,13 +70,13 @@ const DisputeDetailsModal = ({
           )}
           {dispute.admin_notes && (
             <div>
-              <p className="text-muted-foreground">Admin notes</p>
+              <p className="text-muted-foreground">{t("disputes.adminNotes")}</p>
               <p className="whitespace-pre-wrap">{dispute.admin_notes}</p>
             </div>
           )}
           {dispute.resolved_at && (
             <p className="text-xs text-muted-foreground">
-              Resolved {new Date(dispute.resolved_at).toLocaleString()}
+              {t("disputes.resolvedAt", { datetime: new Date(dispute.resolved_at).toLocaleString(getIntlLocale()) })}
             </p>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturesSection from "@/components/FeaturesSection";
@@ -7,11 +8,12 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 
 const Index = () => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="SpotsVault — Find Parking & Storage Spaces in Canada"
-        description="Discover and book parking spots and storage spaces near you. List your unused space and earn. Canada's peer-to-peer parking and storage marketplace."
+        title={t("seo.home.title")}
+        description={t("seo.home.description")}
         path="/"
       />
       <Navbar />

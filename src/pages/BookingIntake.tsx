@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -22,11 +23,14 @@ import {
   VEHICLE_TYPES,
   VEHICLE_MAKES,
   VEHICLE_COLOURS,
-  PROVINCE_STATE_GROUPS,
   STORAGE_CATEGORIES,
   STORAGE_SIZES,
   buildTimeSlots,
+  getVehicleTypeLabel,
+  getVehicleColourLabel,
+  getProvinceStateGroups,
 } from "@/lib/bookingIntakeOptions";
+import { getIntlLocale } from "@/lib/dateLocale";
 import {
   validatePlate,
   validateDriversLicense,
@@ -52,9 +56,11 @@ type IncomingState = {
 const TIMES = buildTimeSlots(30);
 
 export default function BookingIntake() {
+  const { t } = useTranslation();
   const { state } = useLocation() as { state: IncomingState | null };
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const provinceStateGroups = useMemo(() => getProvinceStateGroups(t), [t]);
 
   const isParking = state?.listingType === "parking";
   const isStorage = state?.listingType === "storage";
@@ -112,9 +118,9 @@ export default function BookingIntake() {
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 max-w-xl text-center">
           <SearchX className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold">No booking in progress</h1>
-          <p className="text-muted-foreground mt-2">Pick a spot first to continue.</p>
-          <Button asChild className="mt-6"><Link to="/find">Find a Spot</Link></Button>
+          <h1 className="text-2xl font-bold">{t("bookingIntake.noBookingInProgress")}</h1>
+          <p className="text-muted-foreground mt-2">{t("bookingIntake.pickASpotFirst")}</p>
+          <Button asChild className="mt-6"><Link to="/find">{t("search.findASpotTitle")}</Link></Button>
         </main>
         <Footer />
       </div>
@@ -128,21 +134,21 @@ export default function BookingIntake() {
     const e: Record<string, string> = {};
     if (isParking) {
       const ep = validatePlate(plate); if (ep) e.plate = ep;
-      const et = requireSelect(vType, "Vehicle type"); if (et) e.vType = et;
-      const em = requireSelect(vMake, "Vehicle make"); if (em) e.vMake = em;
-      if (vMake === "Other" && !vMakeOther.trim()) e.vMakeOther = "Specify the make";
-      const ec = requireSelect(vColour, "Vehicle colour"); if (ec) e.vColour = ec;
+      const et = requireSelect(vType, t("bookingIntake.field.vehicleType")); if (et) e.vType = et;
+      const em = requireSelect(vMake, t("bookingIntake.field.vehicleMake")); if (em) e.vMake = em;
+      if (vMake === "Other" && !vMakeOther.trim()) e.vMakeOther = t("bookingIntake.specifyTheMake");
+      const ec = requireSelect(vColour, t("bookingIntake.field.vehicleColour")); if (ec) e.vColour = ec;
       const ed = validateDriversLicense(dl); if (ed) e.dl = ed;
-      const el = requireSelect(licProv, "Issuing province/state"); if (el) e.licProv = el;
+      const el = requireSelect(licProv, t("bookingIntake.field.issuingProvinceState")); if (el) e.licProv = el;
     } else if (isStorage) {
       const totalItems = Object.values(counts).reduce((a, b) => a + (Number(b) || 0), 0);
-      if (totalItems <= 0) e.counts = "Add at least one item";
-      const es = requireSelect(size, "Estimated total size"); if (es) e.size = es;
-      if (!dropoffDate) e.dropoffDate = "Drop-off date is required";
+      if (totalItems <= 0) e.counts = t("bookingIntake.addAtLeastOneItem");
+      const es = requireSelect(size, t("bookingIntake.field.estimatedTotalSize")); if (es) e.size = es;
+      if (!dropoffDate) e.dropoffDate = t("bookingIntake.dropoffDateRequired");
       else if (dropoffDate < bookingStart || dropoffDate > bookingEnd)
-        e.dropoffDate = `Must be between ${bookingStart} and ${bookingEnd}`;
-      if (!dropoffTime) e.dropoffTime = "Drop-off time is required";
-      if (notes.length > 500) e.notes = "Max 500 characters";
+        e.dropoffDate = t("bookingIntake.dropoffDateRange", { start: bookingStart, end: bookingEnd });
+      if (!dropoffTime) e.dropoffTime = t("bookingIntake.dropoffTimeRequired");
+      if (notes.length > 500) e.notes = t("bookingIntake.max500Characters");
     }
     return e;
   };
@@ -190,30 +196,30 @@ export default function BookingIntake() {
       <Navbar />
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-2xl">
         <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t("common.back")}
         </Button>
 
         <h1 className="text-2xl font-bold mb-1">
-          {isParking ? "Vehicle & Driver Details" : "What are you storing?"}
+          {isParking ? t("bookingIntake.vehicleAndDriverDetails") : t("bookingIntake.whatAreYouStoring")}
         </h1>
         <p className="text-muted-foreground mb-6">
           {isParking
-            ? "We share this with the host so they can identify your vehicle on arrival."
-            : "Help the host prepare the right space and access for your drop-off."}
+            ? t("bookingIntake.parkingIntakeSubtitle")
+            : t("bookingIntake.storageIntakeSubtitle")}
         </p>
 
         <Card className="card-shadow">
           <CardHeader>
             <CardTitle className="text-lg">{state.title}</CardTitle>
             <p className="text-xs text-muted-foreground">
-              {new Date(state.startDate).toLocaleString()} → {new Date(state.endDate).toLocaleString()}
+              {new Date(state.startDate).toLocaleString(getIntlLocale())} → {new Date(state.endDate).toLocaleString(getIntlLocale())}
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
             {isParking && (
               <>
                 <div>
-                  <Label htmlFor="plate">License Plate Number *</Label>
+                  <Label htmlFor="plate">{t("bookingIntake.licensePlateNumber")}</Label>
                   <Input
                     id="plate"
                     value={plate}
@@ -228,26 +234,26 @@ export default function BookingIntake() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label>Vehicle Type *</Label>
+                    <Label>{t("bookingIntake.field.vehicleType")} *</Label>
                     <Select value={vType} onValueChange={(v) => { setVType(v); markTouched("vType"); }}>
                       <SelectTrigger className={showError("vType") ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {VEHICLE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {VEHICLE_TYPES.map((vt) => <SelectItem key={vt} value={vt}>{getVehicleTypeLabel(t, vt)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     {showError("vType") && <p className="text-xs text-destructive mt-1">{liveErrors.vType}</p>}
                   </div>
 
                   <div>
-                    <Label>Vehicle Colour *</Label>
+                    <Label>{t("bookingIntake.field.vehicleColour")} *</Label>
                     <Select value={vColour} onValueChange={(v) => { setVColour(v); markTouched("vColour"); }}>
                       <SelectTrigger className={showError("vColour") ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {VEHICLE_COLOURS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {VEHICLE_COLOURS.map((vc) => <SelectItem key={vc} value={vc}>{getVehicleColourLabel(t, vc)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     {showError("vColour") && <p className="text-xs text-destructive mt-1">{liveErrors.vColour}</p>}
@@ -255,13 +261,13 @@ export default function BookingIntake() {
                 </div>
 
                 <div>
-                  <Label>Vehicle Make / Brand *</Label>
+                  <Label>{t("bookingIntake.vehicleMakeBrand")} *</Label>
                   <Select value={vMake} onValueChange={(v) => { setVMake(v); markTouched("vMake"); }}>
                     <SelectTrigger className={showError("vMake") ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select..." />
+                      <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {VEHICLE_MAKES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      {VEHICLE_MAKES.map((mk) => <SelectItem key={mk} value={mk}>{mk === "Other" ? t("common.other") : mk}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   {showError("vMake") && <p className="text-xs text-destructive mt-1">{liveErrors.vMake}</p>}
@@ -269,7 +275,7 @@ export default function BookingIntake() {
                     <>
                       <Input
                         className={`mt-2 ${showError("vMakeOther") ? "border-destructive" : ""}`}
-                        placeholder="Specify make"
+                        placeholder={t("bookingIntake.specifyMake")}
                         value={vMakeOther}
                         onChange={(e) => setVMakeOther(e.target.value)}
                         onBlur={() => markTouched("vMakeOther")}
@@ -282,11 +288,11 @@ export default function BookingIntake() {
                 </div>
 
                 <div className="border-t pt-5">
-                  <h2 className="font-semibold mb-3">Driver Information</h2>
+                  <h2 className="font-semibold mb-3">{t("bookingIntake.driverInformation")}</h2>
 
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="dl">Driver's License Number *</Label>
+                      <Label htmlFor="dl">{t("bookingIntake.driversLicenseNumber")}</Label>
                       <Input
                         id="dl"
                         value={dl}
@@ -298,13 +304,13 @@ export default function BookingIntake() {
                       {showError("dl") && <p className="text-xs text-destructive mt-1">{liveErrors.dl}</p>}
                     </div>
                     <div>
-                      <Label>License Issuing Province / State *</Label>
+                      <Label>{t("bookingIntake.field.issuingProvinceState")} *</Label>
                       <Select value={licProv} onValueChange={(v) => { setLicProv(v); markTouched("licProv"); }}>
                         <SelectTrigger className={showError("licProv") ? "border-destructive" : ""}>
-                          <SelectValue placeholder="Select..." />
+                          <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent className="max-h-72">
-                          {PROVINCE_STATE_GROUPS.map((g) => (
+                          {provinceStateGroups.map((g) => (
                             <SelectGroup key={g.label}>
                               <SelectLabel>{g.label}</SelectLabel>
                               {g.options.map((o) => (
@@ -324,11 +330,11 @@ export default function BookingIntake() {
             {isStorage && (
               <>
                 <div>
-                  <Label className="mb-2 block">Item categories &amp; quantities *</Label>
+                  <Label className="mb-2 block">{t("bookingIntake.itemCategoriesAndQuantities")} *</Label>
                   <div className="space-y-2">
                     {STORAGE_CATEGORIES.map((c) => (
                       <div key={c.key} className="flex items-center justify-between gap-3">
-                        <span className="text-sm flex-1">{c.label}</span>
+                        <span className="text-sm flex-1">{t(`bookingIntake.storageCategory.${c.key}`, { defaultValue: c.label })}</span>
                         <Input
                           type="number"
                           min={0}
@@ -349,12 +355,12 @@ export default function BookingIntake() {
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Label htmlFor="notes">{t("bookingIntake.notesOptional")}</Label>
                   <Textarea
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-                    placeholder="e.g. fragile items, special handling, access requirements, drop-off time preference"
+                    placeholder={t("bookingIntake.notesPlaceholder")}
                     rows={4}
                     className={showError("notes") ? "border-destructive" : ""}
                   />
@@ -363,14 +369,14 @@ export default function BookingIntake() {
                 </div>
 
                 <div>
-                  <Label>Estimated total size *</Label>
+                  <Label>{t("bookingIntake.field.estimatedTotalSize")} *</Label>
                   <Select value={size} onValueChange={(v) => { setSize(v); markTouched("size"); }}>
                     <SelectTrigger className={showError("size") ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select..." />
+                      <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {STORAGE_SIZES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        <SelectItem key={s.value} value={s.value}>{t(`bookingIntake.storageSize.${s.value}`, { defaultValue: s.label })}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -379,7 +385,7 @@ export default function BookingIntake() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="dropoffDate">Preferred drop-off date *</Label>
+                    <Label htmlFor="dropoffDate">{t("bookingIntake.preferredDropoffDate")} *</Label>
                     <Input
                       id="dropoffDate"
                       type="date"
@@ -395,16 +401,16 @@ export default function BookingIntake() {
                     )}
                   </div>
                   <div>
-                    <Label>Preferred drop-off time *</Label>
+                    <Label>{t("bookingIntake.preferredDropoffTime")} *</Label>
                     <Select
                       value={dropoffTime}
                       onValueChange={(v) => { setDropoffTime(v); markTouched("dropoffTime"); }}
                     >
                       <SelectTrigger className={showError("dropoffTime") ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("bookingIntake.selectPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-72">
-                        {TIMES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {TIMES.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     {showError("dropoffTime") && (
@@ -417,7 +423,7 @@ export default function BookingIntake() {
 
             {!isParking && !isStorage && (
               <p className="text-sm text-muted-foreground">
-                No additional info required for this booking.
+                {t("bookingIntake.noAdditionalInfoRequired")}
               </p>
             )}
 
@@ -427,7 +433,7 @@ export default function BookingIntake() {
               onClick={handleContinue}
               disabled={(isParking || isStorage) && !isValid}
             >
-              Continue to Payment <ArrowRight className="w-4 h-4 ml-1" />
+              {t("bookingIntake.continueToPayment")} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </CardContent>
         </Card>

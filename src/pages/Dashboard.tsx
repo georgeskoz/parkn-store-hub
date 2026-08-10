@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import LanguageToggle from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,7 @@ import ReviewPromptBanner from "@/components/reviews/ReviewPromptBanner";
 type ViewMode = "provider" | "seeker";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, profile, roles, signOut, addRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -39,15 +42,15 @@ const Dashboard = () => {
       await addRole(role);
       setViewMode(role);
       toast({
-        title: `${role === "provider" ? "Provider" : "Seeker"} role activated`,
-        description: `You can now ${role === "provider" ? "list spaces" : "search and book spaces"}.`,
+        title: role === "provider" ? t("dashboard.providerRoleActivated") : t("dashboard.seekerRoleActivated"),
+        description: role === "provider" ? t("dashboard.canNowListSpaces") : t("dashboard.canNowSearchAndBook"),
       });
       navigate("/dashboard", { replace: true });
     } catch (e: any) {
       console.error("Failed to set role:", e);
       toast({
-        title: "Could not set role",
-        description: e?.message || "Please try again.",
+        title: t("dashboard.couldNotSetRole"),
+        description: e?.message || t("dashboard.pleaseTryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -76,13 +79,14 @@ const Dashboard = () => {
                 onClick={() => setViewMode(viewMode === "provider" ? "seeker" : "provider")}
               >
                 <ArrowLeftRight className="w-4 h-4 mr-1" />
-                Switch to {viewMode === "provider" ? "Seeker" : "Provider"}
+                {viewMode === "provider" ? t("dashboard.switchToSeeker") : t("dashboard.switchToProvider")}
               </Button>
             )}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
               {profile?.display_name || user?.email}
             </div>
+            <LanguageToggle />
             <Button variant="ghost" size="icon" onClick={signOut}>
               <LogOut className="w-4 h-4" />
             </Button>
@@ -93,8 +97,8 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         {roles.length === 0 && (
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Spotsvault!</h1>
-            <p className="text-muted-foreground mb-8">How would you like to use Spotsvault? You can always add the other role later.</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{t("dashboard.welcomeToSpotsvault")}</h1>
+            <p className="text-muted-foreground mb-8">{t("dashboard.howWouldYouLikeToUse")}</p>
             <div className="grid md:grid-cols-2 gap-4">
               <button
                 type="button"
@@ -111,8 +115,8 @@ const Dashboard = () => {
                         <Car className="w-7 h-7 text-primary" />
                       )}
                     </div>
-                    <CardTitle>I'm looking for spaces</CardTitle>
-                    <CardDescription>Find and book parking spots or storage near you</CardDescription>
+                    <CardTitle>{t("dashboard.imLookingForSpaces")}</CardTitle>
+                    <CardDescription>{t("dashboard.findAndBookDescription")}</CardDescription>
                   </CardHeader>
                 </Card>
               </button>
@@ -131,8 +135,8 @@ const Dashboard = () => {
                         <Warehouse className="w-7 h-7 text-accent" />
                       )}
                     </div>
-                    <CardTitle>I have spaces to list</CardTitle>
-                    <CardDescription>Rent out your parking spots or storage spaces</CardDescription>
+                    <CardTitle>{t("dashboard.iHaveSpacesToList")}</CardTitle>
+                    <CardDescription>{t("dashboard.rentOutDescription")}</CardDescription>
                   </CardHeader>
                 </Card>
               </button>
@@ -144,10 +148,10 @@ const Dashboard = () => {
           <div>
             <div className="flex items-center gap-3 mb-8">
               <h1 className="text-3xl font-bold text-foreground">
-                {viewMode === "provider" ? "Provider Dashboard" : "Seeker Dashboard"}
+                {viewMode === "provider" ? t("dashboard.providerDashboard") : t("dashboard.seekerDashboard")}
               </h1>
               <Badge variant={viewMode === "provider" ? "default" : "secondary"}>
-                {viewMode === "provider" ? "Provider" : "Seeker"}
+                {viewMode === "provider" ? t("dashboard.provider") : t("dashboard.seeker")}
               </Badge>
             </div>
 
@@ -155,7 +159,7 @@ const Dashboard = () => {
               <Card className="mb-6 border-dashed">
                 <CardContent className="flex items-center justify-between py-4">
                   <p className="text-sm text-muted-foreground">
-                    Want to also {viewMode === "provider" ? "search and book spaces" : "list your spaces"}?
+                    {viewMode === "provider" ? t("dashboard.wantToAlsoSearch") : t("dashboard.wantToAlsoList")}
                   </p>
                   <Button
                     variant="outline"
@@ -163,7 +167,7 @@ const Dashboard = () => {
                     onClick={() => handleAddRole(viewMode === "provider" ? "seeker" : "provider")}
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add {viewMode === "provider" ? "Seeker" : "Provider"} Role
+                    {viewMode === "provider" ? t("dashboard.addSeekerRole") : t("dashboard.addProviderRole")}
                   </Button>
                 </CardContent>
               </Card>
@@ -172,16 +176,16 @@ const Dashboard = () => {
             <Tabs defaultValue="overview">
               <TabsList>
                 <TabsTrigger value="overview">
-                  <LayoutDashboard className="w-4 h-4 mr-1" /> Overview
+                  <LayoutDashboard className="w-4 h-4 mr-1" /> {t("dashboard.overview")}
                 </TabsTrigger>
                 <TabsTrigger value="messages" className="relative">
-                  <MessageSquare className="w-4 h-4 mr-1" /> Messages
+                  <MessageSquare className="w-4 h-4 mr-1" /> {t("nav.messages")}
                   {unreadTotal > 0 && (
                     <Badge className="ml-2 h-5 min-w-5 px-1 text-[10px]">{unreadTotal}</Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="reviews">
-                  <Star className="w-4 h-4 mr-1" /> Reviews
+                  <Star className="w-4 h-4 mr-1" /> {t("listingDetail.reviews")}
                 </TabsTrigger>
               </TabsList>
 
@@ -206,6 +210,7 @@ const Dashboard = () => {
 };
 
 const MessagesTab = () => {
+  const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
   return (
     <div className="grid md:grid-cols-[320px_1fr] gap-6">
@@ -223,7 +228,7 @@ const MessagesTab = () => {
           />
         ) : (
           <Card className="card-shadow h-[500px] flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">Select a conversation to view messages.</p>
+            <p className="text-sm text-muted-foreground">{t("dashboard.selectConversation")}</p>
           </Card>
         )}
       </div>
@@ -232,6 +237,7 @@ const MessagesTab = () => {
 };
 
 const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) => {
+  const { t } = useTranslation();
   const [activeBookings, setActiveBookings] = useState(0);
   const [revenue, setRevenue] = useState(0);
 
@@ -257,13 +263,13 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Create Listing</CardTitle>
-            <CardDescription>Add a new space to your portfolio</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.createListing")}</CardTitle>
+            <CardDescription>{t("dashboard.addNewSpaceDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="w-full" asChild>
               <Link to="/list">
-                <Plus className="w-4 h-4 mr-2" /> New Listing
+                <Plus className="w-4 h-4 mr-2" /> {t("dashboard.newListing")}
               </Link>
             </Button>
           </CardContent>
@@ -274,8 +280,8 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
         />
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Active Bookings</CardTitle>
-            <CardDescription>Current reservations on your spots</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.activeBookings")}</CardTitle>
+            <CardDescription>{t("dashboard.activeBookingsDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{activeBookings}</p>
@@ -283,8 +289,8 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
         </Card>
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Revenue</CardTitle>
-            <CardDescription>Total earnings this month</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.revenue")}</CardTitle>
+            <CardDescription>{t("dashboard.revenueDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">${revenue.toFixed(2)}</p>
@@ -299,6 +305,7 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
 };
 
 const SeekerView = ({ userId }: { userId?: string }) => {
+  const { t } = useTranslation();
   const [parkingCount, setParkingCount] = useState(0);
   const [storageCount, setStorageCount] = useState(0);
   const [spent, setSpent] = useState(0);
@@ -327,32 +334,32 @@ const SeekerView = ({ userId }: { userId?: string }) => {
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Parking Bookings</CardTitle>
-            <CardDescription>Upcoming & active parking reservations</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.parkingBookings")}</CardTitle>
+            <CardDescription>{t("dashboard.parkingBookingsDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{parkingCount}</p>
             <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-              <Link to="/find?category=parking"><Car className="w-4 h-4 mr-1" /> Find Parking</Link>
+              <Link to="/find?category=parking"><Car className="w-4 h-4 mr-1" /> {t("nav.findParking")}</Link>
             </Button>
           </CardContent>
         </Card>
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Storage Contracts</CardTitle>
-            <CardDescription>Long-term storage rentals</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.storageContracts")}</CardTitle>
+            <CardDescription>{t("dashboard.storageContractsDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{storageCount}</p>
             <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-              <Link to="/find?category=storage"><Warehouse className="w-4 h-4 mr-1" /> Find Storage</Link>
+              <Link to="/find?category=storage"><Warehouse className="w-4 h-4 mr-1" /> {t("nav.findStorage")}</Link>
             </Button>
           </CardContent>
         </Card>
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">Spent</CardTitle>
-            <CardDescription>Total spent this month</CardDescription>
+            <CardTitle className="text-lg">{t("dashboard.spent")}</CardTitle>
+            <CardDescription>{t("dashboard.spentDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">${spent.toFixed(2)}</p>

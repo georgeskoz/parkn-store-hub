@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function ReviewForm({ bookingId, listingId, revieweeId, reviewerId, onSubmitted }: Props) {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -21,7 +23,7 @@ export default function ReviewForm({ bookingId, listingId, revieweeId, reviewerI
 
   const submit = async () => {
     if (rating < 1) {
-      toast({ title: "Please pick a rating", variant: "destructive" });
+      toast({ title: t("reviews.pleasePickRating"), variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -35,27 +37,27 @@ export default function ReviewForm({ bookingId, listingId, revieweeId, reviewerI
     });
     setSubmitting(false);
     if (error) {
-      toast({ title: "Could not submit review", description: error.message, variant: "destructive" });
+      toast({ title: t("reviews.couldNotSubmit"), description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Review submitted — thanks!" });
+    toast({ title: t("reviews.submittedThanks") });
     onSubmitted?.();
   };
 
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-sm font-medium mb-1">Your rating</p>
+        <p className="text-sm font-medium mb-1">{t("reviews.yourRating")}</p>
         <StarRating value={rating} onChange={setRating} size={28} />
       </div>
       <Textarea
-        placeholder="Share your experience (optional)…"
+        placeholder={t("reviews.shareExperiencePlaceholder")}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         rows={3}
       />
       <Button onClick={submit} disabled={submitting}>
-        {submitting ? "Submitting…" : "Submit Review"}
+        {submitting ? t("listingWizard.submitting") : t("reviews.submitReview")}
       </Button>
     </div>
   );

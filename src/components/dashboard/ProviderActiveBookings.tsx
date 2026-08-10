@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getIntlLocale } from "@/lib/dateLocale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +55,7 @@ type Booking = {
 const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 const ProviderActiveBookings = ({ userId }: { userId: string }) => {
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [extensions, setExtensions] = useState<Ext[]>([]);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
@@ -123,15 +126,15 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
       toast({
-        title: decision === "accept" ? "Extension accepted" : "Extension declined",
+        title: decision === "accept" ? t("providerBookings.extensionAccepted") : t("providerBookings.extensionDeclined"),
         description:
           data?.status === "paid"
-            ? `Charged $${ext.extra_amount.toFixed(2)} to customer.`
+            ? t("providerBookings.chargedToCustomer", { amount: ext.extra_amount.toFixed(2) })
             : undefined,
       });
       await load();
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: t("booking.failed"), description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -144,26 +147,26 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
         body: { bookingId: b.id, role: "provider" },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast({ title: "Marked complete" });
+      toast({ title: t("providerBookings.markedComplete") });
       await load();
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: t("booking.failed"), description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
   };
 
   const escrowBadge = (s: string | null) => {
-    if (s === "held") return <Badge variant="secondary">Held in escrow</Badge>;
-    if (s === "released") return <Badge>Paid out</Badge>;
-    if (s === "disputed") return <Badge variant="destructive">Disputed</Badge>;
+    if (s === "held") return <Badge variant="secondary">{t("providerBookings.heldInEscrow")}</Badge>;
+    if (s === "released") return <Badge>{t("providerBookings.paidOut")}</Badge>;
+    if (s === "disputed") return <Badge variant="destructive">{t("booking.escrow.disputed")}</Badge>;
     return null;
   };
 
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle className="text-lg">Hosted Bookings</CardTitle>
+        <CardTitle className="text-lg">{t("providerBookings.hostedBookings")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -174,14 +177,14 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
           <>
             {extensions.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold">Pending extension requests</h4>
+                <h4 className="text-sm font-semibold">{t("providerBookings.pendingExtensionRequests")}</h4>
                 {extensions.map((e) => (
                   <div
                     key={e.id}
                     className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border bg-muted/30"
                   >
                     <div className="text-sm">
-                      +{e.extra_hours}h until {new Date(e.new_end_date).toLocaleString()}{" "}
+                      {t("providerBookings.extraHoursUntil", { hours: e.extra_hours, datetime: new Date(e.new_end_date).toLocaleString(getIntlLocale()) })}{" "}
                       • <strong>${Number(e.extra_amount).toFixed(2)} CAD</strong>
                     </div>
                     <div className="flex gap-2">
@@ -191,14 +194,14 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                         disabled={busy === e.id}
                         onClick={() => respond(e, "decline")}
                       >
-                        Decline
+                        {t("providerBookings.decline")}
                       </Button>
                       <Button
                         size="sm"
                         disabled={busy === e.id}
                         onClick={() => respond(e, "accept")}
                       >
-                        Accept & charge
+                        {t("providerBookings.acceptAndCharge")}
                       </Button>
                     </div>
                   </div>
@@ -207,7 +210,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
             )}
 
             {bookings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No active bookings.</p>
+              <p className="text-sm text-muted-foreground">{t("providerBookings.noActiveBookings")}</p>
             ) : (
               <div className="space-y-3">
                 {bookings.map((b) => {
@@ -221,23 +224,22 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                       <div className="flex-1 min-w-[180px]">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium capitalize">
-                            {b.category || "booking"}
+                            {b.category === "parking" ? t("search.parking") : b.category === "storage" ? t("search.storage") : t("booking.booking")}
                           </span>
                           <Badge variant="outline" className="capitalize">
-                            {b.status}
+                            {t(`booking.status.${b.status}`, { defaultValue: b.status })}
                           </Badge>
                           {escrowBadge(b.escrow_status)}
-                          {overdue && <Badge variant="destructive">Customer overdue</Badge>}
+                          {overdue && <Badge variant="destructive">{t("providerBookings.customerOverdue")}</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {b.city} •{" "}
-                          {new Date(b.start_date).toLocaleDateString()} →{" "}
-                          {new Date(b.end_date).toLocaleDateString()}
+                          {new Date(b.start_date).toLocaleDateString(getIntlLocale())} →{" "}
+                          {new Date(b.end_date).toLocaleDateString(getIntlLocale())}
                         </p>
                         {Number(b.overdue_charges_total || 0) > 0 && (
                           <p className="text-xs mt-1">
-                            Extra collected (2×): $
-                            {Number(b.overdue_charges_total).toFixed(2)}
+                            {t("providerBookings.extraCollected", { amount: Number(b.overdue_charges_total).toFixed(2) })}
                           </p>
                         )}
                       </div>
@@ -252,7 +254,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                             disabled={busy === b.id}
                             onClick={() => markComplete(b)}
                           >
-                            {overdue ? "Force complete (no-pickup)" : "Mark complete"}
+                            {overdue ? t("providerBookings.forceComplete") : t("providerBookings.markComplete")}
                           </Button>
                         )}
                         {(() => {
@@ -260,21 +262,21 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
                           if (rs === "eligible") {
                             return (
                               <Button size="sm" onClick={() => setReviewBooking(b)}>
-                                <Star className="w-3.5 h-3.5 mr-1" /> Leave a Review
+                                <Star className="w-3.5 h-3.5 mr-1" /> {t("booking.leaveAReview")}
                               </Button>
                             );
                           }
                           if (rs === "reviewed") {
                             return (
                               <Button size="sm" variant="outline" disabled>
-                                Review submitted ✓
+                                {t("booking.reviewSubmitted")}
                               </Button>
                             );
                           }
                           if (rs === "expired") {
                             return (
                               <span className="block text-xs text-muted-foreground">
-                                Review period expired
+                                {t("booking.reviewPeriodExpired")}
                               </span>
                             );
                           }

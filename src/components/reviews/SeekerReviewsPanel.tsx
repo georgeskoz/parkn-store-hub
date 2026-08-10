@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getIntlLocale } from "@/lib/dateLocale";
 import StarRating from "./StarRating";
 import ReviewForm from "./ReviewForm";
 
@@ -23,6 +25,7 @@ interface ReviewRow {
 }
 
 export default function SeekerReviewsPanel() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [reviewsByBooking, setReviewsByBooking] = useState<Record<string, ReviewRow>>({});
@@ -55,12 +58,12 @@ export default function SeekerReviewsPanel() {
 
   useEffect(() => { load(); }, [user]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   if (!bookings.length) {
     return (
       <Card className="card-shadow">
         <CardContent className="py-8 text-center text-muted-foreground">
-          You don't have any completed bookings yet.
+          {t("reviews.noCompletedBookingsYet")}
         </CardContent>
       </Card>
     );
@@ -74,8 +77,8 @@ export default function SeekerReviewsPanel() {
           <Card key={b.id} className="card-shadow">
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
-                <span>{b.listings?.title || "Listing"}</span>
-                {existing && <Badge variant="secondary">Review submitted</Badge>}
+                <span>{b.listings?.title || t("listingCard.listing")}</span>
+                {existing && <Badge variant="secondary">{t("booking.reviewSubmitted")}</Badge>}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -84,7 +87,7 @@ export default function SeekerReviewsPanel() {
                   <StarRating value={existing.rating} readOnly />
                   {existing.comment && <p className="text-sm text-foreground/90">{existing.comment}</p>}
                   <p className="text-xs text-muted-foreground">
-                    {new Date(existing.created_at).toLocaleDateString()}
+                    {new Date(existing.created_at).toLocaleDateString(getIntlLocale())}
                   </p>
                 </div>
               ) : (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ChevronRight, ChevronLeft, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-import { STEPS, INITIAL_FORM, type ListingFormData } from "@/components/listing/ListingFormTypes";
+import { INITIAL_FORM, getTranslatedSteps, type ListingFormData } from "@/components/listing/ListingFormTypes";
 import StepTypeCategory from "@/components/listing/StepTypeCategory";
 import StepLocation from "@/components/listing/StepLocation";
 import StepDetails from "@/components/listing/StepDetails";
@@ -19,12 +20,14 @@ import StepExtras from "@/components/listing/StepExtras";
 import StepReview from "@/components/listing/StepReview";
 
 export default function ListYourSpace() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<ListingFormData>({ ...INITIAL_FORM });
   const [submitting, setSubmitting] = useState(false);
+  const STEPS = getTranslatedSteps(t);
 
   const update = (key: string, value: any) => setForm((p) => ({ ...p, [key]: value }));
   const toggleFeature = (f: string) =>
@@ -129,10 +132,10 @@ export default function ListYourSpace() {
         console.error("AI moderation error:", err);
       }
 
-      toast({ title: "Listing created!", description: "Your space is now live on the marketplace." });
+      toast({ title: t("listingWizard.listingCreated"), description: t("listingWizard.listingCreatedDescription") });
       navigate("/dashboard");
     } catch (err: any) {
-      toast({ title: "Error creating listing", description: err.message, variant: "destructive" });
+      toast({ title: t("listingWizard.errorCreatingListing"), description: err.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -144,9 +147,9 @@ export default function ListYourSpace() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Sign in required</h1>
-          <p className="text-muted-foreground mb-4">You need to be logged in to list a space.</p>
-          <Button onClick={() => navigate("/auth")}>Sign In</Button>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t("listingWizard.signInRequired")}</h1>
+          <p className="text-muted-foreground mb-4">{t("listingWizard.needToBeLoggedIn")}</p>
+          <Button onClick={() => navigate("/auth")}>{t("auth.signIn")}</Button>
         </main>
         <Footer />
       </div>
@@ -157,8 +160,8 @@ export default function ListYourSpace() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-2xl">
-        <h1 className="text-3xl font-bold text-foreground mb-1">List Your Space</h1>
-        <p className="text-muted-foreground mb-8">Create a new parking or storage listing in a few steps.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-1">{t("listingWizard.listYourSpace")}</h1>
+        <p className="text-muted-foreground mb-8">{t("listingWizard.createListingSubtitle")}</p>
 
         {/* Progress */}
         <div className="flex items-center gap-1 mb-8">
@@ -186,16 +189,16 @@ export default function ListYourSpace() {
             {/* Navigation */}
             <div className="flex justify-between mt-8">
               <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={step === 0}>
-                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                <ChevronLeft className="w-4 h-4 mr-1" /> {t("common.back")}
               </Button>
               {step < STEPS.length - 1 ? (
                 <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
-                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                  {t("common.next")} <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={!form.disclaimerAccepted || submitting}>
                   {submitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                  {submitting ? "Submitting…" : "Submit Listing"}
+                  {submitting ? t("listingWizard.submitting") : t("listingWizard.submitListing")}
                 </Button>
               )}
             </div>

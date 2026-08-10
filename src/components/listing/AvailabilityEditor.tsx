@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getFullDayLabel } from "@/components/listing/ListingFormTypes";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -9,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, CalendarDays, Clock, Ban, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getDateFnsLocale } from "@/lib/dateLocale";
 
 const DAYS = [
   { idx: 1, label: "Monday", short: "Mon" },
@@ -32,12 +35,12 @@ const TIME_OPTIONS = (() => {
   return arr;
 })();
 
-const fmtTimeLabel = (t: string) => {
-  if (t === "24:00") return "12:00 AM (next)";
-  const [h, m] = t.split(":").map(Number);
+const fmtTimeLabel = (time: string, tr: (key: string) => string) => {
+  if (time === "24:00") return tr("listingWizard.midnightNext");
+  const [h, m] = time.split(":").map(Number);
   const d = new Date();
   d.setHours(h, m, 0, 0);
-  return format(d, "h:mm a");
+  return format(d, "h:mm a", { locale: getDateFnsLocale() });
 };
 
 type DayRow = { enabled: boolean; start: string; end: string };
@@ -53,7 +56,9 @@ interface Props {
 }
 
 export default function AvailabilityEditor({ listingId }: Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
+  const DAYS_TR = DAYS.map((d) => ({ ...d, label: getFullDayLabel(t, d.idx) }));
   const [loading, setLoading] = useState(true);
   const [savingSched, setSavingSched] = useState(false);
   const [savingBlocks, setSavingBlocks] = useState(false);
@@ -116,7 +121,7 @@ export default function AvailabilityEditor({ listingId }: Props) {
         }
         setBookedDates(booked);
       } catch (err: any) {
-        toast({ title: "Failed to load availability", description: err.message, variant: "destructive" });
+        toast({ title: t("availabilitySlots.failedToLoad"), description: err.message, variant: "destructive" });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -137,7 +142,7 @@ export default function AvailabilityEditor({ listingId }: Props) {
       }
       return next;
     });
-    toast({ title: "Applied to all days", description: `${fmtTimeLabel(bulkStart)} – ${fmtTimeLabel(bulkEnd)}` });
+    toast({ title: t("listingWizard.appliedToAllDays"), description: `${fmtTimeLabel(bulkStart, t)} – ${fmtTimeLabel(bulkEnd, t)}` });
   };
 
   const saveSchedule = async () => {
@@ -149,7 +154,7 @@ export default function AvailabilityEditor({ listingId }: Props) {
         if (row.enabled) {
           const sm = parseInt(row.start.replace(":", ""));
           const em = row.end === "24:00" ? 2400 : parseInt(row.end.replace(":", ""));
-          if (em <= sm) throw new Error(`${d.label}: closing time must be after opening time`);
+          if (em <= sm) throw new Error(t("listingWizard.closingAfterOpening", { day: getFullDayLabel(t, d.idx) }));
         }
       }
 
@@ -164,9 +169,9 @@ export default function AvailabilityEditor({ listingId }: Props) {
         const { error } = await supabase.from("listing_availability_slots").insert(rows);
         if (error) throw error;
       }
-      toast({ title: "Weekly schedule saved" });
+      toast({ title: t("listingWizard.weeklyScheduleSaved") });
     } catch (err: any) {
-      toast({ title: "Could not save schedule", description: err.message, variant: "destructive" });
+      toast({ title: t("listingWizard.couldNotSaveSchedule"), description: err.message, variant: "destructive" });
     } finally {
       setSavingSched(false);
     }
@@ -225,9 +230,9 @@ export default function AvailabilityEditor({ listingId }: Props) {
       setBlocked(next);
       setPendingAdd(new Set());
       setPendingRemove(new Set());
-      toast({ title: "Blocked dates saved" });
+      toast({ title: t("listingWizard.blockedDatesSaved") });
     } catch (err: any) {
-      toast({ title: "Could not save blocked dates", description: err.message, variant: "destructive" });
+      toast({ title: t("listingWizard.couldNotSaveBlockedDates"), description: err.message, variant: "destructive" });
     } finally {
       setSavingBlocks(false);
     }
@@ -273,40 +278,40 @@ export default function AvailabilityEditor({ listingId }: Props) {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-primary" />
-          <h3 className="font-semibold text-foreground">Weekly recurring schedule</h3>
+          <h3 className="font-semibold text-foreground">{t("listingWizard.weeklyRecurringSchedule")}</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Set which days you're open and your hours. Days that are off are unbookable.
+          {t("listingWizard.weeklyScheduleHint")}
         </p>
 
         <div className="rounded-lg border border-border p-3 bg-muted/30 flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[140px]">
-            <Label className="text-xs">Bulk open</Label>
+            <Label className="text-xs">{t("listingWizard.bulkOpen")}</Label>
             <Select value={bulkStart} onValueChange={setBulkStart}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent className="max-h-64">
-                {TIME_OPTIONS.filter((t) => t !== "24:00").map((t) => (
-                  <SelectItem key={t} value={t}>{fmtTimeLabel(t)}</SelectItem>
+                {TIME_OPTIONS.filter((time) => time !== "24:00").map((time) => (
+                  <SelectItem key={time} value={time}>{fmtTimeLabel(time, t)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex-1 min-w-[140px]">
-            <Label className="text-xs">Bulk close</Label>
+            <Label className="text-xs">{t("listingWizard.bulkClose")}</Label>
             <Select value={bulkEnd} onValueChange={setBulkEnd}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent className="max-h-64">
-                {TIME_OPTIONS.map((t) => (
-                  <SelectItem key={t} value={t}>{fmtTimeLabel(t)}</SelectItem>
+                {TIME_OPTIONS.map((time) => (
+                  <SelectItem key={time} value={time}>{fmtTimeLabel(time, t)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button variant="secondary" size="sm" onClick={applyToAll}>Apply to all days</Button>
+          <Button variant="secondary" size="sm" onClick={applyToAll}>{t("listingWizard.applyToAllDays")}</Button>
         </div>
 
         <div className="space-y-2">
-          {DAYS.map((d) => {
+          {DAYS_TR.map((d) => {
             const row = schedule[d.idx];
             return (
               <div
@@ -325,23 +330,23 @@ export default function AvailabilityEditor({ listingId }: Props) {
                     <Select value={row.start} onValueChange={(v) => updateDay(d.idx, { start: v })}>
                       <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
                       <SelectContent className="max-h-64">
-                        {TIME_OPTIONS.filter((t) => t !== "24:00").map((t) => (
-                          <SelectItem key={t} value={t}>{fmtTimeLabel(t)}</SelectItem>
+                        {TIME_OPTIONS.filter((time) => time !== "24:00").map((time) => (
+                          <SelectItem key={time} value={time}>{fmtTimeLabel(time, t)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <span className="text-muted-foreground">to</span>
+                    <span className="text-muted-foreground">{t("listingWizard.to")}</span>
                     <Select value={row.end} onValueChange={(v) => updateDay(d.idx, { end: v })}>
                       <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
                       <SelectContent className="max-h-64">
-                        {TIME_OPTIONS.map((t) => (
-                          <SelectItem key={t} value={t}>{fmtTimeLabel(t)}</SelectItem>
+                        {TIME_OPTIONS.map((time) => (
+                          <SelectItem key={time} value={time}>{fmtTimeLabel(time, t)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 ) : (
-                  <span className="text-sm text-muted-foreground italic">Closed</span>
+                  <span className="text-sm text-muted-foreground italic">{t("listingWizard.closed")}</span>
                 )}
               </div>
             );
@@ -351,7 +356,7 @@ export default function AvailabilityEditor({ listingId }: Props) {
         <div className="flex justify-end">
           <Button onClick={saveSchedule} disabled={savingSched}>
             {savingSched ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-            Save schedule
+            {t("listingWizard.saveSchedule")}
           </Button>
         </div>
       </section>
@@ -360,10 +365,10 @@ export default function AvailabilityEditor({ listingId }: Props) {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Ban className="w-4 h-4 text-destructive" />
-          <h3 className="font-semibold text-foreground">Blocked dates</h3>
+          <h3 className="font-semibold text-foreground">{t("listingWizard.blockedDates")}</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Click a date to block or unblock it. Blocked dates override the weekly schedule. Booked dates are read-only.
+          {t("listingWizard.blockedDatesHint")}
         </p>
 
         <div className="rounded-lg border border-border bg-muted/30 p-3 flex flex-col items-center">
@@ -391,16 +396,16 @@ export default function AvailabilityEditor({ listingId }: Props) {
             className="p-2 pointer-events-auto rounded-md bg-background"
           />
           <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground pt-2">
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-primary/30" /> Open</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-destructive/50" /> Blocked</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-muted-foreground/30" /> Booked</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-primary/30" /> {t("storageAvailabilityCalendar.open")}</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-destructive/50" /> {t("listingWizard.blocked")}</span>
+            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-muted-foreground/30" /> {t("storageAvailabilityCalendar.booked")}</span>
           </div>
         </div>
 
         {hasBlockChanges && (
           <div className="text-xs text-muted-foreground">
-            {pendingAdd.size > 0 && <span className="mr-3">+{pendingAdd.size} to block</span>}
-            {pendingRemove.size > 0 && <span>−{pendingRemove.size} to unblock</span>}
+            {pendingAdd.size > 0 && <span className="mr-3">{t("listingWizard.toBlock", { count: pendingAdd.size })}</span>}
+            {pendingRemove.size > 0 && <span>{t("listingWizard.toUnblock", { count: pendingRemove.size })}</span>}
           </div>
         )}
 
@@ -411,12 +416,12 @@ export default function AvailabilityEditor({ listingId }: Props) {
               onClick={() => { setPendingAdd(new Set()); setPendingRemove(new Set()); }}
               disabled={savingBlocks}
             >
-              <Trash2 className="w-4 h-4 mr-1" /> Discard changes
+              <Trash2 className="w-4 h-4 mr-1" /> {t("listingWizard.discardChanges")}
             </Button>
           )}
           <Button onClick={saveBlocks} disabled={savingBlocks || !hasBlockChanges}>
             {savingBlocks ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-            Save blocked dates
+            {t("listingWizard.saveBlockedDates")}
           </Button>
         </div>
       </section>

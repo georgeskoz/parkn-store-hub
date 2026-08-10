@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import { getDateFnsLocale } from "@/lib/dateLocale";
 
 export interface TimeRange {
   start: string; // "HH:MM"
@@ -27,7 +29,7 @@ const fmtTime = (t: string) => {
   const [h, m] = t.split(":").map(Number);
   const d = new Date();
   d.setHours(h, m, 0, 0);
-  return format(d, "h:mm a");
+  return format(d, "h:mm a", { locale: getDateFnsLocale() });
 };
 
 export function fitsInOpenWindow(
@@ -48,6 +50,7 @@ export default function AvailabilitySlots({
   selectedEnd,
   onPickSlot,
 }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [available, setAvailable] = useState<TimeRange[]>([]);
   const [busy, setBusy] = useState<TimeRange[]>([]);
@@ -70,7 +73,7 @@ export default function AvailabilitySlots({
         setAvailable((data?.available || []) as TimeRange[]);
         setBusy((data?.busy || []) as TimeRange[]);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load availability");
+        if (!cancelled) setError(err.message || t("availabilitySlots.failedToLoad"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -92,7 +95,7 @@ export default function AvailabilitySlots({
     <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-foreground flex items-center gap-1">
-          <Clock className="w-3 h-3" /> Availability for {format(date, "MMM d")}
+          <Clock className="w-3 h-3" /> {t("availabilitySlots.availabilityFor", { date: format(date, "MMM d", { locale: getDateFnsLocale() }) })}
         </p>
         {loading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
@@ -113,23 +116,23 @@ export default function AvailabilitySlots({
                   key={i}
                   className="absolute top-0 h-full bg-destructive/60"
                   style={{ left: `${left}%`, width: `${width}%` }}
-                  title={`Booked ${fmtTime(b.start)} – ${fmtTime(b.end)}`}
+                  title={t("availabilitySlots.booked", { start: fmtTime(b.start), end: fmtTime(b.end) })}
                 />
               );
             })}
           </div>
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span>
+            <span>{t("availabilitySlots.time12am")}</span><span>{t("availabilitySlots.time6am")}</span><span>{t("availabilitySlots.time12pm")}</span><span>{t("availabilitySlots.time6pm")}</span><span>{t("availabilitySlots.time12am")}</span>
           </div>
 
           {hasBookings ? (
             <div className="space-y-2">
               <p className="text-xs font-medium text-foreground">
-                Available Time Slots Open for Rent
+                {t("availabilitySlots.availableSlotsOpenForRent")}
               </p>
               {available.length === 0 ? (
                 <p className="text-xs text-destructive flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Fully booked. Pick another date.
+                  <AlertCircle className="w-3 h-3" /> {t("availabilitySlots.fullyBooked")}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
@@ -147,7 +150,7 @@ export default function AvailabilitySlots({
               )}
               {busy.length > 0 && (
                 <div className="pt-1">
-                  <p className="text-[11px] text-muted-foreground mb-1">Already booked:</p>
+                  <p className="text-[11px] text-muted-foreground mb-1">{t("availabilitySlots.alreadyBooked")}</p>
                   <div className="flex flex-wrap gap-1">
                     {busy.map((b, i) => (
                       <Badge key={i} variant="outline" className="text-[10px] line-through text-muted-foreground">
@@ -160,14 +163,14 @@ export default function AvailabilitySlots({
             </div>
           ) : (
             <p className="text-xs text-primary flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Fully available all day
+              <CheckCircle2 className="w-3 h-3" /> {t("availabilitySlots.fullyAvailableAllDay")}
             </p>
           )}
 
           {selectedStart && selectedEnd && !selectionFits && (
             <p className="text-xs text-destructive flex items-center gap-1 border-t border-border pt-2">
               <AlertCircle className="w-3 h-3" />
-              Your selected time {fmtTime(selectedStart)}–{fmtTime(selectedEnd)} overlaps a booked block. Pick a slot above.
+              {t("availabilitySlots.selectionOverlaps", { start: fmtTime(selectedStart), end: fmtTime(selectedEnd) })}
             </p>
           )}
         </>

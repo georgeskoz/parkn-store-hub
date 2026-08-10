@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getIntlLocale } from "@/lib/dateLocale";
 import StarRating from "./StarRating";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -41,6 +43,7 @@ export const useListingRatingSummary = (listingId: string) => {
 };
 
 export default function ListingReviews({ listingId }: Props) {
+  const { t } = useTranslation();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,10 +72,10 @@ export default function ListingReviews({ listingId }: Props) {
     })();
   }, [listingId]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading reviews…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("reviews.loadingReviews")}</p>;
 
   if (reviews.length === 0) {
-    return <p className="text-muted-foreground">No reviews yet — be the first!</p>;
+    return <p className="text-muted-foreground">{t("reviews.noReviewsBeFirst")}</p>;
   }
 
   return (
@@ -81,9 +84,9 @@ export default function ListingReviews({ listingId }: Props) {
         <Card key={r.id}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="font-medium text-foreground">{r.profiles?.display_name || "Anonymous"}</p>
+              <p className="font-medium text-foreground">{r.profiles?.display_name || t("reviews.anonymous")}</p>
               <span className="text-xs text-muted-foreground">
-                {new Date(r.created_at).toLocaleDateString()}
+                {new Date(r.created_at).toLocaleDateString(getIntlLocale())}
               </span>
             </div>
             <StarRating value={r.rating} readOnly size={16} />

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -25,21 +26,13 @@ import {
   formatPostalCode,
 } from "@/lib/validators";
 
-const CA_PROVINCES: Array<{ code: string; name: string }> = [
-  { code: "AB", name: "Alberta" },
-  { code: "BC", name: "British Columbia" },
-  { code: "MB", name: "Manitoba" },
-  { code: "NB", name: "New Brunswick" },
-  { code: "NL", name: "Newfoundland and Labrador" },
-  { code: "NS", name: "Nova Scotia" },
-  { code: "NT", name: "Northwest Territories" },
-  { code: "NU", name: "Nunavut" },
-  { code: "ON", name: "Ontario" },
-  { code: "PE", name: "Prince Edward Island" },
-  { code: "QC", name: "Quebec" },
-  { code: "SK", name: "Saskatchewan" },
-  { code: "YT", name: "Yukon" },
-];
+const CA_PROVINCE_SLUGS: Record<string, string> = {
+  AB: "alberta", BC: "britishColumbia", MB: "manitoba", NB: "newBrunswick",
+  NL: "newfoundlandLabrador", NS: "novaScotia", NT: "northwestTerritories",
+  NU: "nunavut", ON: "ontario", PE: "princeEdwardIsland", QC: "quebec",
+  SK: "saskatchewan", YT: "yukon",
+};
+const CA_PROVINCE_CODES = Object.keys(CA_PROVINCE_SLUGS);
 
 const US_STATES: Array<{ code: string; name: string }> = [
   ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"],
@@ -58,6 +51,8 @@ const US_STATES: Array<{ code: string; name: string }> = [
 ].map(([code, name]) => ({ code, name }));
 
 export default function ProfileSettings() {
+  const { t } = useTranslation();
+  const CA_PROVINCES = CA_PROVINCE_CODES.map((code) => ({ code, name: t(`bookingIntake.province.${CA_PROVINCE_SLUGS[code]}`) }));
   const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -91,7 +86,7 @@ export default function ProfileSettings() {
   }>({});
 
   const regionOptions = form.country === "US" ? US_STATES : CA_PROVINCES;
-  const regionLabel = form.country === "US" ? "State" : "Province";
+  const regionLabel = form.country === "US" ? t("profileSettings.state") : t("profileSettings.province");
 
   const runValidation = (f = form) => {
     const e: typeof errors = {};
@@ -113,9 +108,9 @@ export default function ProfileSettings() {
       if (epc) e.postal_code = epc;
     }
     if (anyAddress) {
-      if (!f.address_line1.trim()) e.address_line1 = "Address is required";
-      if (!f.city.trim()) e.city = "City is required";
-      if (!f.province.trim()) e.province = `${f.country === "US" ? "State" : "Province"} is required`;
+      if (!f.address_line1.trim()) e.address_line1 = t("profileSettings.addressRequired");
+      if (!f.city.trim()) e.city = t("profileSettings.cityRequired");
+      if (!f.province.trim()) e.province = t("validators.fieldRequired", { label: f.country === "US" ? t("profileSettings.state") : t("profileSettings.province") });
     }
     return e;
   };
@@ -124,11 +119,11 @@ export default function ProfileSettings() {
   const handleAvatarFile = async (file: File) => {
     if (!user) return;
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please select an image.", variant: "destructive" });
+      toast({ title: t("profileSettings.invalidFile"), description: t("profileSettings.pleaseSelectImage"), variant: "destructive" });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 5MB.", variant: "destructive" });
+      toast({ title: t("listingWizard.fileTooLarge"), description: t("profileSettings.max5mb"), variant: "destructive" });
       return;
     }
     setUploading(true);
@@ -142,11 +137,11 @@ export default function ProfileSettings() {
       const { data: signed, error: sErr } = await supabase.storage
         .from("avatars")
         .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (sErr || !signed) throw sErr || new Error("Could not create URL");
+      if (sErr || !signed) throw sErr || new Error(t("profileSettings.couldNotCreateUrl"));
       setForm(p => ({ ...p, avatar_url: signed.signedUrl }));
-      toast({ title: "Photo uploaded", description: "Click Save Changes to apply." });
+      toast({ title: t("profileSettings.photoUploaded"), description: t("profileSettings.clickSaveToApply") });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({ title: t("listingWizard.uploadFailed"), description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -178,11 +173,11 @@ export default function ProfileSettings() {
       .eq("id", user.id);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     } else {
       setErrors({});
       await refreshProfile();
-      toast({ title: "Profile updated", description: "Your changes have been saved." });
+      toast({ title: t("profileSettings.profileUpdated"), description: t("profileSettings.changesSaved") });
     }
     setSaving(false);
   };
@@ -194,15 +189,15 @@ export default function ProfileSettings() {
       const { error } = await supabase.functions.invoke("delete-account");
       if (error) throw error;
       toast({
-        title: "Account deleted",
-        description: "Your account has been deactivated. We're sorry to see you go.",
+        title: t("profileSettings.accountDeleted"),
+        description: t("profileSettings.accountDeletedDescription"),
       });
       await signOut();
       navigate("/", { replace: true });
     } catch (e: any) {
       toast({
-        title: "Could not delete account",
-        description: e?.message || "Please try again or contact support.",
+        title: t("profileSettings.couldNotDeleteAccount"),
+        description: e?.message || t("profileSettings.tryAgainOrContactSupport"),
         variant: "destructive",
       });
       setDeleting(false);
@@ -213,13 +208,13 @@ export default function ProfileSettings() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-2xl">
-        <h1 className="text-3xl font-bold text-foreground mb-1">Profile Settings</h1>
-        <p className="text-muted-foreground mb-8">Manage your personal information</p>
+        <h1 className="text-3xl font-bold text-foreground mb-1">{t("profileSettings.profileSettings")}</h1>
+        <p className="text-muted-foreground mb-8">{t("profileSettings.managePersonalInfo")}</p>
 
         <Card className="card-shadow">
           <CardHeader>
-            <CardTitle>Personal Info</CardTitle>
-            <CardDescription>This information will be visible to other users</CardDescription>
+            <CardTitle>{t("profileSettings.personalInfo")}</CardTitle>
+            <CardDescription>{t("profileSettings.personalInfoDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Avatar upload */}
@@ -232,7 +227,7 @@ export default function ProfileSettings() {
                 )}
               </div>
               <div className="flex-1 space-y-2">
-                <Label>Profile Photo</Label>
+                <Label>{t("profileSettings.profilePhoto")}</Label>
                 <div className="flex flex-wrap gap-2">
                   <input
                     ref={fileInputRef}
@@ -251,33 +246,33 @@ export default function ProfileSettings() {
                   />
                   <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                     {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                    Upload Photo
+                    {t("profileSettings.uploadPhoto")}
                   </Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} disabled={uploading}>
                     <Camera className="w-4 h-4 mr-2" />
-                    Take Selfie
+                    {t("profileSettings.takeSelfie")}
                   </Button>
                   {form.avatar_url && (
                     <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, avatar_url: "" }))} disabled={uploading}>
-                      Remove
+                      {t("profileSettings.remove")}
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">PNG/JPG up to 5MB</p>
+                <p className="text-xs text-muted-foreground">{t("profileSettings.pngJpgUpTo5mb")}</p>
               </div>
             </div>
 
             <div>
-              <Label>Email</Label>
+              <Label>{t("auth.email")}</Label>
               <Input value={user?.email ?? ""} readOnly disabled />
-              <p className="text-xs text-muted-foreground mt-1">Email cannot be edited here.</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("profileSettings.emailCannotBeEdited")}</p>
             </div>
 
             <div>
-              <Label htmlFor="display_name">Full Name *</Label>
+              <Label htmlFor="display_name">{t("profileSettings.fullName")} *</Label>
               <Input
                 id="display_name"
-                placeholder="Your name"
+                placeholder={t("auth.yourName")}
                 value={form.display_name}
                 onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))}
                 onBlur={() => setErrors(p => ({ ...p, display_name: validateFullName(form.display_name) || undefined }))}
@@ -290,7 +285,7 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">{t("profileSettings.phone")}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -304,19 +299,19 @@ export default function ProfileSettings() {
                 <p className="text-xs text-destructive mt-1">{errors.phone}</p>
               ) : (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Format: (514) 555-1234 or +1-514-555-1234. Stored as +15145551234.
+                  {t("profileSettings.phoneFormatHint")}
                 </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="address_line1">Address Line 1</Label>
+              <Label htmlFor="address_line1">{t("profileSettings.addressLine1")}</Label>
               <Input
                 id="address_line1"
                 placeholder="123 Main St"
                 value={form.address_line1}
                 onChange={e => setForm(p => ({ ...p, address_line1: e.target.value }))}
-                onBlur={() => setErrors(p => ({ ...p, address_line1: form.address_line1.trim() ? undefined : "Address is required" }))}
+                onBlur={() => setErrors(p => ({ ...p, address_line1: form.address_line1.trim() ? undefined : t("profileSettings.addressRequired") }))}
                 className={errors.address_line1 ? "border-destructive" : ""}
                 maxLength={200}
               />
@@ -326,10 +321,10 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="address_line2">Address Line 2</Label>
+              <Label htmlFor="address_line2">{t("profileSettings.addressLine2")}</Label>
               <Input
                 id="address_line2"
-                placeholder="Apt, suite, unit (optional)"
+                placeholder={t("profileSettings.addressLine2Placeholder")}
                 value={form.address_line2}
                 onChange={e => setForm(p => ({ ...p, address_line2: e.target.value }))}
                 maxLength={200}
@@ -338,13 +333,13 @@ export default function ProfileSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city">{t("search.city")}</Label>
                 <Input
                   id="city"
                   placeholder="Montreal"
                   value={form.city}
                   onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
-                  onBlur={() => setErrors(p => ({ ...p, city: form.city.trim() ? undefined : "City is required" }))}
+                  onBlur={() => setErrors(p => ({ ...p, city: form.city.trim() ? undefined : t("profileSettings.cityRequired") }))}
                   className={errors.city ? "border-destructive" : ""}
                   maxLength={100}
                 />
@@ -354,7 +349,7 @@ export default function ProfileSettings() {
               </div>
 
               <div>
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">{t("listingWizard.country")}</Label>
                 <Select
                   value={form.country}
                   onValueChange={(v) => setForm(p => ({ ...p, country: v as "CA" | "US", province: "" }))}
@@ -363,8 +358,8 @@ export default function ProfileSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CA">Canada</SelectItem>
-                    <SelectItem value="US">United States</SelectItem>
+                    <SelectItem value="CA">{t("bookingIntake.canada")}</SelectItem>
+                    <SelectItem value="US">{t("bookingIntake.unitedStates")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -384,7 +379,7 @@ export default function ProfileSettings() {
                     id="province"
                     className={errors.province ? "border-destructive" : ""}
                   >
-                    <SelectValue placeholder={`Select ${regionLabel.toLowerCase()}`} />
+                    <SelectValue placeholder={t("profileSettings.selectRegion", { region: regionLabel })} />
                   </SelectTrigger>
                   <SelectContent>
                     {regionOptions.map(o => (
@@ -399,7 +394,7 @@ export default function ProfileSettings() {
 
               <div>
                 <Label htmlFor="postal_code">
-                  {form.country === "US" ? "ZIP Code" : "Postal Code"}
+                  {form.country === "US" ? t("profileSettings.zipCode") : t("profileSettings.postalCode")}
                 </Label>
                 <Input
                   id="postal_code"
@@ -423,10 +418,10 @@ export default function ProfileSettings() {
             </div>
 
             <div>
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio">{t("profileSettings.bio")}</Label>
               <Textarea
                 id="bio"
-                placeholder="Tell others a bit about yourself…"
+                placeholder={t("profileSettings.bioPlaceholder")}
                 rows={4}
                 value={form.bio}
                 onChange={e => setForm(p => ({ ...p, bio: e.target.value }))}
@@ -436,7 +431,7 @@ export default function ProfileSettings() {
             <div className="flex items-center gap-3 pt-2">
               <Button onClick={handleSave} disabled={saving || hasErrors(runValidation())}>
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Save Changes
+                {t("listingWizard.saveChanges")}
               </Button>
             </div>
           </CardContent>
@@ -445,29 +440,29 @@ export default function ProfileSettings() {
         <Card className="card-shadow mt-8 border-destructive/40">
           <CardHeader>
             <CardTitle className="text-destructive flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" /> Danger Zone
+              <AlertTriangle className="w-5 h-5" /> {t("profileSettings.dangerZone")}
             </CardTitle>
             <CardDescription>
-              Permanently disable your account. This cannot be undone.
+              {t("profileSettings.dangerZoneDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeleteConfirm(""); }}>
               <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                <Trash2 className="w-4 h-4 mr-2" /> {t("profileSettings.deleteAccount")}
               </Button>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Delete your account?</DialogTitle>
+                  <DialogTitle>{t("profileSettings.deleteAccountQuestion")}</DialogTitle>
                   <DialogDescription className="space-y-2 pt-2">
-                    <span className="block">This action is permanent. Once confirmed:</span>
-                    <span className="block">• Your login will be disabled and personal info (name, photo, phone, bio) removed.</span>
-                    <span className="block">• All your listings will be unpublished.</span>
-                    <span className="block">• Bookings, payments, and reviews will be retained for legal and accounting purposes and to preserve other users' records.</span>
+                    <span className="block">{t("profileSettings.actionPermanent")}</span>
+                    <span className="block">• {t("profileSettings.deleteBullet1")}</span>
+                    <span className="block">• {t("profileSettings.deleteBullet2")}</span>
+                    <span className="block">• {t("profileSettings.deleteBullet3")}</span>
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-delete">Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
+                  <Label htmlFor="confirm-delete">{t("profileSettings.typeToConfirmPrefix")} <span className="font-mono font-bold">DELETE</span> {t("profileSettings.typeToConfirmSuffix")}</Label>
                   <Input
                     id="confirm-delete"
                     value={deleteConfirm}
@@ -478,7 +473,7 @@ export default function ProfileSettings() {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     variant="destructive"
@@ -486,7 +481,7 @@ export default function ProfileSettings() {
                     onClick={handleDeleteAccount}
                   >
                     {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                    Permanently delete
+                    {t("profileSettings.permanentlyDelete")}
                   </Button>
                 </DialogFooter>
               </DialogContent>

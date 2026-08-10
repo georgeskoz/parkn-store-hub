@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function ConversationPanel({ conversationId, listingId, providerId, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
@@ -154,7 +156,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
     return (
       <div className="w-full md:w-96 h-[500px] border border-border rounded-lg bg-card flex flex-col">
         <div className="flex items-center justify-between p-3 border-b border-border">
-          <h3 className="font-semibold text-sm">Messages</h3>
+          <h3 className="font-semibold text-sm">{t("nav.messages")}</h3>
           <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -174,7 +176,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">
-            Start a conversation with the provider.
+            {t("messaging.startConversation")}
           </p>
         )}
         {messages.map((msg) => {
@@ -186,7 +188,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
               </div>
               {isMe && (
                 <span className="text-[10px] text-muted-foreground mt-1">
-                  {msg.read_at ? "Read" : "Sent"}
+                  {msg.read_at ? t("messaging.read") : t("messaging.sent")}
                 </span>
               )}
             </div>
@@ -199,7 +201,7 @@ export default function ConversationPanel({ conversationId, listingId, providerI
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-          placeholder="Type a message..."
+          placeholder={t("messaging.typeAMessage")}
           className="flex-1"
         />
         <Button size="icon" onClick={handleSend} disabled={sending || !input.trim()}>

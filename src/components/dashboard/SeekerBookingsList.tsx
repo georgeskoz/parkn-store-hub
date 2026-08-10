@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getIntlLocale } from "@/lib/dateLocale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,22 +69,23 @@ const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 const CANCELLABLE = ["pending", "confirmed", "active"];
 
-const escrowBadge = (s: string | null) => {
+const escrowBadge = (s: string | null, t: (key: string) => string) => {
   switch (s) {
     case "held":
-      return <Badge variant="secondary">In escrow</Badge>;
+      return <Badge variant="secondary">{t("booking.escrow.held")}</Badge>;
     case "released":
-      return <Badge>Released</Badge>;
+      return <Badge>{t("booking.escrow.released")}</Badge>;
     case "disputed":
-      return <Badge variant="destructive">Disputed</Badge>;
+      return <Badge variant="destructive">{t("booking.escrow.disputed")}</Badge>;
     case "refunded":
-      return <Badge variant="outline">Refunded</Badge>;
+      return <Badge variant="outline">{t("booking.escrow.refunded")}</Badge>;
     default:
       return null;
   }
 };
 
 const SeekerBookingsList = ({ userId }: { userId: string }) => {
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -161,15 +164,15 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast({
-        title: "Booking cancelled",
+        title: t("booking.bookingCancelled"),
         description: data?.refundAmount
-          ? `Refund of $${data.refundAmount.toFixed(2)} (${data.refundPercent}%) is being processed.`
-          : "No refund applies under the cancellation policy.",
+          ? t("booking.refundBeingProcessed", { amount: data.refundAmount.toFixed(2), percent: data.refundPercent })
+          : t("booking.noRefundApplies"),
       });
       setTarget(null);
       await load();
     } catch (e: any) {
-      toast({ title: "Cancellation failed", description: e.message, variant: "destructive" });
+      toast({ title: t("booking.cancellationFailed"), description: e.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -181,10 +184,10 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         body: { bookingId: b.id, role: "seeker" },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast({ title: "Pickup confirmed", description: "Funds will release shortly." });
+      toast({ title: t("booking.pickupConfirmed"), description: t("booking.fundsWillRelease") });
       await load();
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: t("booking.failed"), description: e.message, variant: "destructive" });
     }
   };
 
@@ -197,13 +200,13 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
       toast({
-        title: "Extension requested",
-        description: `Total $${data.total.toFixed(2)} CAD pending provider approval.`,
+        title: t("booking.extensionRequested"),
+        description: t("booking.extensionTotalPending", { total: data.total.toFixed(2) }),
       });
       setExtBooking(null);
       setExtHours(1);
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: t("booking.failed"), description: e.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -222,7 +225,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle className="text-lg">My Bookings</CardTitle>
+        <CardTitle className="text-lg">{t("booking.myBookings")}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -230,7 +233,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : bookings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No bookings yet.</p>
+          <p className="text-sm text-muted-foreground">{t("booking.noBookingsYet")}</p>
         ) : (
           <div className="space-y-3">
             {bookings.map((b) => (
@@ -238,7 +241,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex-1 min-w-[180px]">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium capitalize">{b.category || "booking"}</span>
+                    <span className="font-medium capitalize">{b.category === "parking" ? t("search.parking") : b.category === "storage" ? t("search.storage") : t("booking.booking")}</span>
                     <Badge
                       variant={
                         b.status === "cancelled"
@@ -249,28 +252,28 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                       }
                       className="capitalize"
                     >
-                      {b.status}
+                      {t(`booking.status.${b.status}`, { defaultValue: b.status })}
                     </Badge>
-                    {escrowBadge(b.escrow_status)}
-                    {isOverdue(b) && <Badge variant="destructive">Overdue</Badge>}
+                    {escrowBadge(b.escrow_status, t)}
+                    {isOverdue(b) && <Badge variant="destructive">{t("booking.overdue")}</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {b.city} • {new Date(b.start_date).toLocaleDateString()} →{" "}
-                    {new Date(b.end_date).toLocaleDateString()}
+                    {b.city} • {new Date(b.start_date).toLocaleDateString(getIntlLocale())} →{" "}
+                    {new Date(b.end_date).toLocaleDateString(getIntlLocale())}
                   </p>
                   {Number(b.overdue_charges_total || 0) > 0 && (
                     <p className="text-xs text-destructive mt-1">
-                      Overdue charges: ${Number(b.overdue_charges_total).toFixed(2)} (2× daily rate)
+                      {t("booking.overdueCharges", { amount: Number(b.overdue_charges_total).toFixed(2) })}
                     </p>
                   )}
                   {b.escrow_status === "held" && b.auto_release_at && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Auto-release: {new Date(b.auto_release_at).toLocaleString()}
+                      {t("booking.autoRelease", { datetime: new Date(b.auto_release_at).toLocaleString(getIntlLocale()) })}
                     </p>
                   )}
                   {b.status === "cancelled" && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Refund: ${Number(b.refund_amount || 0).toFixed(2)} ({b.refund_status || "n/a"})
+                      {t("booking.refundLine", { amount: Number(b.refund_amount || 0).toFixed(2), status: b.refund_status || t("booking.na") })}
                     </p>
                   )}
                 </div>
@@ -279,7 +282,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                   <div className="flex flex-wrap justify-end gap-1">
                     {inWindow(b) && !b.completed_by_seeker_at && (
                       <Button size="sm" onClick={() => completePickup(b)}>
-                        Complete & Pickup
+                        {t("booking.completeAndPickup")}
                       </Button>
                     )}
                     {inWindow(b) && (
@@ -291,7 +294,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                           setExtHours(1);
                         }}
                       >
-                        Request extension
+                        {t("booking.requestExtension")}
                       </Button>
                     )}
                     <DisputeControl
@@ -312,7 +315,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                           size="sm"
                           onClick={() => setTarget(b)}
                         >
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                       )}
                     {(() => {
@@ -320,21 +323,21 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                       if (rs === "eligible") {
                         return (
                           <Button size="sm" variant="default" onClick={() => setReviewBooking(b)}>
-                            <Star className="w-3.5 h-3.5 mr-1" /> Leave a Review
+                            <Star className="w-3.5 h-3.5 mr-1" /> {t("booking.leaveAReview")}
                           </Button>
                         );
                       }
                       if (rs === "reviewed") {
                         return (
                           <Button size="sm" variant="outline" disabled>
-                            Review submitted ✓
+                            {t("booking.reviewSubmitted")}
                           </Button>
                         );
                       }
                       if (rs === "expired") {
                         return (
                           <span className="text-xs text-muted-foreground self-center">
-                            Review period expired
+                            {t("booking.reviewPeriodExpired")}
                           </span>
                         );
                       }
@@ -352,9 +355,9 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                       className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                     >
                       {expanded.has(b.id) ? (
-                        <><ChevronUp className="w-3 h-3" /> Hide details</>
+                        <><ChevronUp className="w-3 h-3" /> {t("booking.hideDetails")}</>
                       ) : (
-                        <><ChevronDown className="w-3 h-3" /> Show {b.category === "parking" ? "vehicle" : "storage"} details</>
+                        <><ChevronDown className="w-3 h-3" /> {b.category === "parking" ? t("booking.showVehicleDetails") : t("booking.showStorageDetails")}</>
                       )}
                     </button>
                     {expanded.has(b.id) && <BookingIntakeDetails booking={b} className="mt-2" />}
@@ -369,18 +372,18 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
       <AlertDialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogTitle>{t("booking.cancelThisBooking")}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
-                <p className="font-medium">Cancellation policy</p>
+                <p className="font-medium">{t("booking.cancellationPolicy")}</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Cancel 24h+ before start: <strong>full refund</strong></li>
-                  <li>Cancel within 24h of start: <strong>50% refund</strong></li>
-                  <li>No-show / after start: <strong>no refund</strong></li>
+                  <li>{t("booking.cancelPolicyFull")} <strong>{t("booking.fullRefund")}</strong></li>
+                  <li>{t("booking.cancelPolicyPartial")} <strong>{t("booking.fiftyPercentRefund")}</strong></li>
+                  <li>{t("booking.cancelPolicyNone")} <strong>{t("booking.noRefund")}</strong></li>
                 </ul>
                 {target && (
                   <p className="pt-2">
-                    Estimated refund:{" "}
+                    {t("booking.estimatedRefund")}{" "}
                     <strong>
                       ${refundPreview(target).amount.toFixed(2)} (
                       {refundPreview(target).pct}%)
@@ -391,7 +394,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Keep booking</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>{t("booking.keepBooking")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -399,7 +402,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
               }}
               disabled={submitting}
             >
-              {submitting ? "Cancelling…" : "Confirm cancellation"}
+              {submitting ? t("booking.cancelling") : t("booking.confirmCancellation")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -408,10 +411,10 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
       <Dialog open={!!extBooking} onOpenChange={(o) => !o && setExtBooking(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request extra time</DialogTitle>
+            <DialogTitle>{t("booking.requestExtraTime")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Label htmlFor="hrs">Extra hours</Label>
+            <Label htmlFor="hrs">{t("booking.extraHours")}</Label>
             <Input
               id="hrs"
               type="number"
@@ -421,15 +424,15 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
               onChange={(e) => setExtHours(Math.max(1, parseInt(e.target.value) || 1))}
             />
             <p className="text-xs text-muted-foreground">
-              Provider must accept. You'll be charged automatically on the card you used.
+              {t("booking.providerMustAccept")}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExtBooking(null)} disabled={submitting}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitExtension} disabled={submitting}>
-              {submitting ? "Sending…" : "Send request"}
+              {submitting ? t("booking.sending") : t("booking.sendRequest")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,8 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { recordUserAgreement } from "@/lib/userAgreements";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const Auth = () => {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,8 +58,8 @@ const Auth = () => {
   const handleGoogle = async () => {
     if (!isLogin && !agreed) {
       toast({
-        title: "Agreement required",
-        description: "Please accept the Terms and Privacy Policy to continue.",
+        title: t("auth.agreementRequired"),
+        description: t("auth.agreementRequiredDescription"),
         variant: "destructive",
       });
       return;
@@ -69,7 +72,7 @@ const Auth = () => {
       options: { redirectTo: callback },
     });
     if (error) {
-      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.googleSignInFailed"), description: error.message, variant: "destructive" });
       setGoogleLoading(false);
     }
   };
@@ -82,7 +85,7 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Login failed", description: error.message, variant: "destructive" });
+        toast({ title: t("auth.loginFailed"), description: error.message, variant: "destructive" });
       } else {
         const pending = consumePendingBooking();
         if (pending) {
@@ -98,15 +101,15 @@ const Auth = () => {
         (safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : "");
       const { error } = await signUp(email, password, displayName, emailRedirectTo);
       if (error) {
-        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+        toast({ title: t("auth.signUpFailed"), description: error.message, variant: "destructive" });
       } else {
         // Record Terms/Privacy acceptance for the new user (if a session was created immediately).
         const userId = (await supabase.auth.getUser()).data.user?.id ?? null;
         if (userId) await recordUserAgreement(userId);
 
         toast({
-          title: "Check your email",
-          description: "We sent you a confirmation link to verify your account.",
+          title: t("auth.checkYourEmail"),
+          description: t("auth.checkYourEmailDescription"),
         });
       }
     }
@@ -127,23 +130,23 @@ const Auth = () => {
         htmlFor="agree"
         className="text-sm font-normal text-foreground leading-snug cursor-pointer"
       >
-        I agree to the{" "}
+        {t("auth.agreeToThe")}{" "}
         <Link
           to="/terms"
           target="_blank"
           rel="noopener noreferrer"
           className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
         >
-          Terms and Conditions
+          {t("footer.termsOfService")}
         </Link>{" "}
-        and{" "}
+        {t("common.and")}{" "}
         <Link
           to="/privacy"
           target="_blank"
           rel="noopener noreferrer"
           className="text-primary font-medium underline underline-offset-2 hover:text-primary/80"
         >
-          Privacy Policy
+          {t("footer.privacyPolicy")}
         </Link>
         .
       </Label>
@@ -152,19 +155,22 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground justify-center mb-8">
           <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
             <Car className="w-5 h-5 text-primary-foreground" />
           </div>
-          Spotsvault
+          {t("common.appName")}
         </Link>
 
         <Card className="card-shadow">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
+            <CardTitle className="text-2xl">{isLogin ? t("auth.welcomeBack") : t("auth.createYourAccount")}</CardTitle>
             <CardDescription>
-              {isLogin ? "Sign in to access your dashboard" : "Join Spotsvault to find or list spaces"}
+              {isLogin ? t("auth.signInToAccessDashboard") : t("auth.joinToFindOrList")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -183,7 +189,7 @@ const Auth = () => {
                 <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38z"/>
               </svg>
-              {googleLoading ? "Redirecting…" : "Continue with Google"}
+              {googleLoading ? t("auth.redirecting") : t("auth.continueWithGoogle")}
             </Button>
 
             <div className="relative my-6">
@@ -191,17 +197,17 @@ const Auth = () => {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or</span>
+                <span className="bg-card px-2 text-muted-foreground">{t("common.or")}</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
+                  <Label htmlFor="displayName">{t("auth.displayName")}</Label>
                   <Input
                     id="displayName"
-                    placeholder="Your name"
+                    placeholder={t("auth.yourName")}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     required={!isLogin}
@@ -209,7 +215,7 @@ const Auth = () => {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -220,7 +226,7 @@ const Auth = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("auth.password")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -235,6 +241,7 @@ const Auth = () => {
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -245,17 +252,17 @@ const Auth = () => {
                 className="w-full"
                 disabled={submitting || disableSignupActions}
               >
-                {submitting ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+                {submitting ? t("auth.pleaseWait") : isLogin ? t("auth.signIn") : t("auth.createAccount")}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+              {isLogin ? t("auth.dontHaveAccount") : t("auth.alreadyHaveAccount")}{" "}
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-primary font-medium hover:underline"
               >
-                {isLogin ? "Sign up" : "Sign in"}
+                {isLogin ? t("auth.signUpLink") : t("auth.signInLink")}
               </button>
             </div>
           </CardContent>

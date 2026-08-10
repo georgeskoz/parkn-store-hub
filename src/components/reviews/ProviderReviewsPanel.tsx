@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
+import { getIntlLocale } from "@/lib/dateLocale";
 import StarRating from "./StarRating";
 
 interface ReviewRow {
@@ -16,6 +18,7 @@ interface ReviewRow {
 }
 
 export default function ProviderReviewsPanel() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +55,7 @@ export default function ProviderReviewsPanel() {
     })();
   }, [user]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
 
   const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
@@ -61,32 +64,32 @@ export default function ProviderReviewsPanel() {
       <Card className="card-shadow">
         <CardContent className="py-6 flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Average Rating</p>
+            <p className="text-sm text-muted-foreground">{t("reviews.averageRating")}</p>
             <div className="flex items-center gap-3 mt-1">
               <p className="text-4xl font-bold text-foreground">{avg.toFixed(1)}</p>
               <StarRating value={avg} readOnly size={22} />
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Total Reviews</p>
+            <p className="text-sm text-muted-foreground">{t("reviews.totalReviews")}</p>
             <p className="text-3xl font-bold text-foreground">{reviews.length}</p>
           </div>
         </CardContent>
       </Card>
 
       {reviews.length === 0 ? (
-        <Card><CardContent className="py-8 text-center text-muted-foreground">No reviews yet.</CardContent></Card>
+        <Card><CardContent className="py-8 text-center text-muted-foreground">{t("reviews.noReviewsYet")}</CardContent></Card>
       ) : (
         reviews.map((r) => (
           <Card key={r.id}>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-foreground">{r.reviewer?.display_name || "Anonymous"}</p>
+                  <p className="font-medium text-foreground">{r.reviewer?.display_name || t("reviews.anonymous")}</p>
                   <p className="text-xs text-muted-foreground">{r.listing?.title}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleDateString()}
+                  {new Date(r.created_at).toLocaleDateString(getIntlLocale())}
                 </span>
               </div>
               <StarRating value={r.rating} readOnly size={16} />

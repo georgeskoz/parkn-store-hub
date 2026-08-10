@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import BookingIntakeDetails from "@/components/booking/BookingIntakeDetails";
+import { getDateFnsLocale } from "@/lib/dateLocale";
 
 type IntakePayload =
   | {
@@ -59,6 +61,7 @@ interface SurgePreview {
 }
 
 export default function BookingConfirmation() {
+  const { t } = useTranslation();
   const { state } = useLocation() as { state: BookingState | null };
   const { user } = useAuth();
   const [paying, setPaying] = useState(false);
@@ -108,13 +111,13 @@ export default function BookingConfirmation() {
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 max-w-xl text-center">
           <SearchX className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">No booking in progress</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("bookingIntake.noBookingInProgress")}</h1>
           <p className="text-muted-foreground mt-2">
-            Pick a spot first, then return here to confirm your booking.
+            {t("bookingConfirmation.pickASpotFirst")}
           </p>
           <div className="flex gap-3 justify-center mt-6">
-            <Button asChild><Link to="/find">Find a Spot</Link></Button>
-            <Button variant="outline" asChild><Link to="/dashboard">Dashboard</Link></Button>
+            <Button asChild><Link to="/find">{t("search.findASpotTitle")}</Link></Button>
+            <Button variant="outline" asChild><Link to="/dashboard">{t("nav.dashboard")}</Link></Button>
           </div>
         </main>
         <Footer />
@@ -132,7 +135,7 @@ export default function BookingConfirmation() {
 
   const handlePay = async () => {
     if (!user) {
-      toast({ title: "Please sign in", description: "You must be logged in to complete a booking.", variant: "destructive" });
+      toast({ title: t("bookingConfirmation.pleaseSignIn"), description: t("bookingConfirmation.mustBeLoggedIn"), variant: "destructive" });
       return;
     }
     setPaying(true);
@@ -140,10 +143,10 @@ export default function BookingConfirmation() {
       const { data, error } = await supabase.functions.invoke("create-booking-payment", { body: state });
       if (error) throw error;
       if (data?.url) window.open(data.url, "_blank");
-      else throw new Error("No checkout URL returned");
+      else throw new Error(t("bookingConfirmation.noCheckoutUrl"));
     } catch (err: any) {
       console.error(err);
-      toast({ title: "Payment error", description: err.message || "Could not start payment.", variant: "destructive" });
+      toast({ title: t("bookingConfirmation.paymentError"), description: err.message || t("bookingConfirmation.couldNotStartPayment"), variant: "destructive" });
     } finally {
       setPaying(false);
     }
@@ -158,8 +161,8 @@ export default function BookingConfirmation() {
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-xl">
         <div className="text-center mb-8">
           <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Confirm Your Booking</h1>
-          <p className="text-muted-foreground mt-1">Review details and proceed to payment.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("bookingConfirmation.confirmYourBooking")}</h1>
+          <p className="text-muted-foreground mt-1">{t("bookingConfirmation.reviewDetailsSubtitle")}</p>
         </div>
 
         <Card className="card-shadow">
@@ -172,15 +175,15 @@ export default function BookingConfirmation() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Check-in</p>
+                <p className="text-xs text-muted-foreground">{t("bookingConfirmation.checkIn")}</p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {format(start, "MMM d, yyyy")}
+                  <Calendar className="w-3 h-3" /> {format(start, "MMM d, yyyy", { locale: getDateFnsLocale() })}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Check-out</p>
+                <p className="text-xs text-muted-foreground">{t("bookingConfirmation.checkOut")}</p>
                 <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {format(end, "MMM d, yyyy")}
+                  <Calendar className="w-3 h-3" /> {format(end, "MMM d, yyyy", { locale: getDateFnsLocale() })}
                 </p>
               </div>
             </div>
@@ -188,7 +191,7 @@ export default function BookingConfirmation() {
             {surge && (
               <div className="rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 p-3">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold text-sm">
-                  <Zap className="w-4 h-4" /> Event Surge Pricing — {surge.multiplier}x
+                  <Zap className="w-4 h-4" /> {t("bookingConfirmation.eventSurgePricing", { multiplier: surge.multiplier })}
                 </div>
                 {surge.label && (
                   <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">{surge.label}</p>
@@ -203,23 +206,23 @@ export default function BookingConfirmation() {
 
             <div className="border-t border-border pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground capitalize">{state.rate} rate × {state.units}</span>
+                <span className="text-muted-foreground capitalize">{t(`listingDetail.rateLabel.${state.rate}`, { defaultValue: state.rate })} × {state.units}</span>
                 <span>${displaySubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground text-xs">
-                <span>GST (5%)</span><span>${displayGst.toFixed(2)}</span>
+                <span>{t("listingDetail.gst")}</span><span>${displayGst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground text-xs">
-                <span>QST (9.975%)</span><span>${displayQst.toFixed(2)}</span>
+                <span>{t("listingDetail.qst")}</span><span>${displayQst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-foreground border-t border-border pt-2">
-                <span>Total</span><span>${displayTotal.toFixed(2)}</span>
+                <span>{t("listingDetail.total")}</span><span>${displayTotal.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-              <div className="flex justify-between"><span>Platform fee (10%)</span><span>${platformFee.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Provider payout (90%)</span><span>${providerPayout.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>{t("bookingConfirmation.platformFee")}</span><span>${platformFee.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>{t("bookingConfirmation.providerPayout")}</span><span>${providerPayout.toFixed(2)}</span></div>
             </div>
 
             {state.intake && state.intake.kind !== "none" && (
@@ -234,9 +237,9 @@ export default function BookingConfirmation() {
 
             <Button className="w-full" size="lg" onClick={handlePay} disabled={paying}>
               {paying ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("bookingConfirmation.processing")}</>
               ) : (
-                <><CreditCard className="w-4 h-4 mr-2" /> Pay ${displayTotal.toFixed(2)} CAD</>
+                <><CreditCard className="w-4 h-4 mr-2" /> {t("bookingConfirmation.payAmount", { amount: displayTotal.toFixed(2) })}</>
               )}
             </Button>
           </CardContent>
@@ -244,10 +247,10 @@ export default function BookingConfirmation() {
 
         <div className="flex gap-3 mt-6">
           <Button variant="outline" className="flex-1" asChild>
-            <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Dashboard</Link>
+            <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> {t("nav.dashboard")}</Link>
           </Button>
           <Button variant="outline" className="flex-1" asChild>
-            <Link to={`/${state.listingType}`}>Browse More</Link>
+            <Link to={`/${state.listingType}`}>{t("bookingConfirmation.browseMore")}</Link>
           </Button>
         </div>
       </main>

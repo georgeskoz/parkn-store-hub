@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import StepExtras from "@/components/listing/StepExtras";
 import AvailabilityEditor from "@/components/listing/AvailabilityEditor";
 
 export default function EditListing() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ export default function EditListing() {
           .maybeSingle();
         if (error) throw error;
         if (!l) {
-          toast({ title: "Listing not found", variant: "destructive" });
+          toast({ title: t("listingDetail.listingNotFound"), variant: "destructive" });
           navigate("/dashboard");
           return;
         }
@@ -112,7 +114,7 @@ export default function EditListing() {
           disclaimerAccepted: true,
         });
       } catch (err: any) {
-        toast({ title: "Failed to load listing", description: err.message, variant: "destructive" });
+        toast({ title: t("listingWizard.failedToLoadListing"), description: err.message, variant: "destructive" });
       } finally {
         setLoading(false);
       }
@@ -197,12 +199,12 @@ export default function EditListing() {
       }
 
       toast({
-        title: "Listing updated",
-        description: "Your changes were saved. The listing is pending re-review.",
+        title: t("listingWizard.listingUpdated"),
+        description: t("listingWizard.listingUpdatedDescription"),
       });
       navigate("/dashboard");
     } catch (err: any) {
-      toast({ title: "Error saving listing", description: err.message, variant: "destructive" });
+      toast({ title: t("listingWizard.errorSavingListing"), description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -213,8 +215,8 @@ export default function EditListing() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Sign in required</h1>
-          <Button onClick={() => navigate("/auth")}>Sign In</Button>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t("listingWizard.signInRequired")}</h1>
+          <Button onClick={() => navigate("/auth")}>{t("auth.signIn")}</Button>
         </main>
         <Footer />
       </div>
@@ -226,9 +228,9 @@ export default function EditListing() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 max-w-2xl text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Not authorized</h1>
-          <p className="text-muted-foreground mb-4">You can only edit listings you own.</p>
-          <Button asChild><Link to="/dashboard">Back to Dashboard</Link></Button>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t("listingWizard.notAuthorized")}</h1>
+          <p className="text-muted-foreground mb-4">{t("listingWizard.canOnlyEditOwnListings")}</p>
+          <Button asChild><Link to="/dashboard">{t("listingWizard.backToDashboard")}</Link></Button>
         </main>
         <Footer />
       </div>
@@ -240,11 +242,11 @@ export default function EditListing() {
       <Navbar />
       <main className="pt-24 pb-16 container mx-auto px-4 max-w-2xl">
         <Button variant="ghost" size="sm" asChild className="mb-3">
-          <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard</Link>
+          <Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> {t("listingWizard.backToDashboard")}</Link>
         </Button>
-        <h1 className="text-3xl font-bold text-foreground mb-1">Edit Listing</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-1">{t("listingWizard.editListing")}</h1>
         <p className="text-muted-foreground mb-6">
-          Update your listing. Saving will set the listing back to <strong>pending</strong> review.
+          {t("listingWizard.editListingHintPrefix")} <strong>{t("listingWizard.pending")}</strong> {t("listingWizard.editListingHintSuffix")}
         </p>
 
         {loading ? (
@@ -253,43 +255,43 @@ export default function EditListing() {
           </div>
         ) : (
           <div className="space-y-6">
-            <Card><CardHeader><CardTitle>Category</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.categoryLabel")}</CardTitle></CardHeader>
               <CardContent><StepTypeCategory form={form} update={update} /></CardContent>
             </Card>
-            <Card><CardHeader><CardTitle>Location</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.steps.location")}</CardTitle></CardHeader>
               <CardContent><StepLocation form={form} update={update} /></CardContent>
             </Card>
-            <Card><CardHeader><CardTitle>Details & Features</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.detailsAndFeatures")}</CardTitle></CardHeader>
               <CardContent><StepDetails form={form} update={update} toggleFeature={toggleFeature} /></CardContent>
             </Card>
-            <Card><CardHeader><CardTitle>Photos</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.steps.photos")}</CardTitle></CardHeader>
               <CardContent><StepPhotos form={form} update={update} /></CardContent>
             </Card>
-            <Card><CardHeader><CardTitle>Pricing & Availability</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.pricingAndAvailability")}</CardTitle></CardHeader>
               <CardContent><StepPricing form={form} update={update} /></CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Availability schedule</CardTitle>
+                <CardTitle>{t("listingWizard.availabilitySchedule")}</CardTitle>
                 <p className="text-xs text-muted-foreground pt-1">
-                  Changes here update bookable hours instantly and do not require re-review.
+                  {t("listingWizard.availabilityScheduleEditHint")}
                 </p>
               </CardHeader>
               <CardContent>
                 {id && <AvailabilityEditor listingId={id} />}
               </CardContent>
             </Card>
-            <Card><CardHeader><CardTitle>Extras</CardTitle></CardHeader>
+            <Card><CardHeader><CardTitle>{t("listingWizard.steps.extras")}</CardTitle></CardHeader>
               <CardContent>
                 <StepExtras form={form} update={update} toggleLandmark={toggleLandmark} addCustomLandmark={addCustomLandmark} />
               </CardContent>
             </Card>
 
             <div className="flex justify-end gap-2 sticky bottom-4">
-              <Button variant="outline" asChild><Link to="/dashboard">Cancel</Link></Button>
+              <Button variant="outline" asChild><Link to="/dashboard">{t("common.cancel")}</Link></Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                {saving ? "Saving…" : "Save Changes"}
+                {saving ? t("listingWizard.saving") : t("listingWizard.saveChanges")}
               </Button>
             </div>
           </div>

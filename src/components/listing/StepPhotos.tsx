@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Camera, Trash2, Upload } from "lucide-react";
@@ -17,6 +18,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function StepPhotos({ form, update }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +31,7 @@ export default function StepPhotos({ form, update }: Props) {
     const remaining = MAX_PHOTOS - form.photos.length;
     const toUpload = Array.from(files).slice(0, remaining);
     if (toUpload.length === 0) {
-      toast({ title: "Limit reached", description: `Maximum ${MAX_PHOTOS} photos allowed.`, variant: "destructive" });
+      toast({ title: t("listingWizard.limitReached"), description: t("listingWizard.maxPhotosAllowed", { count: MAX_PHOTOS }), variant: "destructive" });
       return;
     }
 
@@ -38,11 +40,11 @@ export default function StepPhotos({ form, update }: Props) {
 
     for (const file of toUpload) {
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast({ title: "Invalid file type", description: `${file.name} is not a supported image (JPEG, PNG, WebP, GIF only).`, variant: "destructive" });
+        toast({ title: t("listingWizard.invalidFileType"), description: t("listingWizard.unsupportedImage", { fileName: file.name }), variant: "destructive" });
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        toast({ title: "File too large", description: `${file.name} exceeds the 10MB limit.`, variant: "destructive" });
+        toast({ title: t("listingWizard.fileTooLarge"), description: t("listingWizard.exceedsFileSizeLimit", { fileName: file.name }), variant: "destructive" });
         continue;
       }
       const ext = file.name.split(".").pop();
@@ -54,7 +56,7 @@ export default function StepPhotos({ form, update }: Props) {
       });
 
       if (error) {
-        toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+        toast({ title: t("listingWizard.uploadFailed"), description: error.message, variant: "destructive" });
         continue;
       }
 
@@ -76,11 +78,11 @@ export default function StepPhotos({ form, update }: Props) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-primary mb-2">
         <Camera className="w-5 h-5" />
-        <span className="font-semibold text-foreground">Photos of Your Space</span>
+        <span className="font-semibold text-foreground">{t("listingWizard.photosOfYourSpace")}</span>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Upload clear, well-lit photos so seekers know exactly what to expect. Show the entrance, the space itself, any access points, and surrounding area. Up to {MAX_PHOTOS} photos.
+        {t("listingWizard.photosHint", { count: MAX_PHOTOS })}
       </p>
 
       <input
@@ -100,7 +102,7 @@ export default function StepPhotos({ form, update }: Props) {
         className="w-full border-dashed border-2 py-8"
       >
         <Upload className="w-5 h-5 mr-2" />
-        {uploading ? "Uploading…" : `Upload Photos (${form.photos.length}/${MAX_PHOTOS})`}
+        {uploading ? t("listingWizard.uploading") : t("listingWizard.uploadPhotosCount", { count: form.photos.length, max: MAX_PHOTOS })}
       </Button>
 
       {form.photos.length > 0 && (

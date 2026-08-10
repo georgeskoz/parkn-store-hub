@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useReviewableBookings } from "@/hooks/useReviewableBookings";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 const ReviewPromptBanner = ({ userId, role }: Props) => {
+  const { t } = useTranslation();
   const { pending, reload } = useReviewableBookings(userId, role);
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -27,17 +29,19 @@ const ReviewPromptBanner = ({ userId, role }: Props) => {
             </div>
             <div>
               <p className="text-sm font-medium">
-                Your recent booking{next.listing_title ? ` at "${next.listing_title}"` : ""} is complete — how was your experience?
+                {next.listing_title
+                  ? t("reviews.recentBookingCompleteAt", { title: next.listing_title })
+                  : t("reviews.recentBookingComplete")}
               </p>
               {pending.length > 1 && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {pending.length - 1} more booking{pending.length - 1 === 1 ? "" : "s"} awaiting your review.
+                  {t("reviews.moreBookingsAwaiting", { count: pending.length - 1 })}
                 </p>
               )}
             </div>
           </div>
           <Button size="sm" onClick={() => setOpenId(next.id)}>
-            Write a Review
+            {t("reviews.writeAReview")}
           </Button>
         </CardContent>
       </Card>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
 }
 
 export default function FindASpot() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialQ = searchParams.get("q") || "";
   const [searchInput, setSearchInput] = useState(initialQ);
@@ -151,16 +153,16 @@ export default function FindASpot() {
       <Navbar />
       <main className="pt-20 pb-16">
         <section className="container mx-auto px-4 mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-1">Find a Spot</h1>
-          <p className="text-muted-foreground">Browse parking & storage spaces across Quebec</p>
+          <h1 className="text-3xl font-bold text-foreground mb-1">{t("search.findASpotTitle")}</h1>
+          <p className="text-muted-foreground">{t("search.browseAcrossQuebec")}</p>
         </section>
 
         <section className="container mx-auto px-4 mb-4">
           <Tabs value={category} onValueChange={(v) => setCategory(v as Category)}>
             <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="parking" className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5" />Parking</TabsTrigger>
-              <TabsTrigger value="storage" className="flex items-center gap-1.5"><Warehouse className="w-3.5 h-3.5" />Storage</TabsTrigger>
+              <TabsTrigger value="all">{t("search.all")}</TabsTrigger>
+              <TabsTrigger value="parking" className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5" />{t("search.parking")}</TabsTrigger>
+              <TabsTrigger value="storage" className="flex items-center gap-1.5"><Warehouse className="w-3.5 h-3.5" />{t("search.storage")}</TabsTrigger>
             </TabsList>
           </Tabs>
         </section>
@@ -171,7 +173,7 @@ export default function FindASpot() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by city or address..."
+                placeholder={t("search.searchByCityOrAddress")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
@@ -184,7 +186,7 @@ export default function FindASpot() {
               className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 h-11 rounded-lg font-medium whitespace-nowrap inline-flex items-center gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {loading ? "Searching..." : "Search"}
+              {loading ? t("search.searching") : t("search.search")}
             </button>
           </div>
         </section>
@@ -192,9 +194,9 @@ export default function FindASpot() {
         <section className="container mx-auto px-4 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
             <Select value={city} onValueChange={setCity}>
-              <SelectTrigger className="w-[160px]"><SelectValue placeholder="City" /></SelectTrigger>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder={t("search.city")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
+                <SelectItem value="all">{t("search.allCities")}</SelectItem>
                 {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -207,24 +209,24 @@ export default function FindASpot() {
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Near a destination (city or address)…"
+                placeholder={t("search.nearDestination")}
                 value={destination}
                 onChange={(e) => { setDestination(e.target.value); setUserCoords(null); }}
                 className="pl-9 pr-8"
               />
               {(destination || userCoords) && (
-                <button onClick={clearLocation} aria-label="Clear location" className="absolute right-3 top-1/2 -translate-y-1/2">
+                <button onClick={clearLocation} aria-label={t("search.clearLocation")} className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                 </button>
               )}
             </div>
             <Button variant="outline" size="sm" onClick={handleUseMyLocation} disabled={locating} className="gap-1.5">
               <Navigation className="w-3.5 h-3.5" />
-              {locating ? "Locating…" : "Use my location"}
+              {locating ? t("search.locating") : t("search.useMyLocation")}
             </Button>
             {userCoords && (
               <Badge variant="secondary" className="text-xs">
-                📍 Near you ({userCoords.lat.toFixed(2)}, {userCoords.lng.toFixed(2)})
+                {t("search.nearYou", { lat: userCoords.lat.toFixed(2), lng: userCoords.lng.toFixed(2) })}
               </Badge>
             )}
           </div>
@@ -233,24 +235,24 @@ export default function FindASpot() {
             <div className="flex gap-2 mt-3 flex-wrap">
               {activeFilters.map((f) => <Badge key={f} variant="secondary" className="gap-1 text-xs capitalize">{f}</Badge>)}
               {destinationCoords && !userCoords && destination && (
-                <Badge variant="secondary" className="text-xs">📍 Near "{destination}"</Badge>
+                <Badge variant="secondary" className="text-xs">{t("search.nearQuoted", { destination })}</Badge>
               )}
-              <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAll}>Clear all</Button>
+              <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAll}>{t("search.clearAll")}</Button>
             </div>
           )}
         </section>
 
         <section className="container mx-auto px-4">
           <p className="text-sm text-muted-foreground mb-4">
-            {loading ? "Loading…" : `${filtered.length} result${filtered.length !== 1 ? "s" : ""} found`}
+            {loading ? t("common.loading") : t("search.resultsFound", { count: filtered.length })}
           </p>
 
           {!loading && filtered.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-border rounded-xl">
               <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-foreground font-medium">No listings found</p>
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or check back soon.</p>
-              <Button variant="outline" className="mt-4" onClick={clearAll}>Reset Filters</Button>
+              <p className="text-foreground font-medium">{t("search.noListingsFound")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("search.tryAdjustingFilters")}</p>
+              <Button variant="outline" className="mt-4" onClick={clearAll}>{t("search.resetFilters")}</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

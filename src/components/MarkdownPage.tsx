@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const MarkdownPage = ({ slug, fallbackTitle, footerSlot }: Props) => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(fallbackTitle ?? "");
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,14 +49,14 @@ const MarkdownPage = ({ slug, fallbackTitle, footerSlot }: Props) => {
       <main className="flex-1 w-full pt-24 pb-20">
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="text-muted-foreground">Loading…</div>
+            <div className="text-muted-foreground">{t("common.loading")}</div>
           ) : notFound ? (
             <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                {fallbackTitle || "Coming soon"}
+                {fallbackTitle || t("staticPages.comingSoon")}
               </h1>
               <p className="text-muted-foreground">
-                This page hasn't been published yet. Please check back soon.
+                {t("staticPages.pageNotPublishedYet")}
               </p>
             </div>
           ) : (

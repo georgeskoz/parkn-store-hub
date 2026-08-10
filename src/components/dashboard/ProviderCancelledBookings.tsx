@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getIntlLocale } from "@/lib/dateLocale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -16,6 +18,7 @@ type Row = {
 };
 
 const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
   return (
     <Card className="card-shadow">
       <CardHeader>
-        <CardTitle className="text-lg">Cancelled Bookings</CardTitle>
+        <CardTitle className="text-lg">{t("providerBookings.cancelledBookings")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {rows.map((r) => (
@@ -48,25 +51,25 @@ const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
           >
             <div>
               <p className="font-medium capitalize">
-                {r.category} • {r.city}
+                {r.category === "parking" ? t("search.parking") : r.category === "storage" ? t("search.storage") : r.category} • {r.city}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(r.start_date).toLocaleDateString()} →{" "}
-                {new Date(r.end_date).toLocaleDateString()}
+                {new Date(r.start_date).toLocaleDateString(getIntlLocale())} →{" "}
+                {new Date(r.end_date).toLocaleDateString(getIntlLocale())}
                 {r.cancelled_at && (
-                  <> • cancelled {new Date(r.cancelled_at).toLocaleDateString()}</>
+                  <> • {t("providerBookings.cancelledOn", { date: new Date(r.cancelled_at).toLocaleDateString(getIntlLocale()) })}</>
                 )}
               </p>
             </div>
             <div className="text-right">
-              <p>Total: ${Number(r.total_amount).toFixed(2)}</p>
+              <p>{t("providerBookings.total", { amount: Number(r.total_amount).toFixed(2) })}</p>
               <p className="text-xs">
-                Refund:{" "}
+                {t("providerBookings.refundLabel")}{" "}
                 <span className="font-medium">
                   ${Number(r.refund_amount || 0).toFixed(2)}
                 </span>{" "}
                 <Badge variant="secondary" className="ml-1">
-                  {r.refund_status || "n/a"}
+                  {r.refund_status || t("booking.na")}
                 </Badge>
               </p>
             </div>

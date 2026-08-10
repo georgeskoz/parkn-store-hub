@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -29,6 +30,7 @@ import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
 import StorageAvailabilityCalendar from "@/components/listing/StorageAvailabilityCalendar";
 import { addMonths } from "date-fns";
 import SEO from "@/components/SEO";
+import { getDateFnsLocale } from "@/lib/dateLocale";
 
 interface DbListing {
   id: string;
@@ -87,6 +89,7 @@ const availColor: Record<string, string> = {
 };
 
 export default function ListingDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -119,7 +122,7 @@ export default function ListingDetail() {
 
         if (fetchError) throw fetchError;
         if (!data) {
-          setError("Listing not found");
+          setError(t("listingDetail.listingNotFound"));
           return;
         }
 
@@ -150,7 +153,7 @@ export default function ListingDetail() {
         setOpenDow(slots.length > 0 ? new Set(slots.map((s) => s.day_of_week as number)) : null);
       } catch (err) {
         console.error("Error fetching listing:", err);
-        setError("Failed to load listing");
+        setError(t("listingDetail.failedToLoad"));
       } finally {
         setLoading(false);
       }
@@ -183,13 +186,13 @@ export default function ListingDetail() {
         <Navbar />
         <main className="pt-24 pb-16 container mx-auto px-4 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {error || "Listing not found"}
+            {error || t("listingDetail.listingNotFound")}
           </h1>
           <p className="text-muted-foreground mb-6">
-            This listing doesn't exist or has been removed.
+            {t("listingDetail.listingDoesNotExist")}
           </p>
           <Button asChild>
-            <Link to="/find">Back to Marketplace</Link>
+            <Link to="/find">{t("listingDetail.backToMarketplace")}</Link>
           </Button>
         </main>
         <Footer />
@@ -199,7 +202,7 @@ export default function ListingDetail() {
 
   const isParking = listing.category === "parking";
   const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
-  const priceLabel = listing.price_monthly ? "/month" : listing.price_daily ? "/day" : listing.price_hourly ? "/hour" : "";
+  const priceLabel = listing.price_monthly ? t("listingDetail.perMonth") : listing.price_daily ? t("listingDetail.perDay") : listing.price_hourly ? t("listingDetail.perHour") : "";
 
   // Compute duration using actual start/end times (not just calendar dates) so
   // partial-day parking bookings pick the hourly rate, not a whole day.
@@ -314,7 +317,7 @@ export default function ListingDetail() {
             to="/find"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to marketplace
+            <ArrowLeft className="w-4 h-4" /> {t("listingDetail.backToMarketplaceLower")}
           </Link>
         </div>
 
@@ -330,7 +333,7 @@ export default function ListingDetail() {
                       <div className="aspect-video rounded-xl overflow-hidden bg-muted flex items-center justify-center">
                         <img
                           src={photo.url}
-                          alt={`${listing.title} - photo ${idx + 1}`}
+                          alt={t("listingDetail.photoAlt", { title: listing.title, index: idx + 1 })}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -346,7 +349,7 @@ export default function ListingDetail() {
               </Carousel>
             ) : (
               <div className="aspect-video rounded-xl bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">No photos available</p>
+                <p className="text-muted-foreground">{t("listingDetail.noPhotosAvailable")}</p>
               </div>
             )}
 
@@ -355,14 +358,14 @@ export default function ListingDetail() {
 
             {/* Description */}
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-2">About this space</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-2">{t("listingDetail.aboutThisSpace")}</h2>
               <p className="text-muted-foreground leading-relaxed">{listing.description}</p>
             </div>
 
             {/* Features */}
             {listing.features && listing.features.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-foreground mb-3">Features</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.features")}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {listing.features.map((f) => (
                     <div key={f} className="flex items-center gap-2 text-sm text-foreground">
@@ -376,7 +379,7 @@ export default function ListingDetail() {
             {/* Nearby landmarks */}
             {listing.nearby_landmarks && listing.nearby_landmarks.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-foreground mb-3">Nearby Landmarks</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.nearbyLandmarks")}</h2>
                 <div className="flex flex-wrap gap-2">
                   {listing.nearby_landmarks.map((landmark) => (
                     <Badge key={landmark} variant="outline">
@@ -389,35 +392,35 @@ export default function ListingDetail() {
 
             {/* Pricing */}
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Pricing</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.pricing")}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {listing.price_hourly && (
                   <div className="p-4 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground">Hourly</p>
+                    <p className="text-sm text-muted-foreground">{t("search.hourly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_hourly}</p>
                   </div>
                 )}
                 {listing.price_daily && (
                   <div className="p-4 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground">Daily</p>
+                    <p className="text-sm text-muted-foreground">{t("search.daily")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_daily}</p>
                   </div>
                 )}
                 {listing.price_weekly && (
                   <div className="p-4 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground">Weekly</p>
+                    <p className="text-sm text-muted-foreground">{t("storageListings.duration.weekly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_weekly}</p>
                   </div>
                 )}
                 {listing.price_monthly && (
                   <div className="p-4 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground">Monthly</p>
+                    <p className="text-sm text-muted-foreground">{t("search.monthly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_monthly}</p>
                   </div>
                 )}
                 {listing.seasonal && (
                   <div className="p-4 rounded-lg border border-border text-center">
-                    <p className="text-sm text-muted-foreground">Seasonal</p>
+                    <p className="text-sm text-muted-foreground">{t("storageListings.duration.seasonal")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.seasonal}</p>
                   </div>
                 )}
@@ -425,10 +428,10 @@ export default function ListingDetail() {
               {listing.student_discount && (
                 <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <p className="text-sm text-foreground">
-                    🎓 <span className="font-semibold">{listing.student_discount_percent}% Student Discount</span>
+                    🎓 <span className="font-semibold">{t("listingCard.studentDiscount", { percent: listing.student_discount_percent })}</span>
                     {listing.student_universities && (
                       <span className="text-muted-foreground ml-1">
-                        • Available for: {listing.student_universities}
+                        • {t("listingDetail.availableFor", { universities: listing.student_universities })}
                       </span>
                     )}
                   </p>
@@ -438,13 +441,13 @@ export default function ListingDetail() {
 
             {/* Reviews */}
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Reviews</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.reviews")}</h2>
               <ListingReviews listingId={listing.id} />
             </div>
 
             {/* Map */}
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Location</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.location")}</h2>
               <div className="h-80 rounded-lg overflow-hidden border border-border">
                 <MapContainer center={[listing.lat, listing.lng]} zoom={15} style={{ height: "100%", width: "100%" }}>
                   <TileLayer
@@ -463,7 +466,7 @@ export default function ListingDetail() {
           <div>
             <Card className="card-shadow sticky top-24">
               <CardHeader>
-                <CardTitle className="text-lg">Contact Provider</CardTitle>
+                <CardTitle className="text-lg">{t("listingDetail.contactProvider")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 {/* Provider info */}
@@ -480,7 +483,7 @@ export default function ListingDetail() {
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{profile?.display_name || "Unknown Provider"}</p>
+                    <p className="font-semibold text-foreground">{profile?.display_name || t("listingDetail.unknownProvider")}</p>
                     {profile?.bio && <p className="text-xs text-muted-foreground">{profile.bio}</p>}
                   </div>
                 </div>
@@ -497,7 +500,7 @@ export default function ListingDetail() {
                   )}
                   <Button className="w-full" onClick={() => setShowMessages(true)}>
                     <Mail className="w-4 h-4 mr-2" />
-                    Send Message
+                    {t("listingDetail.sendMessage")}
                   </Button>
                 </div>
 
@@ -505,7 +508,7 @@ export default function ListingDetail() {
                 {price && (
                   <div className="pt-4 border-t border-border space-y-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Starting at</p>
+                      <p className="text-xs text-muted-foreground">{t("listingDetail.startingAt")}</p>
                       <p className="text-2xl font-bold text-foreground">
                         ${price}
                         <span className="text-sm text-muted-foreground ml-1">{priceLabel}</span>
@@ -514,12 +517,12 @@ export default function ListingDetail() {
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Start</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t("search.start")}</p>
                         <Popover open={startOpen} onOpenChange={(o) => { setStartOpen(o); if (o) setTempStart(startDate); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !startDate && "text-muted-foreground")}>
                               <CalendarIcon className="w-3 h-3 mr-1" />
-                              {startDate ? format(startDate, "MMM d") : "Pick date"}
+                              {startDate ? format(startDate, "MMM d", { locale: getDateFnsLocale() }) : t("listingDetail.pickDate")}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -531,23 +534,23 @@ export default function ListingDetail() {
                               return false;
                             }} className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
-                              <Button variant="ghost" size="sm" onClick={() => setStartOpen(false)}>Cancel</Button>
-                              <Button size="sm" disabled={!tempStart} onClick={() => { setStartDate(tempStart); if (endDate && tempStart && tempStart > endDate) setEndDate(undefined); setStartOpen(false); }}>Confirm</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setStartOpen(false)}>{t("common.cancel")}</Button>
+                              <Button size="sm" disabled={!tempStart} onClick={() => { setStartDate(tempStart); if (endDate && tempStart && tempStart > endDate) setEndDate(undefined); setStartOpen(false); }}>{t("common.confirm")}</Button>
                             </div>
                           </PopoverContent>
                         </Popover>
                         <div className="mt-2">
-                          <p className="text-xs text-muted-foreground mb-1">Start time</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t("search.startTime")}</p>
                           <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">End</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t("search.end")}</p>
                         <Popover open={endOpen} onOpenChange={(o) => { setEndOpen(o); if (o) setTempEnd(endDate); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left text-xs h-9", !endDate && "text-muted-foreground")}>
                               <CalendarIcon className="w-3 h-3 mr-1" />
-                              {endDate ? format(endDate, "MMM d") : "Pick date"}
+                              {endDate ? format(endDate, "MMM d", { locale: getDateFnsLocale() }) : t("listingDetail.pickDate")}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -559,13 +562,13 @@ export default function ListingDetail() {
                               return false;
                             }} className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
-                              <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>Cancel</Button>
-                              <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>Confirm</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>{t("common.cancel")}</Button>
+                              <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>{t("common.confirm")}</Button>
                             </div>
                           </PopoverContent>
                         </Popover>
                         <div className="mt-2">
-                          <p className="text-xs text-muted-foreground mb-1">End time</p>
+                          <p className="text-xs text-muted-foreground mb-1">{t("search.endTime")}</p>
                           <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
                         </div>
                       </div>
@@ -621,18 +624,18 @@ export default function ListingDetail() {
                     {durationDays > 0 && bestRate && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between text-muted-foreground text-xs">
-                          <span><Clock className="w-3 h-3 inline mr-1" />{units} {bestRate === "hourly" ? (units === 1 ? "hour" : "hours") : bestRate === "daily" ? (units === 1 ? "day" : "days") : (units === 1 ? "month" : "months")}</span>
-                          <span className="capitalize">{bestRate} rate</span>
+                          <span><Clock className="w-3 h-3 inline mr-1" />{t(`listingDetail.unitsLabel.${bestRate}`, { count: units })}</span>
+                          <span className="capitalize">{t(`listingDetail.rateLabel.${bestRate}`)}</span>
                         </div>
-                        <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-muted-foreground text-xs"><span>GST (5%)</span><span>${gst.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-muted-foreground text-xs"><span>QST (9.975%)</span><span>${qst.toFixed(2)}</span></div>
-                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-2"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>{t("listingDetail.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground text-xs"><span>{t("listingDetail.gst")}</span><span>${gst.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground text-xs"><span>{t("listingDetail.qst")}</span><span>${qst.toFixed(2)}</span></div>
+                        <div className="flex justify-between font-bold text-foreground border-t border-border pt-2"><span>{t("listingDetail.total")}</span><span>${total.toFixed(2)}</span></div>
                       </div>
                     )}
 
                     <Button className="w-full" size="lg" disabled={!startDate || !endDate || !bestRate} onClick={handleBook}>
-                      {durationDays > 0 && bestRate ? `Book — $${total.toFixed(2)}` : "Select dates to book"}
+                      {durationDays > 0 && bestRate ? t("listingDetail.bookFor", { total: total.toFixed(2) }) : t("listingDetail.selectDatesToBook")}
                     </Button>
 
                   </div>
@@ -659,6 +662,7 @@ export default function ListingDetail() {
 }
 
 function ListingTitleBlock({ listing, isParking }: { listing: DbListing; isParking: boolean }) {
+  const { t } = useTranslation();
   const { avg, count } = useListingRatingSummary(listing.id);
   return (
     <div>
@@ -668,7 +672,7 @@ function ListingTitleBlock({ listing, isParking }: { listing: DbListing; isParki
           <div className="flex items-center gap-2 mt-2">
             <StarRating value={avg} readOnly size={16} />
             <span className="text-sm text-muted-foreground">
-              {count > 0 ? `${avg.toFixed(1)} (${count} review${count > 1 ? "s" : ""})` : "No reviews yet"}
+              {count > 0 ? t("listingDetail.ratingSummary", { avg: avg.toFixed(1), count }) : t("listingDetail.noReviewsYet")}
             </span>
           </div>
           <p className="text-muted-foreground flex items-center gap-1 mt-2">
@@ -685,15 +689,15 @@ function ListingTitleBlock({ listing, isParking }: { listing: DbListing; isParki
         <Badge className={`text-xs border ${availColor[listing.availability] || availColor.available}`}>
           {listing.availability === "available"
             ? isParking && listing.spots
-              ? `${listing.spots} spots`
-              : "Available"
-            : (listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
+              ? t("listingCard.spotsCount", { count: listing.spots })
+              : t("listingCard.available")
+            : t(`listingCard.availability.${listing.availability}`, { defaultValue: listing.availability || "" })}
         </Badge>
         {listing.category === "storage" && listing.size && (
-          <span className="text-muted-foreground">{listing.size} ft · {listing.sqft} sqft</span>
+          <span className="text-muted-foreground">{t("listingCard.sizeSqft", { size: listing.size, sqft: listing.sqft })}</span>
         )}
         {listing.category === "parking" && listing.spots && (
-          <span className="text-muted-foreground">{listing.spots} spots</span>
+          <span className="text-muted-foreground">{t("listingCard.spotsCount", { count: listing.spots })}</span>
         )}
       </div>
     </div>

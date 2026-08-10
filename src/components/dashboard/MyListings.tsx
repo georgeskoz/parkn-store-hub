@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const availColor: Record<string, string> = {
 };
 
 export default function MyListings({ payoutsConnected = true }: { payoutsConnected?: boolean }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [listings, setListings] = useState<DbListing[]>([]);
@@ -67,8 +69,8 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
     } catch (err) {
       console.error("Error fetching listings:", err);
       toast({
-        title: "Error",
-        description: "Failed to load your listings",
+        title: t("common.error"),
+        description: t("myListings.failedToLoad"),
         variant: "destructive",
       });
     } finally {
@@ -90,14 +92,14 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
       setListings(listings.filter(l => l.id !== id));
       setDeleteConfirm(null);
       toast({
-        title: "Listing deleted",
-        description: "Your listing has been removed from the marketplace.",
+        title: t("myListings.listingDeleted"),
+        description: t("myListings.listingDeletedDescription"),
       });
     } catch (err) {
       console.error("Error deleting listing:", err);
       toast({
-        title: "Error",
-        description: "Failed to delete listing. Please try again.",
+        title: t("common.error"),
+        description: t("myListings.failedToDelete"),
         variant: "destructive",
       });
     } finally {
@@ -106,10 +108,10 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
   };
 
   const getPrice = (listing: DbListing): { price: number | null; label: string } => {
-    if (listing.price_monthly) return { price: listing.price_monthly, label: "/month" };
-    if (listing.price_weekly) return { price: listing.price_weekly, label: "/week" };
-    if (listing.price_daily) return { price: listing.price_daily, label: "/day" };
-    if (listing.price_hourly) return { price: listing.price_hourly, label: "/hour" };
+    if (listing.price_monthly) return { price: listing.price_monthly, label: t("listingDetail.perMonth") };
+    if (listing.price_weekly) return { price: listing.price_weekly, label: t("listingCard.perWeek") };
+    if (listing.price_daily) return { price: listing.price_daily, label: t("listingDetail.perDay") };
+    if (listing.price_hourly) return { price: listing.price_hourly, label: t("listingDetail.perHour") };
     return { price: null, label: "" };
   };
 
@@ -117,8 +119,8 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Listings</CardTitle>
-          <CardDescription>Your parking spots and storage spaces</CardDescription>
+          <CardTitle>{t("myListings.myListings")}</CardTitle>
+          <CardDescription>{t("myListings.yourSpaces")}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center items-center py-12">
           <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
@@ -131,13 +133,13 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Listings</CardTitle>
-          <CardDescription>Your parking spots and storage spaces</CardDescription>
+          <CardTitle>{t("myListings.myListings")}</CardTitle>
+          <CardDescription>{t("myListings.yourSpaces")}</CardDescription>
         </CardHeader>
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground mb-4">You haven't created any listings yet.</p>
+          <p className="text-muted-foreground mb-4">{t("myListings.noListingsYet")}</p>
           <Button asChild>
-            <Link to="/list">Create Your First Listing</Link>
+            <Link to="/list">{t("myListings.createFirstListing")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -149,10 +151,10 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>My Listings</CardTitle>
-            <CardDescription>Manage your parking spots and storage spaces</CardDescription>
+            <CardTitle>{t("myListings.myListings")}</CardTitle>
+            <CardDescription>{t("myListings.manageYourSpaces")}</CardDescription>
           </div>
-          <Badge variant="outline">{listings.length} active</Badge>
+          <Badge variant="outline">{t("myListings.activeCount", { count: listings.length })}</Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -181,7 +183,7 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
                       <Badge
                         className={`text-xs border ${availColor[listing.availability] || availColor.available}`}
                       >
-                        {(listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
+                        {listing.availability === "available" ? t("listingCard.available") : t(`listingCard.availability.${listing.availability}`, { defaultValue: listing.availability || "" })}
                       </Badge>
                       {listing.type && (
                         <Badge variant="outline" className="text-xs capitalize">
@@ -196,7 +198,7 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
                       )}
                       {!payoutsConnected && (
                         <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-700">
-                          Payouts not set up
+                          {t("myListings.payoutsNotSetUp")}
                         </Badge>
                       )}
                     </div>
@@ -204,12 +206,12 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
 
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/listing/${listing.id}`} title="View listing">
+                      <Link to={`/listing/${listing.id}`} title={t("myListings.viewListing")}>
                         <Eye className="w-4 h-4" />
                       </Link>
                     </Button>
                     <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/listing/${listing.id}/edit`} title="Edit listing">
+                      <Link to={`/listing/${listing.id}/edit`} title={t("myListings.editListing")}>
                         <Edit className="w-4 h-4" />
                       </Link>
                     </Button>
@@ -218,7 +220,7 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
                       size="icon"
                       onClick={() => setDeleteConfirm(listing.id)}
                       disabled={deleting === listing.id}
-                      title="Delete listing"
+                      title={t("myListings.deleteListing")}
                     >
                       {deleting === listing.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -233,7 +235,7 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
                   <CollapsibleTrigger asChild>
                     <button className="w-full flex items-center justify-between px-4 py-2 border-t border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group">
                       <span className="flex items-center gap-2">
-                        <CalendarClock className="w-4 h-4" /> Availability
+                        <CalendarClock className="w-4 h-4" /> {t("listingWizard.availability")}
                       </span>
                       <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
                     </button>
@@ -251,18 +253,18 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
       <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete listing</AlertDialogTitle>
+            <AlertDialogTitle>{t("myListings.deleteListingTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this listing? This action cannot be undone. It will be removed from the marketplace immediately.
+              {t("myListings.deleteListingConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteConfirm && handleDeleteListing(deleteConfirm)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

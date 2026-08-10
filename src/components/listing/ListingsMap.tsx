@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -27,6 +28,7 @@ interface DbListing {
 }
 
 export default function ListingsMap({ listings }: { listings: DbListing[] }) {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const clusterRef = useRef<any>(null);
@@ -54,9 +56,9 @@ export default function ListingsMap({ listings }: { listings: DbListing[] }) {
       const lng = Number(l.lng);
       if (!isFinite(lat) || !isFinite(lng)) return;
       const price = l.price_monthly || l.price_daily || l.price_hourly;
-      const label = l.price_monthly ? "/mo" : l.price_daily ? "/day" : l.price_hourly ? "/hr" : "";
+      const label = l.price_monthly ? t("listingCard.perMonth") : l.price_daily ? t("listingCard.perDay") : l.price_hourly ? t("listingCard.perHour") : "";
       const marker = L.marker([lat, lng]).bindPopup(
-        `<strong>${l.title}</strong><br/>${price ? `$${price}${label}` : "Contact for pricing"}<br/><a href="/listing/${l.id}" style="font-size:12px;color:#0d9488">View listing →</a>`
+        `<strong>${l.title}</strong><br/>${price ? `$${price}${label}` : t("listingCard.contactForPricing")}<br/><a href="/listing/${l.id}" style="font-size:12px;color:#0d9488">${t("listingCard.viewListingArrow")}</a>`
       );
       clusterRef.current!.addLayer(marker);
     });
@@ -65,7 +67,7 @@ export default function ListingsMap({ listings }: { listings: DbListing[] }) {
       const bounds = L.latLngBounds(valid.map((l) => [Number(l.lat), Number(l.lng)] as [number, number]));
       mapInstance.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
     }
-  }, [listings]);
+  }, [listings, t]);
 
   return <div ref={mapRef} className="w-full h-full" />;
 }

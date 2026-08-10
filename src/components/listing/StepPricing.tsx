@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Plus, Trash2, Calendar, Clock } from "lucide-react";
 import type { ListingFormData, AvailabilitySlot } from "./ListingFormTypes";
-import { DAYS_OF_WEEK, MONTHS } from "./ListingFormTypes";
+import { getTranslatedDaysOfWeek, getTranslatedMonths } from "./ListingFormTypes";
 
 interface Props {
   form: ListingFormData;
@@ -14,6 +15,9 @@ interface Props {
 }
 
 export default function StepPricing({ form, update }: Props) {
+  const { t } = useTranslation();
+  const DAYS_OF_WEEK = getTranslatedDaysOfWeek(t);
+  const MONTHS = getTranslatedMonths(t);
   const slots = form.availabilitySlots ?? [];
 
   const addSlot = () => {
@@ -38,7 +42,7 @@ export default function StepPricing({ form, update }: Props) {
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-primary mb-2">
         <DollarSign className="w-5 h-5" />
-        <span className="font-semibold text-foreground">Pricing</span>
+        <span className="font-semibold text-foreground">{t("listingWizard.pricing")}</span>
       </div>
 
       {/* ============ PARKING ============ */}
@@ -46,33 +50,33 @@ export default function StepPricing({ form, update }: Props) {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <Label>Hourly ($)</Label>
+              <Label>{t("listingWizard.hourlyDollar")}</Label>
               <Input type="number" value={form.hourly} onChange={(e) => update("hourly", e.target.value)} />
             </div>
             <div>
-              <Label>Daily ($)</Label>
+              <Label>{t("listingWizard.dailyDollar")}</Label>
               <Input type="number" value={form.daily} onChange={(e) => update("daily", e.target.value)} />
             </div>
             <div>
-              <Label>Weekly ($)</Label>
+              <Label>{t("listingWizard.weeklyDollar")}</Label>
               <Input type="number" value={form.weekly} onChange={(e) => update("weekly", e.target.value)} />
             </div>
             <div>
-              <Label>Monthly ($)</Label>
+              <Label>{t("listingWizard.monthlyDollar")}</Label>
               <Input type="number" value={form.monthly} onChange={(e) => update("monthly", e.target.value)} />
             </div>
           </div>
 
           <div>
-            <Label>Vehicles that can park simultaneously</Label>
+            <Label>{t("listingWizard.vehiclesSimultaneously")}</Label>
             <Select value={form.spots || "1"} onValueChange={(v) => update("spots", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 vehicle</SelectItem>
-                <SelectItem value="2">2 vehicles</SelectItem>
-                <SelectItem value="3">3 vehicles</SelectItem>
-                <SelectItem value="4">4 vehicles</SelectItem>
-                <SelectItem value="5">5+ vehicles</SelectItem>
+                <SelectItem value="1">{t("listingWizard.vehicleCount_one", { count: 1 })}</SelectItem>
+                <SelectItem value="2">{t("listingWizard.vehicleCount_other", { count: 2 })}</SelectItem>
+                <SelectItem value="3">{t("listingWizard.vehicleCount_other", { count: 3 })}</SelectItem>
+                <SelectItem value="4">{t("listingWizard.vehicleCount_other", { count: 4 })}</SelectItem>
+                <SelectItem value="5">{t("listingWizard.vehicleCountPlus", { count: 5 })}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -82,26 +86,26 @@ export default function StepPricing({ form, update }: Props) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span className="font-semibold text-foreground text-sm">Availability Schedule</span>
+                <span className="font-semibold text-foreground text-sm">{t("listingWizard.availabilitySchedule")}</span>
               </div>
               <Button type="button" size="sm" variant="outline" onClick={addSlot}>
-                <Plus className="w-3 h-3 mr-1" /> Add slot
+                <Plus className="w-3 h-3 mr-1" /> {t("listingWizard.addSlot")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Add one or more time slots per day. Example: Mon–Fri 8:00–18:00, or 20:00–08:00 for overnight parking.
+              {t("listingWizard.availabilityScheduleHint")}
             </p>
 
             {slots.length === 0 && (
               <p className="text-sm text-muted-foreground italic">
-                No slots added — the spot will be considered available 24/7.
+                {t("listingWizard.noSlotsAdded")}
               </p>
             )}
 
             {slots.map((slot, idx) => (
               <div key={idx} className="border rounded-lg p-3 space-y-3 bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">Slot {idx + 1}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("listingWizard.slotNumber", { number: idx + 1 })}</span>
                   <Button type="button" size="sm" variant="ghost" onClick={() => removeSlot(idx)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -124,11 +128,11 @@ export default function StepPricing({ form, update }: Props) {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Start</Label>
+                    <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> {t("search.start")}</Label>
                     <Input type="time" value={slot.startTime} onChange={(e) => updateSlot(idx, { startTime: e.target.value })} />
                   </div>
                   <div>
-                    <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> End</Label>
+                    <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> {t("search.end")}</Label>
                     <Input type="time" value={slot.endTime} onChange={(e) => updateSlot(idx, { endTime: e.target.value })} />
                   </div>
                 </div>
@@ -142,21 +146,21 @@ export default function StepPricing({ form, update }: Props) {
       {form.category === "storage" && (
         <>
           <div>
-            <Label>Monthly ($)</Label>
+            <Label>{t("listingWizard.monthlyDollar")}</Label>
             <Input type="number" value={form.monthly} onChange={(e) => update("monthly", e.target.value)} />
-            <p className="text-xs text-muted-foreground mt-1">Storage spaces are typically rented by the month.</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("listingWizard.storageRentedMonthlyHint")}</p>
           </div>
 
           <div>
-            <Label>Number of units available</Label>
+            <Label>{t("listingWizard.numberOfUnitsAvailable")}</Label>
             <Select value={form.spots || "1"} onValueChange={(v) => update("spots", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1 unit</SelectItem>
-                <SelectItem value="2">2 units</SelectItem>
-                <SelectItem value="3">3 units</SelectItem>
-                <SelectItem value="4">4 units</SelectItem>
-                <SelectItem value="5">5+ units</SelectItem>
+                <SelectItem value="1">{t("listingWizard.unitCount_one", { count: 1 })}</SelectItem>
+                <SelectItem value="2">{t("listingWizard.unitCount_other", { count: 2 })}</SelectItem>
+                <SelectItem value="3">{t("listingWizard.unitCount_other", { count: 3 })}</SelectItem>
+                <SelectItem value="4">{t("listingWizard.unitCount_other", { count: 4 })}</SelectItem>
+                <SelectItem value="5">{t("listingWizard.unitCountPlus", { count: 5 })}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -165,32 +169,32 @@ export default function StepPricing({ form, update }: Props) {
           <div className="border-t pt-4 space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-foreground text-sm">Rental Period</span>
+              <span className="font-semibold text-foreground text-sm">{t("listingWizard.rentalPeriod")}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Minimum rental</Label>
+                <Label>{t("listingWizard.minimumRental")}</Label>
                 <Select value={form.minMonths || "1"} onValueChange={(v) => update("minMonths", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 month</SelectItem>
-                    <SelectItem value="3">3 months</SelectItem>
-                    <SelectItem value="6">6 months</SelectItem>
-                    <SelectItem value="12">12 months</SelectItem>
+                    <SelectItem value="1">{t("listingDetail.unitsLabel.monthly", { count: 1 })}</SelectItem>
+                    <SelectItem value="3">{t("listingDetail.unitsLabel.monthly", { count: 3 })}</SelectItem>
+                    <SelectItem value="6">{t("listingDetail.unitsLabel.monthly", { count: 6 })}</SelectItem>
+                    <SelectItem value="12">{t("listingDetail.unitsLabel.monthly", { count: 12 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Available from</Label>
+                <Label>{t("listingWizard.availableFrom")}</Label>
                 <Input type="date" value={form.rentalStartDate} onChange={(e) => update("rentalStartDate", e.target.value)} />
               </div>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
-                <Label className="text-sm">Seasonal rental</Label>
-                <p className="text-xs text-muted-foreground">e.g. November–April for winter storage</p>
+                <Label className="text-sm">{t("listingWizard.seasonalRental")}</Label>
+                <p className="text-xs text-muted-foreground">{t("listingWizard.seasonalRentalHint")}</p>
               </div>
               <Switch checked={form.seasonalRental} onCheckedChange={(c) => update("seasonalRental", c)} />
             </div>
@@ -198,7 +202,7 @@ export default function StepPricing({ form, update }: Props) {
             {form.seasonalRental && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Season start</Label>
+                  <Label>{t("listingWizard.seasonStart")}</Label>
                   <Select value={form.seasonStartMonth} onValueChange={(v) => update("seasonStartMonth", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -209,7 +213,7 @@ export default function StepPricing({ form, update }: Props) {
                   </Select>
                 </div>
                 <div>
-                  <Label>Season end</Label>
+                  <Label>{t("listingWizard.seasonEnd")}</Label>
                   <Select value={form.seasonEndMonth} onValueChange={(v) => update("seasonEndMonth", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -224,20 +228,20 @@ export default function StepPricing({ form, update }: Props) {
           </div>
 
           <div>
-            <Label>Cancellation Policy</Label>
+            <Label>{t("listingWizard.cancellationPolicy")}</Label>
             <Select value={form.cancellation} onValueChange={(v) => update("cancellation", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="flexible">Flexible</SelectItem>
-                <SelectItem value="moderate">Moderate</SelectItem>
-                <SelectItem value="strict">Strict</SelectItem>
+                <SelectItem value="flexible">{t("listingWizard.cancellation.flexible")}</SelectItem>
+                <SelectItem value="moderate">{t("listingWizard.cancellation.moderate")}</SelectItem>
+                <SelectItem value="strict">{t("listingWizard.cancellation.strict")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </>
       )}
 
-      <p className="text-xs text-muted-foreground">Prices in CAD. Quebec taxes (GST 5% + QST 9.975%) will be added at checkout.</p>
+      <p className="text-xs text-muted-foreground">{t("listingWizard.pricesInCadTaxHint")}</p>
     </div>
   );
 }

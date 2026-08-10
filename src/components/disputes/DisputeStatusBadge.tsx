@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 
 export type DisputeStatus =
@@ -7,27 +8,12 @@ export type DisputeStatus =
   | "resolved_host"
   | "closed";
 
-const MAP: Record<DisputeStatus, { label: string; className: string }> = {
-  open: {
-    label: "Dispute Pending 🕐",
-    className: "bg-yellow-100 text-yellow-900 hover:bg-yellow-100 border-yellow-300",
-  },
-  under_review: {
-    label: "Under Review 🔍",
-    className: "bg-blue-100 text-blue-900 hover:bg-blue-100 border-blue-300",
-  },
-  resolved_seeker: {
-    label: "Resolved — Refund issued ✓",
-    className: "bg-green-100 text-green-900 hover:bg-green-100 border-green-300",
-  },
-  resolved_host: {
-    label: "Resolved — Payment released ✓",
-    className: "bg-green-100 text-green-900 hover:bg-green-100 border-green-300",
-  },
-  closed: {
-    label: "Closed",
-    className: "bg-muted text-muted-foreground hover:bg-muted",
-  },
+const CLASS_MAP: Record<DisputeStatus, string> = {
+  open: "bg-yellow-100 text-yellow-900 hover:bg-yellow-100 border-yellow-300",
+  under_review: "bg-blue-100 text-blue-900 hover:bg-blue-100 border-blue-300",
+  resolved_seeker: "bg-green-100 text-green-900 hover:bg-green-100 border-green-300",
+  resolved_host: "bg-green-100 text-green-900 hover:bg-green-100 border-green-300",
+  closed: "bg-muted text-muted-foreground hover:bg-muted",
 };
 
 const DisputeStatusBadge = ({
@@ -37,14 +23,14 @@ const DisputeStatusBadge = ({
   status: DisputeStatus;
   onClick?: () => void;
 }) => {
-  const cfg = MAP[status];
+  const { t } = useTranslation();
   return (
     <Badge
       variant="outline"
-      className={`cursor-pointer ${cfg.className}`}
+      className={`cursor-pointer ${CLASS_MAP[status]}`}
       onClick={onClick}
     >
-      {cfg.label}
+      {t(`disputes.status.${status}`)}
     </Badge>
   );
 };

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +47,7 @@ const availColor: Record<string, string> = {
 };
 
 export default function DbListingCard({ listing, distance }: Props) {
+  const { t } = useTranslation();
   const category = (listing.category || "").toLowerCase();
   const type = (listing.type || "").toLowerCase();
   const isParking = category === "parking" || type === "parking";
@@ -57,15 +59,15 @@ export default function DbListingCard({ listing, distance }: Props) {
   let price: number | null = null;
   let priceLabel = "";
   if (isParking) {
-    if (hourly != null) { price = hourly; priceLabel = "/hr"; }
-    else if (daily != null) { price = daily; priceLabel = "/day"; }
-    else if (weekly != null) { price = weekly; priceLabel = "/wk"; }
-    else if (monthly != null) { price = monthly; priceLabel = "/mo"; }
+    if (hourly != null) { price = hourly; priceLabel = t("listingCard.perHour"); }
+    else if (daily != null) { price = daily; priceLabel = t("listingCard.perDay"); }
+    else if (weekly != null) { price = weekly; priceLabel = t("listingCard.perWeek"); }
+    else if (monthly != null) { price = monthly; priceLabel = t("listingCard.perMonth"); }
   } else {
-    if (monthly != null) { price = monthly; priceLabel = "/mo"; }
-    else if (weekly != null) { price = weekly; priceLabel = "/wk"; }
-    else if (daily != null) { price = daily; priceLabel = "/day"; }
-    else if (hourly != null) { price = hourly; priceLabel = "/hr"; }
+    if (monthly != null) { price = monthly; priceLabel = t("listingCard.perMonth"); }
+    else if (weekly != null) { price = weekly; priceLabel = t("listingCard.perWeek"); }
+    else if (daily != null) { price = daily; priceLabel = t("listingCard.perDay"); }
+    else if (hourly != null) { price = hourly; priceLabel = t("listingCard.perHour"); }
   }
   const photos = Array.isArray(listing.photos) ? listing.photos : [];
   const firstPhoto = photos?.[0];
@@ -78,25 +80,25 @@ export default function DbListingCard({ listing, distance }: Props) {
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-200 overflow-hidden">
-      <Link to={`/listing/${listing.id}`} className="block h-40 bg-muted relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring" aria-label={`View ${listing.title || "listing"}`}>
-        <img src={coverPhoto} alt={listing.title || "Listing photo"} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+      <Link to={`/listing/${listing.id}`} className="block h-40 bg-muted relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring" aria-label={t("listingCard.viewListing", { title: listing.title || t("listingCard.listing") })}>
+        <img src={coverPhoto} alt={listing.title || t("listingCard.listingPhoto")} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-3 left-3 flex gap-1.5">
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
-            {listing.type || "listing"}
+            {listing.type || t("listingCard.listing")}
           </Badge>
           <Badge variant="secondary" className="text-xs capitalize bg-card/90 backdrop-blur-sm border-0">
-            {listing.category || (isParking ? "parking" : "storage")}
+            {listing.category || (isParking ? t("search.parking") : t("search.storage"))}
           </Badge>
         </div>
         <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
           <Badge className={`text-xs border ${availColor[listing.availability] || availColor.available}`}>
             {listing.availability === "available"
-              ? isParking && listing.spots ? `${listing.spots} spots` : "Available"
-              : (listing.availability?.charAt(0)?.toUpperCase() ?? "") + (listing.availability?.slice(1) ?? "")}
+              ? isParking && listing.spots ? t("listingCard.spotsCount", { count: listing.spots }) : t("listingCard.available")
+              : t(`listingCard.availability.${listing.availability}`, { defaultValue: listing.availability || "" })}
           </Badge>
           {distance !== undefined && (
             <Badge className="bg-card/90 backdrop-blur-sm text-foreground border border-border text-[10px]">
-              {distance.toFixed(1)} km
+              {t("listingCard.distanceKm", { distance: distance.toFixed(1) })}
             </Badge>
           )}
         </div>
@@ -104,14 +106,14 @@ export default function DbListingCard({ listing, distance }: Props) {
 
 
       <CardContent className="p-4 space-y-2.5">
-        <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{listing.title || "Untitled listing"}</h3>
+        <h3 className="font-semibold text-foreground leading-tight line-clamp-1">{listing.title || t("listingCard.untitledListing")}</h3>
         <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <MapPin className="w-3 h-3" /> {listing.region ? `${listing.region}, ` : ""}{[listing.city, listing.province].filter(Boolean).join(", ") || "Quebec"}
+          <MapPin className="w-3 h-3" /> {listing.region ? `${listing.region}, ` : ""}{[listing.city, listing.province].filter(Boolean).join(", ") || t("listingCard.quebec")}
         </p>
-        <p className="text-xs text-muted-foreground line-clamp-2">{listing.description || "No description provided."}</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">{listing.description || t("listingCard.noDescription")}</p>
 
         {listing.size && (
-          <p className="text-xs text-muted-foreground">{listing.size} ft · {listing.sqft} sqft</p>
+          <p className="text-xs text-muted-foreground">{t("listingCard.sizeSqft", { size: listing.size, sqft: listing.sqft })}</p>
         )}
 
         <div className="flex flex-wrap gap-1">
@@ -124,7 +126,7 @@ export default function DbListingCard({ listing, distance }: Props) {
         </div>
 
         {listing.student_discount && (
-          <Badge variant="secondary" className="text-[10px]">🎓 {listing.student_discount_percent}% Student Discount</Badge>
+          <Badge variant="secondary" className="text-[10px]">🎓 {t("listingCard.studentDiscount", { percent: listing.student_discount_percent })}</Badge>
         )}
 
         <div className="flex items-end justify-between pt-2 border-t border-border">
@@ -135,11 +137,11 @@ export default function DbListingCard({ listing, distance }: Props) {
                 <span className="text-xs text-muted-foreground ml-1">{priceLabel}</span>
               </>
             ) : (
-              <span className="text-sm text-muted-foreground">Contact for pricing</span>
+              <span className="text-sm text-muted-foreground">{t("listingCard.contactForPricing")}</span>
             )}
           </div>
           <Button size="sm" className="text-xs h-8" asChild>
-            <Link to={`/listing/${listing.id}`}>View</Link>
+            <Link to={`/listing/${listing.id}`}>{t("listingCard.view")}</Link>
           </Button>
         </div>
       </CardContent>

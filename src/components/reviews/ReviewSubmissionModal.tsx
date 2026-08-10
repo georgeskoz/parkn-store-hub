@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -34,6 +35,7 @@ const ReviewSubmissionModal = ({
   listingTitle,
   onSubmitted,
 }: Props) => {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
@@ -47,13 +49,13 @@ const ReviewSubmissionModal = ({
 
   const submit = async () => {
     if (rating < 1) {
-      toast({ title: "Please select a star rating", variant: "destructive" });
+      toast({ title: t("reviews.pleaseSelectStarRating"), variant: "destructive" });
       return;
     }
     setSubmitting(true);
     try {
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth?.user) throw new Error("You must be signed in.");
+      if (!auth?.user) throw new Error(t("reviews.mustBeSignedIn"));
       const { error } = await supabase.from("reviews").insert({
         booking_id: bookingId,
         listing_id: listingId,
@@ -64,16 +66,16 @@ const ReviewSubmissionModal = ({
         visible: true,
       });
       if (error) throw error;
-      toast({ title: "Review submitted!" });
+      toast({ title: t("reviews.reviewSubmittedExclaim") });
       onSubmitted?.();
       reset();
       onOpenChange(false);
     } catch (e: any) {
-      const msg = e?.message || "Failed to submit review";
+      const msg = e?.message || t("reviews.failedToSubmit");
       toast({
-        title: "Could not submit review",
+        title: t("reviews.couldNotSubmit"),
         description: msg.includes("duplicate")
-          ? "You've already reviewed this booking."
+          ? t("reviews.alreadyReviewed")
           : msg,
         variant: "destructive",
       });
@@ -92,16 +94,16 @@ const ReviewSubmissionModal = ({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Leave a review</DialogTitle>
+          <DialogTitle>{t("reviews.leaveAReview")}</DialogTitle>
           <DialogDescription>
             {listingTitle
-              ? `How was your experience with "${listingTitle}"?`
-              : "Share your experience to help others."}
+              ? t("reviews.howWasExperienceWith", { title: listingTitle })
+              : t("reviews.shareExperienceToHelp")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-1" role="radiogroup" aria-label="Star rating">
+          <div className="flex items-center gap-1" role="radiogroup" aria-label={t("reviews.starRating")}>
             {[1, 2, 3, 4, 5].map((n) => {
               const filled = (hover || rating) >= n;
               return (
@@ -110,7 +112,7 @@ const ReviewSubmissionModal = ({
                   type="button"
                   role="radio"
                   aria-checked={rating === n}
-                  aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                  aria-label={t("reviews.starCount", { count: n })}
                   onMouseEnter={() => setHover(n)}
                   onMouseLeave={() => setHover(0)}
                   onClick={() => setRating(n)}
@@ -128,7 +130,7 @@ const ReviewSubmissionModal = ({
 
           <div className="space-y-1">
             <Textarea
-              placeholder="Tell others what stood out (optional)"
+              placeholder={t("reviews.tellOthersPlaceholder")}
               value={comment}
               onChange={(e) => setComment(e.target.value.slice(0, MAX_LEN))}
               maxLength={MAX_LEN}
@@ -142,11 +144,11 @@ const ReviewSubmissionModal = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={submit} disabled={submitting || rating < 1}>
             {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Submit review
+            {t("reviews.submitReview")}
           </Button>
         </DialogFooter>
       </DialogContent>

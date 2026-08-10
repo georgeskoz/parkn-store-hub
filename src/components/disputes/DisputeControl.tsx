@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import DisputeStatusBadge, { DisputeStatus } from "./DisputeStatusBadge";
@@ -25,6 +26,7 @@ const DisputeControl = ({
   dispute,
   onSubmitted,
 }: Props) => {
+  const { t } = useTranslation();
   const [openSubmit, setOpenSubmit] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
 
@@ -52,7 +54,7 @@ const DisputeControl = ({
 
   if (expired) {
     return (
-      <span className="text-xs text-muted-foreground">Dispute window expired</span>
+      <span className="text-xs text-muted-foreground">{t("disputes.windowExpired")}</span>
     );
   }
 
@@ -64,7 +66,7 @@ const DisputeControl = ({
         onClick={() => setOpenSubmit(true)}
         className="text-destructive border-destructive/40 hover:bg-destructive/10"
       >
-        <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Raise a Dispute
+        <AlertTriangle className="w-3.5 h-3.5 mr-1" /> {t("disputes.raiseADispute")}
       </Button>
       <DisputeSubmissionModal
         open={openSubmit}

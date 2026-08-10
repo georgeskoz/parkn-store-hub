@@ -1,11 +1,13 @@
 import * as React from "react";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getDateFnsLocale } from "@/lib/dateLocale";
 
 export type ParkingDateTime = { date?: string; start?: string; end?: string };
 export type StorageDateTime = { checkin?: string; checkout?: string };
@@ -40,7 +42,7 @@ function fmtTime(t?: string) {
 
 function fmtDate(d?: string) {
   if (!d) return "";
-  try { return format(parseISO(d), "MMM d"); } catch { return d; }
+  try { return format(parseISO(d), "MMM d", { locale: getDateFnsLocale() }); } catch { return d; }
 }
 
 function formatLabel(mode: "parking" | "storage", v: DateTimeValue): string {
@@ -61,10 +63,12 @@ export default function DateTimePicker({
   onChange,
   className,
   triggerClassName,
-  placeholder = "Date & time",
+  placeholder,
 }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const label = formatLabel(mode, value);
+  const effectivePlaceholder = placeholder ?? t("search.dateAndTime");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -78,7 +82,7 @@ export default function DateTimePicker({
         >
           <CalendarIcon className="w-5 h-5 text-muted-foreground shrink-0" />
           <span className={cn("text-sm truncate", label ? "text-foreground" : "text-muted-foreground")}>
-            {label || placeholder}
+            {label || effectivePlaceholder}
           </span>
         </button>
       </PopoverTrigger>
@@ -94,6 +98,7 @@ export default function DateTimePicker({
 }
 
 function ParkingPanel({ value, onChange, onDone }: { value: DateTimeValue; onChange: (v: DateTimeValue) => void; onDone: () => void }) {
+  const { t } = useTranslation();
   const date = value.date ? parseISO(value.date) : undefined;
   const endOptions = React.useMemo(
     () => (value.start ? TIMES.filter((t) => t > value.start!) : TIMES),
@@ -111,38 +116,39 @@ function ParkingPanel({ value, onChange, onDone }: { value: DateTimeValue; onCha
       />
       <div className="grid grid-cols-2 gap-2 mt-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Start time</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{t("search.startTime")}</label>
           <Select
             value={value.start || ""}
             onValueChange={(v) =>
               onChange({ ...value, start: v, end: value.end && v >= value.end ? undefined : value.end })
             }
           >
-            <SelectTrigger><SelectValue placeholder="Start" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("search.start")} /></SelectTrigger>
             <SelectContent className="max-h-64">
-              {TIMES.map((t) => <SelectItem key={t} value={t}>{fmtTime(t)}</SelectItem>)}
+              {TIMES.map((time) => <SelectItem key={time} value={time}>{fmtTime(time)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">End time</label>
+          <label className="text-xs text-muted-foreground mb-1 block">{t("search.endTime")}</label>
           <Select value={value.end || ""} onValueChange={(v) => onChange({ ...value, end: v })} disabled={!value.start}>
-            <SelectTrigger><SelectValue placeholder="End" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t("search.end")} /></SelectTrigger>
             <SelectContent className="max-h-64">
-              {endOptions.map((t) => <SelectItem key={t} value={t}>{fmtTime(t)}</SelectItem>)}
+              {endOptions.map((time) => <SelectItem key={time} value={time}>{fmtTime(time)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
       <div className="flex justify-between mt-3">
-        <Button variant="ghost" size="sm" onClick={() => onChange({})}>Clear</Button>
-        <Button size="sm" onClick={onDone}>Done</Button>
+        <Button variant="ghost" size="sm" onClick={() => onChange({})}>{t("common.clear")}</Button>
+        <Button size="sm" onClick={onDone}>{t("common.done")}</Button>
       </div>
     </div>
   );
 }
 
 function StoragePanel({ value, onChange, onDone }: { value: DateTimeValue; onChange: (v: DateTimeValue) => void; onDone: () => void }) {
+  const { t } = useTranslation();
   const from = value.checkin ? parseISO(value.checkin) : undefined;
   const to = value.checkout ? parseISO(value.checkout) : undefined;
   return (
@@ -163,8 +169,8 @@ function StoragePanel({ value, onChange, onDone }: { value: DateTimeValue; onCha
         className="pointer-events-auto"
       />
       <div className="flex justify-between mt-3">
-        <Button variant="ghost" size="sm" onClick={() => onChange({})}>Clear</Button>
-        <Button size="sm" onClick={onDone}>Done</Button>
+        <Button variant="ghost" size="sm" onClick={() => onChange({})}>{t("common.clear")}</Button>
+        <Button size="sm" onClick={onDone}>{t("common.done")}</Button>
       </div>
     </div>
   );

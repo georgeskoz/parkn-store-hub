@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface StarRatingProps {
@@ -10,6 +11,7 @@ interface StarRatingProps {
 }
 
 export const StarRating = ({ value, onChange, size = 18, className, readOnly }: StarRatingProps) => {
+  const { t } = useTranslation();
   const interactive = !!onChange && !readOnly;
   return (
     <div className={cn("flex items-center gap-0.5", className)}>
@@ -20,7 +22,7 @@ export const StarRating = ({ value, onChange, size = 18, className, readOnly }: 
           disabled={!interactive}
           onClick={() => interactive && onChange?.(n)}
           className={cn(interactive ? "cursor-pointer hover:scale-110 transition-transform" : "cursor-default")}
-          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+          aria-label={t("reviews.starCount", { count: n })}
         >
           <Star
             style={{ width: size, height: size }}

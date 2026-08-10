@@ -1,14 +1,15 @@
 // Reusable form validators for profile, booking intake, and general use.
+import i18n from "@/i18n";
 
 export const isBlank = (v: string | null | undefined) => !v || !v.trim();
 
 /** Full name: letters, spaces, hyphens, apostrophes, periods. No digits. */
 export function validateFullName(v: string): string | null {
   const s = (v || "").trim();
-  if (!s) return "Full name is required";
-  if (s.length < 2) return "Must be at least 2 characters";
-  if (s.length > 100) return "Must be 100 characters or less";
-  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ'’.\- ]+$/.test(s)) return "No numbers or special characters";
+  if (!s) return i18n.t("validators.fullNameRequired");
+  if (s.length < 2) return i18n.t("validators.minLength", { count: 2 });
+  if (s.length > 100) return i18n.t("validators.maxLength", { count: 100 });
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ'’.\- ]+$/.test(s)) return i18n.t("validators.noNumbersOrSpecialChars");
   return null;
 }
 
@@ -23,7 +24,7 @@ export function normalizePhoneE164(v: string): string | null {
 
 export function validatePhone(v: string): string | null {
   if (!v || !v.trim()) return null; // optional unless caller marks required
-  return normalizePhoneE164(v) ? null : "Use (514) 555-1234 or +1-514-555-1234";
+  return normalizePhoneE164(v) ? null : i18n.t("validators.invalidPhone");
 }
 
 /** Canadian postal code regex. */
@@ -54,33 +55,33 @@ export function validatePostalCode(v: string, country?: "CA" | "US"): string | n
   if (!v || !v.trim()) return null;
   const s = v.trim();
   if (country === "CA") {
-    return CA_POSTAL.test(s) ? null : "Enter a valid Canadian postal code (A1A 1A1)";
+    return CA_POSTAL.test(s) ? null : i18n.t("validators.invalidCaPostal");
   }
   if (country === "US") {
-    return US_ZIP.test(s) ? null : "Enter a valid US ZIP code (12345 or 12345-6789)";
+    return US_ZIP.test(s) ? null : i18n.t("validators.invalidUsZip");
   }
   if (CA_POSTAL.test(s) || US_ZIP.test(s)) return null;
-  return "Enter a valid postal code (A1A 1A1) or ZIP (12345 or 12345-6789)";
+  return i18n.t("validators.invalidPostalOrZip");
 }
 
 
 /** License plate: alphanumeric, 1–8 chars, uppercase. */
 export function validatePlate(v: string): string | null {
   const s = (v || "").trim().toUpperCase();
-  if (!s) return "License plate is required";
-  if (!/^[A-Z0-9]{1,8}$/.test(s)) return "Letters and numbers only, max 8 characters";
+  if (!s) return i18n.t("validators.plateRequired");
+  if (!/^[A-Z0-9]{1,8}$/.test(s)) return i18n.t("validators.plateFormat");
   return null;
 }
 
 /** Driver's license: alphanumeric, 5–20 chars. */
 export function validateDriversLicense(v: string): string | null {
   const s = (v || "").trim();
-  if (!s) return "Driver's license is required";
-  if (!/^[A-Za-z0-9 -]{5,20}$/.test(s)) return "5–20 characters, letters/numbers only";
+  if (!s) return i18n.t("validators.driversLicenseRequired");
+  if (!/^[A-Za-z0-9 -]{5,20}$/.test(s)) return i18n.t("validators.driversLicenseFormat");
   return null;
 }
 
 export function requireSelect(v: string | null | undefined, label: string): string | null {
-  if (!v || !v.trim()) return `${label} is required`;
+  if (!v || !v.trim()) return i18n.t("validators.fieldRequired", { label });
   return null;
 }

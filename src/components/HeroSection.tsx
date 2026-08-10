@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -8,6 +9,7 @@ import DateTimePicker, { DateTimeValue, writeDateTimeToParams } from "@/componen
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [location, setLocation] = useState("");
   const [when, setWhen] = useState<DateTimeValue>({});
 
@@ -23,7 +25,7 @@ const HeroSection = () => {
       <div className="absolute inset-0">
         <img
           src={heroBg}
-          alt="Urban cityscape with parking and storage spaces"
+          alt={t("home.hero.imageAlt")}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
@@ -37,8 +39,8 @@ const HeroSection = () => {
             transition={{ duration: 0.7 }}
             className="text-4xl md:text-6xl font-bold text-primary-foreground leading-tight text-balance"
           >
-            Park & Store,{" "}
-            <span className="text-accent">Anywhere</span>
+            {t("home.hero.titleLine1")}{" "}
+            <span className="text-accent">{t("home.hero.titleAccent")}</span>
           </motion.h1>
 
           <motion.p
@@ -47,8 +49,7 @@ const HeroSection = () => {
             transition={{ duration: 0.7, delay: 0.15 }}
             className="mt-5 text-lg text-primary-foreground/80 max-w-lg"
           >
-            Discover available parking spots and storage spaces near you. 
-            List your unused space and earn — it's that simple.
+            {t("home.hero.subtitle")}
           </motion.p>
 
           <motion.div
@@ -59,10 +60,10 @@ const HeroSection = () => {
           >
             <Button variant="hero" size="lg" className="text-base" onClick={() => navigate("/find")}>
               <Search className="w-5 h-5 mr-2" />
-              Find a Spot
+              {t("home.hero.findASpot")}
             </Button>
             <Button variant="hero-outline" size="lg" className="text-base" onClick={() => navigate("/list")}>
-              List Your Space
+              {t("nav.listYourSpace")}
             </Button>
           </motion.div>
         </div>
@@ -79,7 +80,7 @@ const HeroSection = () => {
               <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
               <input
                 type="text"
-                placeholder="Location or address"
+                placeholder={t("search.locationOrAddress")}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -90,7 +91,7 @@ const HeroSection = () => {
               <DateTimePicker mode="parking" value={when} onChange={setWhen} triggerClassName="h-full" />
             </div>
             <Button className="px-8" onClick={handleSearch}>
-              Search
+              {t("search.search")}
             </Button>
           </div>
         </motion.div>

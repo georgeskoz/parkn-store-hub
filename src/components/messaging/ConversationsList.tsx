@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { getIntlLocale } from "@/lib/dateLocale";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export default function ConversationsList({ onSelectConversation, activeId }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,8 +79,8 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
       <Card className="card-shadow">
         <CardContent className="py-8 text-center">
           <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No conversations yet.</p>
-          <p className="text-xs text-muted-foreground">Message a provider from a listing page.</p>
+          <p className="text-sm text-muted-foreground">{t("messaging.noConversationsYet")}</p>
+          <p className="text-xs text-muted-foreground">{t("messaging.messageProviderHint")}</p>
         </CardContent>
       </Card>
     );
@@ -96,20 +99,20 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base truncate">{c.bookings?.listings?.title || "Listing"}</CardTitle>
+                <CardTitle className="text-base truncate">{c.bookings?.listings?.title || t("listingCard.listing")}</CardTitle>
                 <div className="flex items-center gap-1 shrink-0">
                   {unread > 0 && (
                     <Badge className="text-xs">{unread}</Badge>
                   )}
                   <Badge variant="outline" className="text-xs">
-                    {c.bookings?.renter_id === user?.id ? "Provider" : "Seeker"}
+                    {c.bookings?.renter_id === user?.id ? t("dashboard.provider") : t("dashboard.seeker")}
                   </Badge>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                Last message: {new Date(c.last_message_at).toLocaleString()}
+                {t("messaging.lastMessage", { datetime: new Date(c.last_message_at).toLocaleString(getIntlLocale()) })}
               </p>
             </CardContent>
           </Card>

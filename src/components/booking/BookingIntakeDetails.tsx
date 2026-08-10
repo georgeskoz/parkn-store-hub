@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { STORAGE_CATEGORIES, STORAGE_SIZES } from "@/lib/bookingIntakeOptions";
 
 type BookingLike = {
@@ -15,11 +16,11 @@ type BookingLike = {
   dropoff_time?: string | null;
 };
 
-const labelFor = (k: string) =>
-  STORAGE_CATEGORIES.find((c) => c.key === k)?.label || k;
+const labelFor = (t: (key: string, opts?: Record<string, unknown>) => string, k: string) =>
+  t(`bookingIntake.storageCategory.${k}`, { defaultValue: STORAGE_CATEGORIES.find((c) => c.key === k)?.label || k });
 
-const sizeLabel = (v?: string | null) =>
-  STORAGE_SIZES.find((s) => s.value === v)?.label || v || "—";
+const sizeLabel = (t: (key: string, opts?: Record<string, unknown>) => string, v?: string | null) =>
+  v ? t(`bookingIntake.storageSize.${v}`, { defaultValue: STORAGE_SIZES.find((s) => s.value === v)?.label || v }) : "—";
 
 export function hasBookingIntake(b: BookingLike): boolean {
   if (!b) return false;
@@ -39,6 +40,7 @@ export default function BookingIntakeDetails({
   booking: BookingLike;
   className?: string;
 }) {
+  const { t } = useTranslation();
   if (!hasBookingIntake(booking)) return null;
   const isParking = booking.category === "parking" || !!booking.vehicle_plate;
 
@@ -46,37 +48,37 @@ export default function BookingIntakeDetails({
     <div className={`rounded-md border bg-muted/40 p-3 text-sm space-y-2 ${className || ""}`}>
       {isParking ? (
         <>
-          <p className="font-semibold text-foreground">Vehicle &amp; driver</p>
+          <p className="font-semibold text-foreground">{t("bookingIntakeDetails.vehicleAndDriver")}</p>
           <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <div><span className="text-muted-foreground">Plate:</span> {booking.vehicle_plate || "—"}</div>
-            <div><span className="text-muted-foreground">Type:</span> {booking.vehicle_type || "—"}</div>
-            <div><span className="text-muted-foreground">Make:</span> {booking.vehicle_make || "—"}</div>
-            <div><span className="text-muted-foreground">Colour:</span> {booking.vehicle_colour || "—"}</div>
-            <div><span className="text-muted-foreground">Driver's licence:</span> {booking.drivers_license || "—"}</div>
-            <div><span className="text-muted-foreground">Issued by:</span> {booking.license_province_state || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.plate")}:</span> {booking.vehicle_plate || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.type")}:</span> {booking.vehicle_type || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.make")}:</span> {booking.vehicle_make || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.colour")}:</span> {booking.vehicle_colour || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.driversLicence")}:</span> {booking.drivers_license || "—"}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.issuedBy")}:</span> {booking.license_province_state || "—"}</div>
           </div>
         </>
       ) : (
         <>
-          <p className="font-semibold text-foreground">Storage manifest</p>
+          <p className="font-semibold text-foreground">{t("bookingIntakeDetails.storageManifest")}</p>
           {booking.storage_items && (
             <ul className="text-xs space-y-0.5">
               {Object.entries(booking.storage_items).map(([k, n]) => (
                 <li key={k}>
-                  <span className="text-muted-foreground">{labelFor(k)}:</span> {n}
+                  <span className="text-muted-foreground">{labelFor(t, k)}:</span> {n}
                 </li>
               ))}
             </ul>
           )}
           <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs pt-1">
-            <div><span className="text-muted-foreground">Size:</span> {sizeLabel(booking.storage_size)}</div>
+            <div><span className="text-muted-foreground">{t("bookingIntakeDetails.size")}:</span> {sizeLabel(t, booking.storage_size)}</div>
             <div>
-              <span className="text-muted-foreground">Drop-off:</span>{" "}
+              <span className="text-muted-foreground">{t("bookingIntakeDetails.dropoff")}:</span>{" "}
               {booking.dropoff_date || "—"} {booking.dropoff_time || ""}
             </div>
           </div>
           {booking.storage_notes && (
-            <p className="text-xs pt-1"><span className="text-muted-foreground">Notes:</span> {booking.storage_notes}</p>
+            <p className="text-xs pt-1"><span className="text-muted-foreground">{t("bookingIntakeDetails.notes")}:</span> {booking.storage_notes}</p>
           )}
         </>
       )}

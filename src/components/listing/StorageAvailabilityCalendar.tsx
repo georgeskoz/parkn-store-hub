@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Loader2, CalendarDays } from "lucide-react";
@@ -26,6 +27,7 @@ export default function StorageAvailabilityCalendar({
   monthsAhead = 6,
   onPickStart,
 }: Props) {
+  const { t } = useTranslation();
   const [viewMonth, setViewMonth] = useState<Date>(startOfMonth(new Date()));
   const [loading, setLoading] = useState(false);
   const [statusByDay, setStatusByDay] = useState<Record<string, DayStatus["status"]>>({});
@@ -73,7 +75,7 @@ export default function StorageAvailabilityCalendar({
           setOpenDaysOfWeek(null); // no schedule defined → open every day
         }
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load availability");
+        if (!cancelled) setError(err.message || t("availabilitySlots.failedToLoad"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -102,7 +104,7 @@ export default function StorageAvailabilityCalendar({
     <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-foreground flex items-center gap-1">
-          <CalendarDays className="w-3 h-3" /> Storage Availability
+          <CalendarDays className="w-3 h-3" /> {t("storageAvailabilityCalendar.title")}
         </p>
         {loading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
@@ -149,13 +151,13 @@ export default function StorageAvailabilityCalendar({
 
       <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground pt-1">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-primary/30" /> Open
+          <span className="inline-block w-3 h-3 rounded-sm bg-primary/30" /> {t("storageAvailabilityCalendar.open")}
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-amber-300 dark:bg-amber-500/60" /> Partial
+          <span className="inline-block w-3 h-3 rounded-sm bg-amber-300 dark:bg-amber-500/60" /> {t("storageAvailabilityCalendar.partial")}
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-destructive/50" /> Booked
+          <span className="inline-block w-3 h-3 rounded-sm bg-destructive/50" /> {t("storageAvailabilityCalendar.booked")}
         </span>
       </div>
     </div>

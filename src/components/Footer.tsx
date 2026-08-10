@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { Car } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-card border-t border-border py-12">
       <div className="container mx-auto px-4">
@@ -11,38 +14,38 @@ const Footer = () => {
               <div className="w-7 h-7 rounded-md hero-gradient flex items-center justify-center">
                 <Car className="w-4 h-4 text-primary-foreground" />
               </div>
-              Spotsvault
+              {t("common.appName")}
             </Link>
             <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-              The marketplace for parking and storage spaces. Find or list — your space, your way.
+              {t("footer.tagline")}
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-3">Product</h4>
+            <h4 className="font-semibold text-foreground text-sm mb-3">{t("footer.product")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/parking" className="hover:text-foreground transition-colors">Find Parking</Link></li>
-              <li><Link to="/storage" className="hover:text-foreground transition-colors">Find Storage</Link></li>
-              <li><Link to="/list" className="hover:text-foreground transition-colors">List a Space</Link></li>
+              <li><Link to="/parking" className="hover:text-foreground transition-colors">{t("nav.findParking")}</Link></li>
+              <li><Link to="/storage" className="hover:text-foreground transition-colors">{t("nav.findStorage")}</Link></li>
+              <li><Link to="/list" className="hover:text-foreground transition-colors">{t("footer.listASpace")}</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-3">Company</h4>
+            <h4 className="font-semibold text-foreground text-sm mb-3">{t("footer.company")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
-              <li><Link to="/support" className="hover:text-foreground transition-colors">Help & FAQ</Link></li>
-              <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+              <li><Link to="/about" className="hover:text-foreground transition-colors">{t("footer.about")}</Link></li>
+              <li><Link to="/support" className="hover:text-foreground transition-colors">{t("footer.helpFaq")}</Link></li>
+              <li><Link to="/contact" className="hover:text-foreground transition-colors">{t("footer.contact")}</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-3">Legal</h4>
+            <h4 className="font-semibold text-foreground text-sm mb-3">{t("footer.legal")}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-foreground transition-colors">{t("footer.termsOfService")}</Link></li>
+              <li><Link to="/privacy" className="hover:text-foreground transition-colors">{t("footer.privacyPolicy")}</Link></li>
             </ul>
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Spotsvault. All rights reserved.
+          {t("footer.copyright", { year: new Date().getFullYear() })}
         </div>
       </div>
     </footer>

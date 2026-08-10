@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +24,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, X } from "lucide-react";
 
 const REASONS = [
-  { value: "item_not_as_described", label: "Item not as described" },
-  { value: "no_show", label: "No show" },
-  { value: "property_damage", label: "Property damage" },
-  { value: "unauthorized_charge", label: "Unauthorized charge" },
-  { value: "safety_concern", label: "Safety concern" },
-  { value: "other", label: "Other" },
+  "item_not_as_described",
+  "no_show",
+  "property_damage",
+  "unauthorized_charge",
+  "safety_concern",
+  "other",
 ];
 
 const MAX_PHOTOS = 3;
@@ -50,6 +51,7 @@ const DisputeSubmissionModal = ({
   userId,
   onSubmitted,
 }: Props) => {
+  const { t } = useTranslation();
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -92,12 +94,12 @@ const DisputeSubmissionModal = ({
 
   const submit = async () => {
     if (!reason) {
-      toast({ title: "Pick a reason", variant: "destructive" });
+      toast({ title: t("disputes.pickAReason"), variant: "destructive" });
       return;
     }
     if (description.trim().length < MIN_DESC) {
       toast({
-        title: `Description must be at least ${MIN_DESC} characters`,
+        title: t("disputes.descriptionMinLength", { count: MIN_DESC }),
         variant: "destructive",
       });
       return;
@@ -117,15 +119,15 @@ const DisputeSubmissionModal = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast({
-        title: "Dispute submitted",
-        description: "Our team will review within 48 hours.",
+        title: t("disputes.disputeSubmitted"),
+        description: t("disputes.teamWillReview"),
       });
       reset();
       onOpenChange(false);
       onSubmitted?.();
     } catch (e: any) {
       toast({
-        title: "Failed to submit dispute",
+        title: t("disputes.failedToSubmit"),
         description: e.message || String(e),
         variant: "destructive",
       });
@@ -138,23 +140,23 @@ const DisputeSubmissionModal = ({
     <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Raise a dispute</DialogTitle>
+          <DialogTitle>{t("disputes.raiseADispute")}</DialogTitle>
           <DialogDescription>
-            Tell us what happened. Our team reviews disputes within 48 hours.
+            {t("disputes.tellUsWhatHappened")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Reason</Label>
+            <Label>{t("disputes.reason")}</Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a reason" />
+                <SelectValue placeholder={t("disputes.selectAReason")} />
               </SelectTrigger>
               <SelectContent>
                 {REASONS.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
+                  <SelectItem key={r} value={r}>
+                    {t(`disputes.reasonOption.${r}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -162,21 +164,21 @@ const DisputeSubmissionModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{t("common.description")}</Label>
             <Textarea
               rows={5}
               value={description}
               maxLength={MAX_DESC}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what happened in detail…"
+              placeholder={t("disputes.describeWhatHappened")}
             />
             <p className="text-xs text-muted-foreground text-right">
-              {description.length}/{MAX_DESC} (min {MIN_DESC})
+              {t("disputes.descriptionCounter", { count: description.length, max: MAX_DESC, min: MIN_DESC })}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label>Evidence (optional, up to {MAX_PHOTOS} photos)</Label>
+            <Label>{t("disputes.evidenceOptional", { count: MAX_PHOTOS })}</Label>
             {files.length < MAX_PHOTOS && (
               <Input
                 type="file"
@@ -217,15 +219,15 @@ const DisputeSubmissionModal = ({
             disabled={submitting}
             onClick={() => onOpenChange(false)}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={submit} disabled={submitting}>
             {submitting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Submitting…
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> {t("listingWizard.submitting")}
               </>
             ) : (
-              "Submit dispute"
+              t("disputes.submitDispute")
             )}
           </Button>
         </DialogFooter>

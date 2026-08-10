@@ -1,28 +1,34 @@
 import { Bell, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return "just now";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
-  const d = Math.floor(h / 24);
-  return `${d} day${d === 1 ? "" : "s"} ago`;
+function useTimeAgo() {
+  const { t } = useTranslation();
+  return (iso: string): string => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const s = Math.floor(diff / 1000);
+    if (s < 60) return t("chrome.justNow");
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("chrome.minutesAgo", { count: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("chrome.hoursAgo", { count: h });
+    const d = Math.floor(h / 24);
+    return t("chrome.daysAgo", { count: d });
+  };
 }
 
 export default function NotificationBell() {
   const { visible, unreadCount, dismiss } = useAdminNotifications();
+  const { t } = useTranslation();
+  const timeAgo = useTimeAgo();
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative" aria-label="Notifications">
+        <Button variant="ghost" size="sm" className="relative" aria-label={t("chrome.notifications")}>
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
             <Badge
@@ -36,12 +42,12 @@ export default function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">Announcements</h3>
+          <h3 className="text-sm font-semibold">{t("chrome.announcements")}</h3>
         </div>
         <div className="max-h-96 overflow-y-auto">
           {visible.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No announcements
+              {t("chrome.noAnnouncements")}
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -55,7 +61,7 @@ export default function NotificationBell() {
                   <button
                     onClick={() => dismiss(n.id)}
                     className="text-muted-foreground hover:text-foreground shrink-0"
-                    aria-label="Dismiss"
+                    aria-label={t("chrome.dismiss")}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
