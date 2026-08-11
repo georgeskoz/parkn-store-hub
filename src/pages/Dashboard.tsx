@@ -65,9 +65,7 @@ const Dashboard = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
-            <div className="w-7 h-7 rounded-lg hero-gradient flex items-center justify-center">
-              <Car className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src="/icon.png" alt="" className="w-7 h-7 rounded-lg" />
             Spotsvault
           </Link>
 

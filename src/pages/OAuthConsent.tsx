@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Car, CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,9 +127,7 @@ export default function OAuthConsent() {
       <Card className="w-full max-w-xl card-shadow">
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg hero-gradient flex items-center justify-center shrink-0">
-              <Car className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src="/icon.png" alt="" className="w-10 h-10 rounded-lg shrink-0" />
             <div>
               <CardTitle className="text-2xl">{t("oauthConsent.connectTitle", { clientName })}</CardTitle>
               <CardDescription>{t("oauthConsent.connectDescription", { clientName })}</CardDescription>

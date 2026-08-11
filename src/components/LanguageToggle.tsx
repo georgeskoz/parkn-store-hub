@@ -11,9 +11,11 @@ type LanguageCode = (typeof LANGUAGES)[number]["code"];
 
 // EN | FR pill — matches the existing Button variant="ghost" size="sm"
 // pattern already used for every other Navbar control. Persistence is
-// automatic: i18next-browser-languagedetector's cache hooks into
-// i18next's languageChanged event and writes to localStorage whenever
-// changeLanguage() runs, whether triggered by auto-detection or here.
+// automatic: the custom detector registered in src/i18n/index.ts hooks
+// into i18next's languageChanged event and writes to localStorage
+// whenever changeLanguage() runs, whether triggered by auto-detection
+// (geo/browser) or a manual pick here — a manual pick always wins on
+// future visits since localStorage is checked first.
 const LanguageToggle = ({ className }: { className?: string }) => {
   const { i18n, t } = useTranslation();
   const current: LanguageCode = i18n.language?.toLowerCase().startsWith("fr") ? "fr" : "en";

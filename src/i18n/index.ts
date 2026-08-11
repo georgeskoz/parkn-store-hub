@@ -1,18 +1,66 @@
-import i18n from "i18next";
+import i18n, { type LanguageDetectorAsyncModule } from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 
 import en from "./locales/en.json";
 import fr from "./locales/fr.json";
 
-// Detection order: a previously-chosen language (localStorage) always wins;
-// otherwise fall back to the browser/device language on first visit. Once a
-// language resolves (detected or manually toggled), it's cached back to the
-// same localStorage key so it persists across sessions.
+// Detection order: a previously-chosen language (localStorage) always wins —
+// once a user picks explicitly, that choice persists across visits and
+// overrides geo, even if they later appear to browse from a different
+// location. Otherwise, try a geo lookup (Quebec -> fr, elsewhere -> en) via
+// our own Vercel edge function (api/geo-language.ts) — no third-party API or
+// key involved. That lookup is time-boxed and best-effort: if it's slow,
+// blocked (ad blockers/privacy extensions), or fails outright, we fall back
+// to the browser/device language rather than blocking page load.
 export const LANGUAGE_STORAGE_KEY = "spotsvault_lang";
 
+const GEO_FETCH_TIMEOUT_MS = 800;
+
+function isSupported(lng: string | null | undefined): lng is "en" | "fr" {
+  return lng === "en" || lng === "fr";
+}
+
+async function detectViaGeo(): Promise<string | undefined> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), GEO_FETCH_TIMEOUT_MS);
+    const res = await fetch("/api/geo-language", { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as { language?: string };
+    return isSupported(data.language) ? data.language : undefined;
+  } catch {
+    // Timed out, network error, or blocked by an extension — not fatal,
+    // just means we fall through to the browser-language default below.
+    return undefined;
+  }
+}
+
+const languageDetector: LanguageDetectorAsyncModule = {
+  type: "languageDetector",
+  async: true,
+  init: () => {},
+  detect: async (): Promise<string> => {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (isSupported(stored)) return stored;
+
+    const geoLanguage = await detectViaGeo();
+    if (geoLanguage) return geoLanguage;
+
+    const navigatorLanguage = navigator.language?.split("-")[0];
+    return isSupported(navigatorLanguage) ? navigatorLanguage : "en";
+  },
+  cacheUserLanguage: (lng: string) => {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, lng);
+    } catch {
+      // Best-effort persistence — a failed write just means re-detection on next load.
+    }
+  },
+};
+
 i18n
-  .use(LanguageDetector)
+  .use(languageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -21,13 +69,14 @@ i18n
     },
     fallbackLng: "en",
     supportedLngs: ["en", "fr"],
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
-      lookupLocalStorage: LANGUAGE_STORAGE_KEY,
-    },
     interpolation: {
       escapeValue: false, // React already escapes output
+    },
+    // Detection is now async (the geo lookup above) — without this, any
+    // component rendering before it resolves would suspend with no
+    // <Suspense> boundary in place to catch it.
+    react: {
+      useSuspense: false,
     },
   });
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -160,9 +160,7 @@ const Auth = () => {
       </div>
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground justify-center mb-8">
-          <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-            <Car className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src="/icon.png" alt="" className="w-8 h-8 rounded-lg" />
           {t("common.appName")}
         </Link>
 

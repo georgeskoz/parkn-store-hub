@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const Footer = () => {
@@ -11,9 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link to="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
-              <div className="w-7 h-7 rounded-md hero-gradient flex items-center justify-center">
-                <Car className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src="/icon.png" alt="" className="w-7 h-7 rounded-md" />
               {t("common.appName")}
             </Link>
             <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
