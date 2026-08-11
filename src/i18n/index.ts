@@ -83,7 +83,11 @@ i18n
 // index.html ships a static lang="en" (this is a pure client-rendered SPA,
 // no SSR to set it correctly up front) — keep the <html> tag's lang in sync
 // with whatever i18next actually resolves to, both on load and on toggle.
-function syncHtmlLang(lang: string) {
+function syncHtmlLang(lang: string | undefined) {
+  // Detection is async now (geo lookup), so i18n.language can still be
+  // undefined at this call site right after .init() — the languageChanged
+  // listener below fires again once detection actually resolves.
+  if (!lang) return;
   document.documentElement.lang = lang.split("-")[0];
 }
 syncHtmlLang(i18n.language);
