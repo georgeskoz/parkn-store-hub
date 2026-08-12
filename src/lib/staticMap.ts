@@ -12,6 +12,82 @@
 
 const TILE_SIZE = 256;
 
+// Shared zoom level so the fixed Montreal map and any dynamically-loaded
+// city map (see api/hero-map.ts) look visually consistent.
+export const HERO_MAP_ZOOM = 15;
+
+// Google Static Maps silently clamps each axis to a max of 640 pre-scale
+// (1280 post `scale=2`) — verified directly against the API, not assumed
+// from docs. Requesting anything larger than that on BOTH axes (as the
+// original naive width/height pass-through did) gets clamped to a distorted
+// shape — for a wide hero container it comes back a 1280x1280 square, which
+// object-cover then crops. That crop silently breaks the pin math too:
+// projectToPixel positions pins assuming the displayed image's geographic
+// framing matches the CSS container 1:1, which is only true if the image
+// Google actually delivers has the same aspect ratio as that container.
+const GOOGLE_STATIC_MAPS_MAX_PRE_SCALE_AXIS = 640;
+
+// Real viewports/hero containers realistically range from tall mobile
+// (~0.45) to ultra-wide desktop (~3.5) — clamping outside that keeps a
+// malformed/extreme input from producing a degenerate request.
+const MIN_ASPECT_RATIO = 0.4;
+const MAX_ASPECT_RATIO = 4;
+const ASPECT_RATIO_BUCKET_STEP = 0.1;
+
+// Fits the container's aspect ratio into Google's real per-axis limit
+// (maximizing resolution within it) and rounds the aspect ratio to a coarse
+// bucket, so many visitors with similar (but not pixel-identical) viewport
+// shapes request the exact same image URL. That shared URL is what lets
+// Vercel's CDN cache one Google Static Maps response across all of them,
+// instead of one fresh request per pageview. Must be applied on the CLIENT
+// before building the request URL, not just server-side: the CDN caches by
+// the incoming request URL, so two visitors sending different exact
+// dimensions get different cache entries even if the server would've
+// produced visually-equivalent images.
+export function bucketMapSize(containerWidth: number, containerHeight: number): { width: number; height: number } {
+  const safeWidth = containerWidth > 0 ? containerWidth : 1;
+  const safeHeight = containerHeight > 0 ? containerHeight : 1;
+  const aspect = Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, safeWidth / safeHeight));
+  const bucketedAspect = Math.round(aspect / ASPECT_RATIO_BUCKET_STEP) * ASPECT_RATIO_BUCKET_STEP;
+
+  if (bucketedAspect >= 1) {
+    const width = GOOGLE_STATIC_MAPS_MAX_PRE_SCALE_AXIS;
+    return { width, height: Math.round(width / bucketedAspect) };
+  }
+  const height = GOOGLE_STATIC_MAPS_MAX_PRE_SCALE_AXIS;
+  return { width: Math.round(height * bucketedAspect), height };
+}
+
+// ~1.1km of latitude per 0.01°, less for longitude at higher latitudes —
+// coarse enough that two visitors resolved to the same city collapse onto
+// the same request URL (and therefore the same CDN/Google cache entry) even
+// if Vercel's IP database hands back slightly different raw coordinates for
+// them, but fine enough that the map still frames the right part of the
+// city. Same "must bucket on the client before building the request URL"
+// reasoning as bucketMapSize above: the CDN caches by incoming URL, so
+// unbucketed per-visitor lat/lng would defeat cross-visitor cache sharing
+// even though the visual result would've been indistinguishable.
+const CITY_COORD_PRECISION = 100; // 2 decimal places
+
+export function bucketCoordinate(value: number): number {
+  return Math.round(value * CITY_COORD_PRECISION) / CITY_COORD_PRECISION;
+}
+
+// Cache-key-safe city label: lowercased, diacritics stripped, anything but
+// a-z0-9 collapsed to a single hyphen. Purely a human-legible tag alongside
+// the bucketed coordinates above (which do the actual cache-sharing work) —
+// never parsed back, so this only needs to be stable and URL-safe, not
+// reversible.
+export function slugifyCity(city: string): string {
+  return city
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
 // Brand-styled map: navy roads (mirrors mobile's NAVY = #1B4F72), muted
 // neutral land, subdued water, and all labels/POI/transit hidden — a clean
 // "map texture" rather than a literal navigable map, matching the decorative
@@ -63,6 +139,45 @@ export function projectToPixel(
     x: pixelWidth / 2 + (pointPx.x - centerPx.x) * scale,
     y: pixelHeight / 2 + (pointPx.y - centerPx.y) * scale,
   };
+}
+
+const DECORATIVE_PRICES = ["$6", "$8", "$9", "$12", "$15"];
+
+// Small deterministic pseudo-random generator (mulberry32), seeded from the
+// center coordinates so a given city always gets the same-looking pin
+// scatter across reloads rather than jittering randomly on every visit.
+function seededRandom(seed: number): () => number {
+  let t = seed;
+  return function () {
+    t |= 0;
+    t = (t + 0x6d2b79f5) | 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Generates a small, natural-looking scatter of decorative pin offsets
+// around an arbitrary city center — used for dynamically-loaded cities
+// where, unlike Montreal's hand-placed pins, there's no real street data to
+// place them against (that would need a real geocoding lookup, out of scope
+// for a purely decorative background). Deterministic per center so the same
+// city doesn't re-scatter its pins on every reload.
+export function generateDecorativePins(
+  center: { latitude: number; longitude: number },
+): { latitude: number; longitude: number; price: string }[] {
+  const seed = Math.round((center.latitude + 90) * 100000 + (center.longitude + 180) * 1000);
+  const rand = seededRandom(seed);
+  return DECORATIVE_PRICES.map((price) => {
+    const angle = rand() * Math.PI * 2;
+    const distanceDeg = 0.003 + rand() * 0.004; // roughly 300-700m
+    return {
+      latitude: center.latitude + Math.sin(angle) * distanceDeg,
+      longitude:
+        center.longitude + (Math.cos(angle) * distanceDeg) / Math.cos((center.latitude * Math.PI) / 180),
+      price,
+    };
+  });
 }
 
 export function buildStaticMapUrl(opts: {

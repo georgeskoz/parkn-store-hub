@@ -27,8 +27,10 @@ Add for **Production, Preview, Development** (values are in this project's `.env
 | `VITE_SUPABASE_PROJECT_ID` | `skfaqjatbqrmfkojtqsz` |
 | `VITE_SUPABASE_URL` | `https://skfaqjatbqrmfkojtqsz.supabase.co` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | (copy from local `.env`) |
+| `VITE_GOOGLE_MAPS_STATIC_KEY` | (copy from local `.env` — optional, see `.env.example`) |
+| `GOOGLE_MAPS_STATIC_KEY` | (copy from local `.env` — optional, server-side, no `VITE_` prefix) |
 
-Redeploy after adding them.
+Redeploy after adding them. The two Google Maps keys are optional — if either is unset, the hero section falls back to a static photo background (Montreal-only map) or the plain photo, with no error shown to visitors.
 
 ## 4. Connect the two domains
 
