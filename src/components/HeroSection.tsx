@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Search, MapPin } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
+import HeroMap from "@/components/HeroMap";
 import DateTimePicker, { DateTimeValue, writeDateTimeToParams } from "@/components/search/DateTimePicker";
 
 const HeroSection = () => {
@@ -22,14 +22,7 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-      <div className="absolute inset-0">
-        <img
-          src={heroBg}
-          alt={t("home.hero.imageAlt")}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
-      </div>
+      <HeroMap />
 
       <div className="container mx-auto px-4 relative z-10 pt-20">
         <div className="max-w-2xl">
