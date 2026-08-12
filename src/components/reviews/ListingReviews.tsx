@@ -14,7 +14,7 @@ interface ReviewRow {
   id: string;
   rating: number;
   comment: string | null;
-  created_at: string;
+  submitted_at: string;
   reviewer_id: string;
   profiles?: { display_name: string | null; avatar_url: string | null } | null;
 }
@@ -51,10 +51,10 @@ export default function ListingReviews({ listingId }: Props) {
     (async () => {
       const { data } = await supabase
         .from("reviews")
-        .select("id, rating, comment, created_at, reviewer_id")
+        .select("id, rating, comment, submitted_at, reviewer_id")
         .eq("listing_id", listingId)
         .eq("visible", true)
-        .order("created_at", { ascending: false });
+        .order("submitted_at", { ascending: false });
 
       const rows = (data || []) as ReviewRow[];
       // Fetch reviewer profiles
@@ -86,7 +86,7 @@ export default function ListingReviews({ listingId }: Props) {
             <div className="flex items-center justify-between mb-2">
               <p className="font-medium text-foreground">{r.profiles?.display_name || t("reviews.anonymous")}</p>
               <span className="text-xs text-muted-foreground">
-                {new Date(r.created_at).toLocaleDateString(getIntlLocale())}
+                {new Date(r.submitted_at).toLocaleDateString(getIntlLocale())}
               </span>
             </div>
             <StarRating value={r.rating} readOnly size={16} />

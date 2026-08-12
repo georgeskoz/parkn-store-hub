@@ -10,7 +10,7 @@ interface ReviewRow {
   id: string;
   rating: number;
   comment: string | null;
-  created_at: string;
+  submitted_at: string;
   reviewer_id: string;
   listing_id: string;
   reviewer?: { display_name: string | null } | null;
@@ -28,10 +28,10 @@ export default function ProviderReviewsPanel() {
     (async () => {
       const { data } = await supabase
         .from("reviews")
-        .select("id, rating, comment, created_at, reviewer_id, listing_id")
+        .select("id, rating, comment, submitted_at, reviewer_id, listing_id")
         .eq("reviewee_id", user.id)
         .eq("visible", true)
-        .order("created_at", { ascending: false });
+        .order("submitted_at", { ascending: false });
 
       const rows = (data || []) as ReviewRow[];
       const reviewerIds = Array.from(new Set(rows.map((r) => r.reviewer_id)));
@@ -89,7 +89,7 @@ export default function ProviderReviewsPanel() {
                   <p className="text-xs text-muted-foreground">{r.listing?.title}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleDateString(getIntlLocale())}
+                  {new Date(r.submitted_at).toLocaleDateString(getIntlLocale())}
                 </span>
               </div>
               <StarRating value={r.rating} readOnly size={16} />

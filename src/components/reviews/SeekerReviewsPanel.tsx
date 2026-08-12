@@ -21,7 +21,7 @@ interface ReviewRow {
   booking_id: string;
   rating: number;
   comment: string | null;
-  created_at: string;
+  submitted_at: string;
 }
 
 export default function SeekerReviewsPanel() {
@@ -47,7 +47,7 @@ export default function SeekerReviewsPanel() {
     if (rows.length) {
       const { data: revs } = await supabase
         .from("reviews")
-        .select("id, booking_id, rating, comment, created_at")
+        .select("id, booking_id, rating, comment, submitted_at")
         .in("booking_id", rows.map((b) => b.id));
       const map: Record<string, ReviewRow> = {};
       (revs || []).forEach((r: any) => { map[r.booking_id] = r; });
@@ -87,7 +87,7 @@ export default function SeekerReviewsPanel() {
                   <StarRating value={existing.rating} readOnly />
                   {existing.comment && <p className="text-sm text-foreground/90">{existing.comment}</p>}
                   <p className="text-xs text-muted-foreground">
-                    {new Date(existing.created_at).toLocaleDateString(getIntlLocale())}
+                    {new Date(existing.submitted_at).toLocaleDateString(getIntlLocale())}
                   </p>
                 </div>
               ) : (
