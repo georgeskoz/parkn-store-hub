@@ -160,10 +160,14 @@ serve(async (req) => {
 
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
+      // seeker_id/provider_id/commission_amount don't exist on this table in
+      // production -- renter_id/host_id/platform_fee are the real columns
+      // (each individually verified directly against prod). Every other
+      // field here was verified to exist as-is.
       .insert({
         listing_id: listingId,
-        seeker_id: user.id,
-        provider_id: providerId,
+        renter_id: user.id,
+        host_id: providerId,
         start_date: startDate,
         end_date: endDate,
         status: "pending",
@@ -173,7 +177,7 @@ serve(async (req) => {
         original_amount: originalTotal,
         surge_multiplier: surgeMultiplier,
         commission_rate: PLATFORM_COMMISSION_PERCENT,
-        commission_amount: platformFeeCents / 100,
+        platform_fee: platformFeeCents / 100,
         category: listing.category,
         city: listing.city,
         ...intakeFields,
