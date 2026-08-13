@@ -40,11 +40,20 @@
 -- user_owns_listing before today's earlier fix) -- the "Public can view
 -- approved listings" policy below calls it, and shipping that policy
 -- without this function existing would break every listings query with a
--- function-not-found error instead of fixing the security hole. The
--- app_role enum and user_roles table it depends on were confirmed to
--- already exist (including the 'admin' enum value), so only the function
--- itself needs (re)creating.
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
+-- function-not-found error instead of fixing the security hole.
+--
+-- Correction from the first version of this migration: it declared
+-- _role as the app_role enum type (matching the repo's own original
+-- definition), but running it against production surfaced "type
+-- app_role does not exist" (42704) -- so unlike the enum VALUE 'admin'
+-- (confirmed usable via a filter query beforehand), the TYPE ITSELF
+-- isn't named app_role on production, or user_roles.role isn't that
+-- enum type at all. Rather than guess at the real type name, this
+-- version takes _role as text and casts the column to text for
+-- comparison, which works regardless of whether the underlying column
+-- is plain text or any enum type (every type has a default cast to
+-- text) -- no longer assuming anything about a type name I can't verify.
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role text)
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
@@ -53,13 +62,13 @@ SET search_path = public
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
+    WHERE user_id = _user_id AND role::text = _role
   )
 $$;
 -- Matches the widest grant found in the repo's own history
 -- (20260701001110): RLS policies need to call this for every querying
 -- role, anon included (it just correctly evaluates false for them).
-GRANT EXECUTE ON FUNCTION public.has_role(uuid, app_role) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, text) TO anon, authenticated, service_role;
 
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 
