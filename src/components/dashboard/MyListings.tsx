@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { Trash2, Edit, Eye, Loader2, MapPin, DollarSign, CalendarClock, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AvailabilityEditor from "@/components/listing/AvailabilityEditor";
+import { getIntlLocale } from "@/lib/dateLocale";
 
 interface DbListing {
   id: string;
@@ -31,6 +32,11 @@ interface DbListing {
   spots: number | null;
   sqft: number | null;
   created_at: string;
+  // The `status` text column ("pending"/"approved") isn't reliably kept in
+  // sync with `is_approved` (seen diverge in production) — `is_approved` is
+  // what listing visibility RLS actually gates on, so it's the source of
+  // truth for whether a listing is really live.
+  is_approved: boolean;
 }
 
 const availColor: Record<string, string> = {
@@ -45,6 +51,7 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
   const { user } = useAuth();
   const { toast } = useToast();
   const [listings, setListings] = useState<DbListing[]>([]);
+  const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -66,6 +73,19 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
 
       if (error) throw error;
       setListings((data || []) as DbListing[]);
+
+      // One query for every listing's booking count, not one per card —
+      // grouped client-side since it's just a handful of rows per host.
+      const { data: bookings } = await (supabase as any)
+        .from("bookings")
+        .select("listing_id, status")
+        .eq("host_id", user.id);
+      const counts: Record<string, number> = {};
+      (bookings || []).forEach((b: { listing_id: string; status: string }) => {
+        if (b.status === "cancelled") return;
+        counts[b.listing_id] = (counts[b.listing_id] || 0) + 1;
+      });
+      setBookingCounts(counts);
     } catch (err) {
       console.error("Error fetching listings:", err);
       toast({
@@ -114,6 +134,9 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
     if (listing.price_hourly) return { price: listing.price_hourly, label: t("listingDetail.perHour") };
     return { price: null, label: "" };
   };
+
+  const formatListedDate = (isoDate: string) =>
+    new Date(isoDate).toLocaleDateString(getIntlLocale(), { year: "numeric", month: "short", day: "numeric" });
 
   if (loading) {
     return (
@@ -175,11 +198,25 @@ export default function MyListings({ payoutsConnected = true }: { payoutsConnect
                           <MapPin className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{listing.city}, {listing.province}</span>
                         </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t("myListings.listedOn", { date: formatListedDate(listing.created_at) })}
+                          {bookingCounts[listing.id] > 0 &&
+                            ` · ${t("myListings.bookingCount", { count: bookingCounts[listing.id] })}`}
+                        </p>
                       </div>
                       <Badge variant="secondary" className="capitalize shrink-0">{listing.category}</Badge>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-3">
+                      <Badge
+                        className={`text-xs border ${
+                          listing.is_approved
+                            ? "bg-primary/10 text-primary border-primary/20"
+                            : "bg-accent/10 text-accent-foreground border-accent/20"
+                        }`}
+                      >
+                        {listing.is_approved ? t("myListings.statusActive") : t("myListings.statusPendingReview")}
+                      </Badge>
                       <Badge
                         className={`text-xs border ${availColor[listing.availability] || availColor.available}`}
                       >
