@@ -29,7 +29,9 @@ const ProviderCancelledBookings = ({ userId }: { userId: string }) => {
         .select(
           "id,start_date,end_date,total_amount,refund_amount,refund_status,cancelled_at,category,city",
         )
-        .eq("provider_id", userId)
+        // provider_id doesn't exist on this table in production -- host_id
+        // is the real column (verified directly).
+        .eq("host_id", userId)
         .eq("status", "cancelled")
         .order("cancelled_at", { ascending: false });
       setRows((data || []) as Row[]);

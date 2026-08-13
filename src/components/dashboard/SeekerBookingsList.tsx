@@ -34,7 +34,7 @@ import BookingIntakeDetails, { hasBookingIntake } from "@/components/booking/Boo
 type Booking = {
   id: string;
   listing_id: string;
-  provider_id: string;
+  host_id: string;
   start_date: string;
   end_date: string;
   total_amount: number;
@@ -46,6 +46,16 @@ type Booking = {
   cancelled_at: string | null;
   escrow_status: string | null;
   auto_release_at: string | null;
+  // KNOWN BROKEN, not fixed here: none of these five columns exist on the
+  // real production `bookings` table (verified directly; no renamed
+  // equivalent found under any name after extensive probing). The
+  // select() below still 400s because of them even after the
+  // provider_id/seeker_id rename -- the dual-confirmation completion +
+  // escrow-release tracking this component (and complete-rental /
+  // release-booking-payout) depends on appears to be missing from prod's
+  // actual schema, not just misnamed. Needs a product/schema decision,
+  // not a mechanical rename -- flagged separately rather than guessed at
+  // here.
   overdue_charges_total: number | null;
   completed_by_seeker_at: string | null;
   completed_by_provider_at: string | null;
@@ -108,9 +118,9 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     const { data } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,provider_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
+        "id,listing_id,host_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
       )
-      .eq("seeker_id", userId)
+      .eq("renter_id", userId)
       .order("start_date", { ascending: false });
     const list = (data || []) as Booking[];
     setBookings(list);
@@ -445,7 +455,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
           onOpenChange={(o) => !o && setReviewBooking(null)}
           bookingId={reviewBooking.id}
           listingId={reviewBooking.listing_id}
-          revieweeId={reviewBooking.provider_id}
+          revieweeId={reviewBooking.host_id}
           listingTitle={reviewBooking.listings?.title || undefined}
           onSubmitted={load}
         />

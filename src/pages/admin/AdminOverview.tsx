@@ -19,14 +19,16 @@ const AdminOverview = () => {
       const [profilesRes, listingsRes, bookingsRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("listings").select("*"),
-        supabase.from("bookings").select("id,listing_id,total_amount,commission_amount,status,city,category,created_at"),
+        // commission_amount doesn't exist on this table in production --
+        // platform_fee is the real column (verified directly).
+        supabase.from("bookings").select("id,listing_id,total_amount,platform_fee,status,city,category,created_at"),
       ]);
 
       const listings = listingsRes.data || [];
       const bookings = bookingsRes.data || [];
 
       const totalRevenue = bookings.reduce((sum, b) => sum + Number(b.total_amount || 0), 0);
-      const totalCommission = bookings.reduce((sum, b) => sum + Number(b.commission_amount || 0), 0);
+      const totalCommission = bookings.reduce((sum, b) => sum + Number(b.platform_fee || 0), 0);
 
       setStats({
         users: profilesRes.count || 0,
@@ -57,7 +59,7 @@ const AdminOverview = () => {
         const month = new Date(b.created_at).toLocaleString("default", { month: "short", year: "2-digit" });
         if (!monthMap[month]) monthMap[month] = { revenue: 0, commission: 0 };
         monthMap[month].revenue += Number(b.total_amount || 0);
-        monthMap[month].commission += Number(b.commission_amount || 0);
+        monthMap[month].commission += Number(b.platform_fee || 0);
       });
       setMonthlyData(Object.entries(monthMap).map(([month, d]) => ({ month, ...d })));
 

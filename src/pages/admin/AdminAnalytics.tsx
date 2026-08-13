@@ -20,7 +20,9 @@ const AdminAnalytics = () => {
     const fetch = async () => {
       const [listingsRes, bookingsRes] = await Promise.all([
         supabase.from("listings").select("*"),
-        supabase.from("bookings").select("id,city,created_at,total_amount,commission_amount,status,category"),
+        // commission_amount doesn't exist on this table in production --
+        // platform_fee is the real column (verified directly).
+        supabase.from("bookings").select("id,city,created_at,total_amount,platform_fee,status,category"),
       ]);
 
       const listings = listingsRes.data || [];

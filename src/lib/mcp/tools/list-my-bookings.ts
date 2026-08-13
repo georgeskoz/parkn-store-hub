@@ -19,8 +19,10 @@ export default defineTool({
 
     let query = client
       .from("bookings")
-      .select("id,listing_id,seeker_id,provider_id,status,escrow_status,start_date,end_date,total_amount,category,city,created_at,listings(title,city,province,type,category)")
-      .or(`seeker_id.eq.${userId},provider_id.eq.${userId}`)
+      // provider_id/seeker_id don't exist on this table in production --
+      // host_id/renter_id are the real columns (verified directly).
+      .select("id,listing_id,renter_id,host_id,status,escrow_status,start_date,end_date,total_amount,category,city,created_at,listings(title,city,province,type,category)")
+      .or(`renter_id.eq.${userId},host_id.eq.${userId}`)
       .order("created_at", { ascending: false })
       .limit(clampLimit(limit, 10, 25));
 
@@ -32,7 +34,7 @@ export default defineTool({
     const bookings = (data ?? []).map((booking) => ({
       id: booking.id,
       listing_id: booking.listing_id,
-      role: booking.seeker_id === userId ? "seeker" : "provider",
+      role: booking.renter_id === userId ? "seeker" : "provider",
       status: booking.status,
       escrow_status: booking.escrow_status,
       start_date: booking.start_date,

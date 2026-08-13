@@ -244,14 +244,19 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
     (async () => {
       const { data } = await supabase
         .from("bookings")
-        .select("status,total_amount,commission_amount,created_at")
-        .eq("provider_id", userId);
+        // provider_id/commission_amount don't exist on this table in
+        // production -- the real columns are host_id/platform_fee
+        // (verified directly against prod; commission_amount isn't
+        // recoverable under any name since inserts including it were
+        // failing outright, see create-booking-payment).
+        .select("status,total_amount,platform_fee,created_at")
+        .eq("host_id", userId);
       const list = data || [];
       setActiveBookings(list.filter((b) => ["confirmed", "active", "pending"].includes(b.status)).length);
       const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
       const rev = list
         .filter((b) => new Date(b.created_at) >= startOfMonth && ["confirmed", "active", "completed"].includes(b.status))
-        .reduce((sum, b) => sum + (Number(b.total_amount) - Number(b.commission_amount || 0)), 0);
+        .reduce((sum, b) => sum + (Number(b.total_amount) - Number(b.platform_fee || 0)), 0);
       setRevenue(rev);
     })();
   }, [userId]);
@@ -313,8 +318,10 @@ const SeekerView = ({ userId }: { userId?: string }) => {
     (async () => {
       const { data } = await supabase
         .from("bookings")
+        // seeker_id doesn't exist on this table in production -- renter_id
+        // is the real column (verified directly against prod).
         .select("category,total_amount,status,created_at")
-        .eq("seeker_id", userId);
+        .eq("renter_id", userId);
       const list = data || [];
       const active = list.filter((b) => ["confirmed", "active", "pending"].includes(b.status));
       setParkingCount(active.filter((b) => b.category === "parking").length);

@@ -11,6 +11,13 @@ export type ReviewableBooking = {
 
 const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
+// KNOWN BROKEN, not fixed here: released_at/updated_at/completed_by_provider_at/
+// completed_by_seeker_at don't exist on the real production `bookings` table
+// (verified directly; no renamed equivalent found under any name after
+// extensive probing). The select() below still 400s because of them even
+// after the seeker_id/provider_id rename -- this dual-confirmation
+// completion tracking appears to be missing from prod's actual schema, not
+// just misnamed. Needs a product/schema decision, not a mechanical rename.
 const completionTimestamp = (b: any): string | null => {
   // Prefer released_at; fall back to latest of completed_by_*; finally updated_at.
   const candidates = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at, b.updated_at]
@@ -32,8 +39,10 @@ export const useReviewableBookings = (
     if (!userId) return;
     setLoading(true);
     try {
-      const ownCol = role === "seeker" ? "seeker_id" : "provider_id";
-      const counterCol = role === "seeker" ? "provider_id" : "seeker_id";
+      // seeker_id/provider_id don't exist on this table in production --
+      // renter_id/host_id are the real columns (verified directly).
+      const ownCol = role === "seeker" ? "renter_id" : "host_id";
+      const counterCol = role === "seeker" ? "host_id" : "renter_id";
 
       const { data: bks } = await supabase
         .from("bookings")

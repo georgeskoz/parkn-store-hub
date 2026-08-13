@@ -25,7 +25,7 @@ type Ext = {
 type Booking = {
   id: string;
   listing_id: string;
-  seeker_id: string;
+  renter_id: string;
   start_date: string;
   end_date: string;
   total_amount: number;
@@ -33,6 +33,16 @@ type Booking = {
   city: string | null;
   category: string | null;
   escrow_status: string | null;
+  // KNOWN BROKEN, not fixed here: none of these five columns exist on the
+  // real production `bookings` table (verified directly; confirmed no
+  // renamed equivalent exists under any name after extensive probing).
+  // The select() below still 400s because of them even after the
+  // provider_id/seeker_id rename -- the whole dual-confirmation
+  // completion + escrow-release tracking this component (and
+  // complete-rental / release-booking-payout) depends on appears to be
+  // missing from prod's actual schema, not just misnamed. Needs a
+  // product/schema decision, not a mechanical rename -- flagged
+  // separately rather than guessed at here.
   overdue_charges_total: number | null;
   completed_by_provider_at: string | null;
   completed_by_seeker_at: string | null;
@@ -70,9 +80,9 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
       supabase
         .from("bookings")
         .select(
-          "id,listing_id,seeker_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
+          "id,listing_id,renter_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
         )
-        .eq("provider_id", userId)
+        .eq("host_id", userId)
         .neq("status", "cancelled")
         .order("end_date", { ascending: false }),
       supabase
@@ -313,7 +323,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
           onOpenChange={(o) => !o && setReviewBooking(null)}
           bookingId={reviewBooking.id}
           listingId={reviewBooking.listing_id}
-          revieweeId={reviewBooking.seeker_id}
+          revieweeId={reviewBooking.renter_id}
           listingTitle={reviewBooking.listings?.title || undefined}
           onSubmitted={load}
         />

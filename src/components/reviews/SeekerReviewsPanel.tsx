@@ -11,7 +11,7 @@ import ReviewForm from "./ReviewForm";
 interface BookingRow {
   id: string;
   listing_id: string;
-  provider_id: string;
+  host_id: string;
   end_date: string;
   listings: { title: string } | null;
 }
@@ -36,8 +36,10 @@ export default function SeekerReviewsPanel() {
     setLoading(true);
     const { data: bks } = await supabase
       .from("bookings")
-      .select("id, listing_id, provider_id, end_date, listings(title)")
-      .eq("seeker_id", user.id)
+      // provider_id/seeker_id don't exist on this table in production --
+      // host_id/renter_id are the real columns (verified directly).
+      .select("id, listing_id, host_id, end_date, listings(title)")
+      .eq("renter_id", user.id)
       .eq("status", "completed")
       .order("end_date", { ascending: false });
 
@@ -94,7 +96,7 @@ export default function SeekerReviewsPanel() {
                 <ReviewForm
                   bookingId={b.id}
                   listingId={b.listing_id}
-                  revieweeId={b.provider_id}
+                  revieweeId={b.host_id}
                   reviewerId={user!.id}
                   onSubmitted={load}
                 />
