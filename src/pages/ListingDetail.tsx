@@ -108,6 +108,7 @@ export default function ListingDetail() {
   const [tempEnd, setTempEnd] = useState<Date | undefined>();
   const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
   const [openDow, setOpenDow] = useState<Set<number> | null>(null);
+  const [bookedDays, setBookedDays] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -141,16 +142,36 @@ export default function ListingDetail() {
           setProfile(profileData as UserProfile);
         }
 
-        // Fetch host availability config
-        const [blocksRes, slotsRes] = await Promise.all([
+        // Fetch host availability config, plus real booked-out days (one
+        // fetch for a 6-month window, not re-queried per render or per
+        // calendar popover open). Storage listings skip this -- their own
+        // StorageAvailabilityCalendar already fetches the same data itself,
+        // paginated by visible month; fetching it again here would just be
+        // a redundant upfront query for a listing type that doesn't use
+        // these two date pickers' booked-day styling anyway.
+        const today = new Date();
+        const isStorageCategory = data.category === "storage";
+        const [blocksRes, slotsRes, availRes] = await Promise.all([
           (supabase as any).from("listing_blocked_dates").select("blocked_date").eq("listing_id", id),
           supabase.from("listing_availability_slots").select("day_of_week").eq("listing_id", id),
+          isStorageCategory
+            ? Promise.resolve({ data: [] })
+            : (supabase as any).rpc("get_daily_availability", {
+                target_listing_id: id,
+                range_start: format(today, "yyyy-MM-dd"),
+                range_end: format(addMonths(today, 6), "yyyy-MM-dd"),
+              }),
         ]);
         const b = new Set<string>();
         for (const r of (blocksRes.data || []) as any[]) b.add(String(r.blocked_date).slice(0, 10));
         setBlockedDays(b);
         const slots = (slotsRes.data || []) as any[];
         setOpenDow(slots.length > 0 ? new Set(slots.map((s) => s.day_of_week as number)) : null);
+        const booked = new Set<string>();
+        for (const r of (availRes.data || []) as { day: string; status: string }[]) {
+          if (r.status === "booked") booked.add(String(r.day).slice(0, 10));
+        }
+        setBookedDays(booked);
       } catch (err) {
         console.error("Error fetching listing:", err);
         setError(t("listingDetail.failedToLoad"));
@@ -201,8 +222,16 @@ export default function ListingDetail() {
   }
 
   const isParking = listing.category === "parking";
-  const price = listing.price_monthly || listing.price_daily || listing.price_hourly;
-  const priceLabel = listing.price_monthly ? t("listingDetail.perMonth") : listing.price_daily ? t("listingDetail.perDay") : listing.price_hourly ? t("listingDetail.perHour") : "";
+  const price = listing.price_monthly || listing.price_weekly || listing.price_daily || listing.price_hourly;
+  const priceLabel = listing.price_monthly
+    ? t("listingDetail.perMonth")
+    : listing.price_weekly
+      ? t("listingDetail.perWeek")
+      : listing.price_daily
+        ? t("listingDetail.perDay")
+        : listing.price_hourly
+          ? t("listingDetail.perHour")
+          : "";
 
   // Compute duration using actual start/end times (not just calendar dates) so
   // partial-day parking bookings pick the hourly rate, not a whole day.
@@ -221,31 +250,35 @@ export default function ListingDetail() {
     : 0;
 
   const hasMonthly = !!listing.price_monthly;
+  const hasWeekly = !!listing.price_weekly;
   const hasDaily = !!listing.price_daily;
   const hasHourly = !!listing.price_hourly;
 
   // Pick the cheapest applicable rate for the actual duration.
-  const bestRate: "monthly" | "daily" | "hourly" | null = (() => {
+  const bestRate: "monthly" | "weekly" | "daily" | "hourly" | null = (() => {
     if (!durationMs) return null;
     if (isParking) {
       // Compare candidate totals
-      const candidates: { rate: "hourly" | "daily" | "monthly"; total: number }[] = [];
+      const candidates: { rate: "hourly" | "daily" | "weekly" | "monthly"; total: number }[] = [];
       if (hasHourly) candidates.push({ rate: "hourly", total: Number(listing.price_hourly) * Math.max(Math.ceil(durationHours), 1) });
       if (hasDaily) candidates.push({ rate: "daily", total: Number(listing.price_daily) * Math.max(Math.ceil(durationHours / 24), 1) });
+      if (hasWeekly && durationHours >= 24 * 7) candidates.push({ rate: "weekly", total: Number(listing.price_weekly) * Math.max(Math.ceil(durationHours / (24 * 7)), 1) });
       if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(durationHours / (24 * 30)), 1) });
-      if (!candidates.length) return hasDaily ? "daily" : hasMonthly ? "monthly" : null;
+      if (!candidates.length) return hasDaily ? "daily" : hasWeekly ? "weekly" : hasMonthly ? "monthly" : hasHourly ? "hourly" : null;
       candidates.sort((a, b) => a.total - b.total);
       return candidates[0].rate;
     }
-    // Storage: day/month granularity
+    // Storage: day/week/month granularity
     if (durationDays >= 30 && hasMonthly) return "monthly";
+    if (durationDays >= 7 && hasWeekly) return "weekly";
     if (durationDays >= 1 && hasDaily) return "daily";
-    return hasMonthly ? "monthly" : hasDaily ? "daily" : hasHourly ? "hourly" : null;
+    return hasMonthly ? "monthly" : hasWeekly ? "weekly" : hasDaily ? "daily" : hasHourly ? "hourly" : null;
   })();
 
   const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
   const units = !bestRate ? 0
     : bestRate === "monthly" ? Math.max(Math.ceil(durationHours / (24 * 30)), 1)
+    : bestRate === "weekly" ? Math.max(Math.ceil(durationHours / (24 * 7)), 1)
     : bestRate === "daily" ? Math.max(Math.ceil(durationHours / 24), 1)
     : Math.max(Math.ceil(durationHours), 1);
   const subtotal = +(unitPrice * units).toFixed(2);
@@ -530,9 +563,12 @@ export default function ListingDetail() {
                               if (d < new Date(new Date().setHours(0,0,0,0))) return true;
                               const key = format(d, "yyyy-MM-dd");
                               if (blockedDays.has(key)) return true;
+                              if (bookedDays.has(key)) return true;
                               if (openDow && !openDow.has(d.getDay())) return true;
                               return false;
-                            }} className="p-3 pointer-events-auto" />
+                            }} modifiers={{ booked: Array.from(bookedDays).map((k) => new Date(k + "T00:00:00")) }}
+                              modifiersClassNames={{ booked: "bg-muted text-muted-foreground line-through" }}
+                              className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
                               <Button variant="ghost" size="sm" onClick={() => setStartOpen(false)}>{t("common.cancel")}</Button>
                               <Button size="sm" disabled={!tempStart} onClick={() => { setStartDate(tempStart); if (endDate && tempStart && tempStart > endDate) setEndDate(undefined); setStartOpen(false); }}>{t("common.confirm")}</Button>
@@ -558,9 +594,12 @@ export default function ListingDetail() {
                               if (d < (startDate || new Date())) return true;
                               const key = format(d, "yyyy-MM-dd");
                               if (blockedDays.has(key)) return true;
+                              if (bookedDays.has(key)) return true;
                               if (openDow && !openDow.has(d.getDay())) return true;
                               return false;
-                            }} className="p-3 pointer-events-auto" />
+                            }} modifiers={{ booked: Array.from(bookedDays).map((k) => new Date(k + "T00:00:00")) }}
+                              modifiersClassNames={{ booked: "bg-muted text-muted-foreground line-through" }}
+                              className="p-3 pointer-events-auto" />
                             <div className="flex justify-end gap-2 p-3 border-t border-border">
                               <Button variant="ghost" size="sm" onClick={() => setEndOpen(false)}>{t("common.cancel")}</Button>
                               <Button size="sm" disabled={!tempEnd} onClick={() => { setEndDate(tempEnd); setEndOpen(false); }}>{t("common.confirm")}</Button>

@@ -53,12 +53,12 @@ serve(async (req) => {
 
     const { data: booking, error: bErr } = await admin
       .from("bookings")
-      .select("id, seeker_id, provider_id, status, end_date, escrow_status")
+      .select("id, renter_id, host_id, status, end_date, escrow_status")
       .eq("id", booking_id)
       .maybeSingle();
     if (bErr) throw bErr;
     if (!booking) throw new Error("Booking not found");
-    if (booking.seeker_id !== user.id && booking.provider_id !== user.id) {
+    if (booking.renter_id !== user.id && booking.host_id !== user.id) {
       throw new Error("Not authorized");
     }
     if (!["active", "completed"].includes(booking.status)) {

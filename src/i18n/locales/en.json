@@ -358,6 +358,8 @@
     "noCheckoutUrl": "No checkout URL returned",
     "paymentError": "Payment error",
     "couldNotStartPayment": "Could not start payment.",
+    "slotUnavailableTitle": "Time slot no longer available",
+    "slotUnavailableDescription": "This time slot is no longer available — please choose different dates.",
     "confirmYourBooking": "Confirm Your Booking",
     "reviewDetailsSubtitle": "Review details and proceed to payment.",
     "checkIn": "Check-in",

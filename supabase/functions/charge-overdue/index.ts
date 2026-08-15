@@ -24,7 +24,7 @@ serve(async (req) => {
     // Find held bookings past end_at with no seeker completion
     const { data: bookings, error } = await admin
       .from("bookings")
-      .select("id, listing_id, end_date, stripe_customer_id, stripe_payment_method_id, overdue_charges_total, completed_by_seeker_at, seeker_id")
+      .select("id, listing_id, end_date, stripe_customer_id, stripe_payment_method_id, overdue_charges_total, completed_by_seeker_at, renter_id")
       .eq("escrow_status", "held")
       .lt("end_date", new Date().toISOString())
       .is("completed_by_seeker_at", null);
@@ -40,11 +40,11 @@ serve(async (req) => {
 
       const { data: listing } = await admin
         .from("listings")
-        .select("daily, hourly, price_daily, price_hourly")
+        .select("price_daily, price_hourly")
         .eq("id", b.listing_id)
         .maybeSingle();
       const l: any = listing || {};
-      const baseRate = Number(l.price_daily ?? l.daily ?? l.price_hourly ?? l.hourly ?? 0);
+      const baseRate = Number(l.price_daily ?? l.price_hourly ?? 0);
       if (!baseRate) {
         results.push({ id: b.id, skipped: "no_rate" });
         continue;

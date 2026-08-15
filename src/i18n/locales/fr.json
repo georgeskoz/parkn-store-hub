@@ -358,6 +358,8 @@
     "noCheckoutUrl": "Aucune URL de paiement retournée",
     "paymentError": "Erreur de paiement",
     "couldNotStartPayment": "Impossible de démarrer le paiement.",
+    "slotUnavailableTitle": "Créneau non disponible",
+    "slotUnavailableDescription": "Ce créneau n'est plus disponible — veuillez choisir d'autres dates.",
     "confirmYourBooking": "Confirmez votre réservation",
     "reviewDetailsSubtitle": "Vérifiez les détails et procédez au paiement.",
     "checkIn": "Arrivée",

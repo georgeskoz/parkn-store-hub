@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CheckCircle, MapPin, Calendar, ArrowLeft, CreditCard, Loader2, Zap, SearchX } from "lucide-react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -50,6 +51,12 @@ interface BookingState {
   total: number;
   intake?: IntakePayload;
 }
+
+// Must match the literal string thrown by create-booking-payment's
+// double-booking guard -- matched exactly (not by substring) so unrelated
+// errors never get mislabeled as an availability conflict.
+const SLOT_UNAVAILABLE_MESSAGE =
+  "This time slot was just booked by someone else. Please pick another time.";
 
 interface SurgePreview {
   multiplier: number;
@@ -146,7 +153,31 @@ export default function BookingConfirmation() {
       else throw new Error(t("bookingConfirmation.noCheckoutUrl"));
     } catch (err: any) {
       console.error(err);
-      toast({ title: t("bookingConfirmation.paymentError"), description: err.message || t("bookingConfirmation.couldNotStartPayment"), variant: "destructive" });
+      // functions.invoke() only surfaces a generic "non-2xx status code"
+      // message on error -- the real body (the { error } JSON our edge
+      // functions actually return) lives on error.context and has to be
+      // read separately.
+      let serverMessage: string | undefined;
+      if (err instanceof FunctionsHttpError) {
+        try {
+          const body = await err.context.json();
+          serverMessage = body?.error;
+        } catch {
+          // response body wasn't JSON -- fall through to the generic message
+        }
+      } else {
+        serverMessage = err?.message;
+      }
+
+      if (serverMessage === SLOT_UNAVAILABLE_MESSAGE) {
+        toast({
+          title: t("bookingConfirmation.slotUnavailableTitle"),
+          description: t("bookingConfirmation.slotUnavailableDescription"),
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: t("bookingConfirmation.paymentError"), description: serverMessage || t("bookingConfirmation.couldNotStartPayment"), variant: "destructive" });
+      }
     } finally {
       setPaying(false);
     }

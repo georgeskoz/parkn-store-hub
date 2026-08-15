@@ -30,7 +30,7 @@ serve(async (req) => {
     // Find releasable bookings
     let query = admin
       .from("bookings")
-      .select("id, provider_id, total_amount, overdue_charges_total, payment_intent_id, released_transfer_id")
+      .select("id, host_id, total_amount, overdue_charges_total, stripe_payment_intent_id, released_transfer_id")
       .eq("escrow_status", "held")
       .lte("auto_release_at", new Date().toISOString())
       .is("released_at", null);
@@ -47,7 +47,7 @@ serve(async (req) => {
       const { data: provider } = await admin
         .from("profiles")
         .select("stripe_account_id, stripe_onboarding_complete")
-        .eq("id", b.provider_id)
+        .eq("id", b.host_id)
         .maybeSingle();
 
       if (!provider?.stripe_account_id || !provider.stripe_onboarding_complete) {

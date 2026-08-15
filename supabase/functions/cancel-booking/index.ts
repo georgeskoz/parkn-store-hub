@@ -76,7 +76,7 @@ serve(async (req) => {
       .single();
     if (bErr || !booking) throw new Error("Booking not found");
 
-    if (booking.seeker_id !== userId && !isAdmin) {
+    if (booking.renter_id !== userId && !isAdmin) {
       return new Response(
         JSON.stringify({ error: "Only the seeker (or an admin) can cancel" }),
         {
@@ -109,13 +109,13 @@ serve(async (req) => {
     let refundStatus: "none" | "succeeded" | "failed" | "pending" = "none";
     let refundError: string | null = null;
 
-    if (refundCents > 0 && booking.payment_intent_id) {
+    if (refundCents > 0 && booking.stripe_payment_intent_id) {
       try {
         const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
           apiVersion: "2025-08-27.basil",
         });
         const refund = await stripe.refunds.create({
-          payment_intent: booking.payment_intent_id,
+          payment_intent: booking.stripe_payment_intent_id,
           amount: refundCents,
           reason: "requested_by_customer",
           metadata: { booking_id: bookingId, cancelled_by: userId },

@@ -29,17 +29,17 @@ serve(async (req) => {
 
     const { data: booking } = await admin
       .from("bookings")
-      .select("id, seeker_id, provider_id, escrow_status, completed_by_provider_at, completed_by_seeker_at")
+      .select("id, renter_id, host_id, escrow_status, completed_by_provider_at, completed_by_seeker_at")
       .eq("id", bookingId)
       .maybeSingle();
     if (!booking) throw new Error("Booking not found");
 
     const update: Record<string, unknown> = {};
     if (role === "seeker") {
-      if (booking.seeker_id !== user.id) throw new Error("Not authorized");
+      if (booking.renter_id !== user.id) throw new Error("Not authorized");
       update.completed_by_seeker_at = new Date().toISOString();
     } else {
-      if (booking.provider_id !== user.id) throw new Error("Not authorized");
+      if (booking.host_id !== user.id) throw new Error("Not authorized");
       update.completed_by_provider_at = new Date().toISOString();
     }
 

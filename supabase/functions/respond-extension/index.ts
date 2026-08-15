@@ -32,12 +32,12 @@ serve(async (req) => {
 
     const { data: ext } = await admin
       .from("booking_extensions")
-      .select("*, bookings!inner(provider_id, seeker_id, listing_id, stripe_customer_id, stripe_payment_method_id, auto_release_at)")
+      .select("*, bookings!inner(host_id, renter_id, listing_id, stripe_customer_id, stripe_payment_method_id, auto_release_at)")
       .eq("id", extensionId)
       .maybeSingle();
     if (!ext) throw new Error("Extension not found");
     const booking = (ext as any).bookings;
-    if (booking.provider_id !== user.id) throw new Error("Only provider can respond");
+    if (booking.host_id !== user.id) throw new Error("Only provider can respond");
     if (ext.status !== "pending") throw new Error("Already responded");
 
     if (decision === "decline") {

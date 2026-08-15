@@ -29,18 +29,18 @@ serve(async (req) => {
 
     const { data: booking } = await admin
       .from("bookings")
-      .select("id, listing_id, seeker_id, provider_id, end_date")
+      .select("id, listing_id, renter_id, host_id, end_date")
       .eq("id", bookingId)
       .maybeSingle();
     if (!booking) throw new Error("Booking not found");
-    if (booking.seeker_id !== user.id) throw new Error("Not your booking");
+    if (booking.renter_id !== user.id) throw new Error("Not your booking");
 
     const { data: listing } = await admin
       .from("listings")
-      .select("hourly, daily")
+      .select("price_hourly, price_daily")
       .eq("id", booking.listing_id)
       .maybeSingle();
-    const hourly = Number(listing?.hourly ?? 0) || Number(listing?.daily ?? 0) / 24;
+    const hourly = Number(listing?.price_hourly ?? 0) || Number(listing?.price_daily ?? 0) / 24;
     if (!hourly) throw new Error("Listing has no hourly rate");
 
     const subtotal = +(hourly * extraHours).toFixed(2);

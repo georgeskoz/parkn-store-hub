@@ -16,12 +16,24 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-  );
-
   try {
+    // Moved inside the try/catch: this was the one piece of code in the
+    // whole function capable of producing a raw, uncaught crash with no
+    // error log (everything else already lived inside this block).
+    // Defensive regardless of root cause -- but per current investigation,
+    // do NOT swap SUPABASE_ANON_KEY for SUPABASE_PUBLISHABLE_KEYS as a
+    // same-shape env var rename. Confirmed against current Supabase docs
+    // and the exact GitHub issue describing this migration: legacy keys
+    // stay populated (not undefined) through the deprecation window, and
+    // the new var holds a JSON object keyed by name, not a plain string --
+    // a same-shape swap would be wrong on both the "is this the bug" and
+    // the "is this the right replacement" fronts. Get real Logs tab output
+    // from a live attempt before changing this further.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    );
+
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabase.auth.getUser(token);
@@ -85,7 +97,17 @@ serve(async (req) => {
 
     const { data: listing, error: listingError } = await admin
       .from("listings")
-      .select("city, category, host_id, user_id, hourly, daily, weekly, monthly, seasonal, price_hourly, price_daily, price_weekly, price_monthly")
+      // hourly/daily/weekly/monthly/seasonal (bare names) don't exist on
+      // this table in production -- this is the actual cause of the crash,
+      // caught live via the BOOKING_PAYMENT_ERROR log: "column
+      // listings.hourly does not exist". Only the price_ prefixed columns
+      // are real; individually verified against prod, including
+      // confirming price_seasonal *also* doesn't exist (there's no
+      // seasonal-pricing column under any name right now -- matches
+      // ListingFormTypes.ts's form.seasonal, which the wizard UI never
+      // actually sets either, so this isn't a regression, just no longer
+      // crashing the entire booking flow along with an already-dead field).
+      .select("city, category, host_id, user_id, price_hourly, price_daily, price_weekly, price_monthly")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
@@ -93,11 +115,11 @@ serve(async (req) => {
 
     const l = listing as any;
     const rateMap: Record<string, number | null> = {
-      hourly: l.price_hourly ?? l.hourly ?? null,
-      daily: l.price_daily ?? l.daily ?? null,
-      weekly: l.price_weekly ?? l.weekly ?? null,
-      monthly: l.price_monthly ?? l.monthly ?? null,
-      seasonal: l.seasonal ?? null,
+      hourly: l.price_hourly ?? null,
+      daily: l.price_daily ?? null,
+      weekly: l.price_weekly ?? null,
+      monthly: l.price_monthly ?? null,
+      seasonal: null,
     };
     const unitPrice = rateMap[rate];
     if (unitPrice == null || Number(unitPrice) <= 0) {
@@ -196,6 +218,11 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      // Stripe defaults this to 24h. An abandoned session blocks this
+      // listing's dates until it expires, so keep the window short --
+      // stripe-webhook's checkout.session.expired handler frees the
+      // booking as soon as this fires. Stripe's minimum is 30 minutes.
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
       line_items: [
         {
           price_data: {
@@ -270,6 +297,10 @@ serve(async (req) => {
       },
     );
   } catch (error) {
+    // Log the raw error, not just .message -- a non-Error throw (a plain
+    // object, a Postgrest/Stripe error shape, etc.) can carry useful
+    // structure that .message would discard entirely.
+    console.error("BOOKING_PAYMENT_ERROR:", error);
     const msg = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

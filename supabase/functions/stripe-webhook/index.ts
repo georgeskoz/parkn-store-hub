@@ -70,7 +70,7 @@ serve(async (req) => {
           stripe_session_id: session.id,
         };
         if (typeof session.payment_intent === "string") {
-          update.payment_intent_id = session.payment_intent;
+          update.stripe_payment_intent_id = session.payment_intent;
         }
         if (typeof session.customer === "string") {
           update.stripe_customer_id = session.customer;
@@ -86,6 +86,27 @@ serve(async (req) => {
         break;
       }
 
+      case "checkout.session.expired": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const bookingId = session.metadata?.booking_id;
+        if (!bookingId) break;
+
+        // Only cancel if it never actually completed -- avoids racing a
+        // checkout.session.completed event that landed first.
+        const { data: booking } = await supabase
+          .from("bookings")
+          .select("status")
+          .eq("id", bookingId)
+          .maybeSingle();
+        if (booking?.status === "pending") {
+          await supabase
+            .from("bookings")
+            .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+            .eq("id", bookingId);
+        }
+        break;
+      }
+
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const bookingId = pi.metadata?.booking_id;
@@ -97,16 +118,22 @@ serve(async (req) => {
             .eq("id", extensionId);
         }
         if (bookingId) {
-          await supabase
+          // Previously an un-checked await -- a failed write here (e.g. the
+          // wrong column name below) returned 200 to Stripe regardless, so
+          // Stripe never retried and the failure was invisible. Match
+          // checkout.session.completed's pattern: capture the error and throw,
+          // so a real failure surfaces as a 500 and Stripe retries it.
+          const { error } = await supabase
             .from("bookings")
             .update({
               status: "confirmed",
               escrow_status: "held",
-              payment_intent_id: pi.id,
+              stripe_payment_intent_id: pi.id,
               stripe_payment_method_id:
                 typeof pi.payment_method === "string" ? pi.payment_method : null,
             })
             .eq("id", bookingId);
+          if (error) throw error;
         }
         break;
       }
@@ -124,7 +151,7 @@ serve(async (req) => {
               dispute_opened_at: new Date().toISOString(),
               dispute_reason: dispute.reason || null,
             })
-            .eq("payment_intent_id", pi);
+            .eq("stripe_payment_intent_id", pi);
         }
         break;
       }
