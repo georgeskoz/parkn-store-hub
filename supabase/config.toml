@@ -3,6 +3,9 @@ project_id = "skfaqjatbqrmfkojtqsz"
 [functions.create-booking-payment]
 verify_jwt = false
 
+[functions.preview-booking-tax]
+verify_jwt = false
+
 [functions.create-admin-user]
 verify_jwt = false
 
@@ -13,10 +16,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.release-booking-payout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.charge-overdue]
-verify_jwt = false
+verify_jwt = true
 
 [functions.request-extension]
 verify_jwt = false

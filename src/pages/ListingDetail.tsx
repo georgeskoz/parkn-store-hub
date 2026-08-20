@@ -88,6 +88,75 @@ const availColor: Record<string, string> = {
   full: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+type TaxLineItem = { name: string; rate: number; amount: number };
+type BestRate = "monthly" | "weekly" | "daily" | "hourly" | null;
+
+// Extracted so the pre-checkout tax preview effect (which must be declared
+// above this component's early loading/error returns, per Rules of Hooks)
+// and the render body can both derive subtotal from the exact same rate
+// selection, instead of two copies drifting apart.
+function computeBookingPricing(
+  listing: Pick<DbListing, "category" | "price_hourly" | "price_daily" | "price_weekly" | "price_monthly">,
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  startTime: string,
+  endTime: string,
+): { isParking: boolean; durationDays: number; bestRate: BestRate; unitPrice: number; units: number; subtotal: number } {
+  const isParking = listing.category === "parking";
+
+  // Compute duration using actual start/end times (not just calendar dates)
+  // so partial-day parking bookings pick the hourly rate, not a whole day.
+  const applyTimeInline = (d: Date, t: string) => {
+    const [h, m] = (t || "00:00").split(":").map(Number);
+    const x = new Date(d);
+    x.setHours(h || 0, m || 0, 0, 0);
+    return x;
+  };
+  const startDT = startDate ? applyTimeInline(startDate, isParking ? startTime : "00:00") : null;
+  const endDT = endDate ? applyTimeInline(endDate, isParking ? endTime : "00:00") : null;
+  const durationMs = startDT && endDT ? Math.max(endDT.getTime() - startDT.getTime(), 0) : 0;
+  const durationHours = durationMs / 3600000;
+  const durationDays = durationMs > 0
+    ? (isParking ? durationHours / 24 : Math.max(differenceInDays(endDate!, startDate!), 1))
+    : 0;
+
+  const hasMonthly = !!listing.price_monthly;
+  const hasWeekly = !!listing.price_weekly;
+  const hasDaily = !!listing.price_daily;
+  const hasHourly = !!listing.price_hourly;
+
+  // Pick the cheapest applicable rate for the actual duration.
+  const bestRate: BestRate = (() => {
+    if (!durationMs) return null;
+    if (isParking) {
+      // Compare candidate totals
+      const candidates: { rate: "hourly" | "daily" | "weekly" | "monthly"; total: number }[] = [];
+      if (hasHourly) candidates.push({ rate: "hourly", total: Number(listing.price_hourly) * Math.max(Math.ceil(durationHours), 1) });
+      if (hasDaily) candidates.push({ rate: "daily", total: Number(listing.price_daily) * Math.max(Math.ceil(durationHours / 24), 1) });
+      if (hasWeekly && durationHours >= 24 * 7) candidates.push({ rate: "weekly", total: Number(listing.price_weekly) * Math.max(Math.ceil(durationHours / (24 * 7)), 1) });
+      if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(durationHours / (24 * 30)), 1) });
+      if (!candidates.length) return hasDaily ? "daily" : hasWeekly ? "weekly" : hasMonthly ? "monthly" : hasHourly ? "hourly" : null;
+      candidates.sort((a, b) => a.total - b.total);
+      return candidates[0].rate;
+    }
+    // Storage: day/week/month granularity
+    if (durationDays >= 30 && hasMonthly) return "monthly";
+    if (durationDays >= 7 && hasWeekly) return "weekly";
+    if (durationDays >= 1 && hasDaily) return "daily";
+    return hasMonthly ? "monthly" : hasWeekly ? "weekly" : hasDaily ? "daily" : hasHourly ? "hourly" : null;
+  })();
+
+  const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
+  const units = !bestRate ? 0
+    : bestRate === "monthly" ? Math.max(Math.ceil(durationHours / (24 * 30)), 1)
+    : bestRate === "weekly" ? Math.max(Math.ceil(durationHours / (24 * 7)), 1)
+    : bestRate === "daily" ? Math.max(Math.ceil(durationHours / 24), 1)
+    : Math.max(Math.ceil(durationHours), 1);
+  const subtotal = +(unitPrice * units).toFixed(2);
+
+  return { isParking, durationDays, bestRate, unitPrice, units, subtotal };
+}
+
 export default function ListingDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -109,6 +178,7 @@ export default function ListingDetail() {
   const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
   const [openDow, setOpenDow] = useState<Set<number> | null>(null);
   const [bookedDays, setBookedDays] = useState<Set<string>>(new Set());
+  const [taxPreview, setTaxPreview] = useState<{ lineItems: TaxLineItem[]; taxTotal: number }>({ lineItems: [], taxTotal: 0 });
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -183,6 +253,38 @@ export default function ListingDetail() {
     fetchListing();
   }, [id]);
 
+  // Must be declared here, before the loading/error early returns below --
+  // hooks can't be called conditionally. Derives subtotal via
+  // computeBookingPricing (the same function the render body uses) rather
+  // than duplicating the rate-selection logic.
+  useEffect(() => {
+    if (!listing || !startDate || !endDate) {
+      setTaxPreview({ lineItems: [], taxTotal: 0 });
+      return;
+    }
+    const { subtotal } = computeBookingPricing(listing, startDate, endDate, startTime, endTime);
+    if (!subtotal) {
+      setTaxPreview({ lineItems: [], taxTotal: 0 });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("preview-booking-tax", {
+          body: { country: listing.country, province: listing.province, subtotal },
+        });
+        if (!cancelled && !error && data) {
+          setTaxPreview(data);
+        }
+      } catch (err) {
+        console.warn("Tax preview skipped:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listing, startDate, endDate, startTime, endTime]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -221,7 +323,6 @@ export default function ListingDetail() {
     );
   }
 
-  const isParking = listing.category === "parking";
   const price = listing.price_monthly || listing.price_weekly || listing.price_daily || listing.price_hourly;
   const priceLabel = listing.price_monthly
     ? t("listingDetail.perMonth")
@@ -233,58 +334,10 @@ export default function ListingDetail() {
           ? t("listingDetail.perHour")
           : "";
 
-  // Compute duration using actual start/end times (not just calendar dates) so
-  // partial-day parking bookings pick the hourly rate, not a whole day.
-  const applyTimeInline = (d: Date, t: string) => {
-    const [h, m] = (t || "00:00").split(":").map(Number);
-    const x = new Date(d);
-    x.setHours(h || 0, m || 0, 0, 0);
-    return x;
-  };
-  const startDT = startDate ? applyTimeInline(startDate, isParking ? startTime : "00:00") : null;
-  const endDT = endDate ? applyTimeInline(endDate, isParking ? endTime : "00:00") : null;
-  const durationMs = startDT && endDT ? Math.max(endDT.getTime() - startDT.getTime(), 0) : 0;
-  const durationHours = durationMs / 3600000;
-  const durationDays = durationMs > 0
-    ? (isParking ? durationHours / 24 : Math.max(differenceInDays(endDate!, startDate!), 1))
-    : 0;
-
-  const hasMonthly = !!listing.price_monthly;
-  const hasWeekly = !!listing.price_weekly;
-  const hasDaily = !!listing.price_daily;
-  const hasHourly = !!listing.price_hourly;
-
-  // Pick the cheapest applicable rate for the actual duration.
-  const bestRate: "monthly" | "weekly" | "daily" | "hourly" | null = (() => {
-    if (!durationMs) return null;
-    if (isParking) {
-      // Compare candidate totals
-      const candidates: { rate: "hourly" | "daily" | "weekly" | "monthly"; total: number }[] = [];
-      if (hasHourly) candidates.push({ rate: "hourly", total: Number(listing.price_hourly) * Math.max(Math.ceil(durationHours), 1) });
-      if (hasDaily) candidates.push({ rate: "daily", total: Number(listing.price_daily) * Math.max(Math.ceil(durationHours / 24), 1) });
-      if (hasWeekly && durationHours >= 24 * 7) candidates.push({ rate: "weekly", total: Number(listing.price_weekly) * Math.max(Math.ceil(durationHours / (24 * 7)), 1) });
-      if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(durationHours / (24 * 30)), 1) });
-      if (!candidates.length) return hasDaily ? "daily" : hasWeekly ? "weekly" : hasMonthly ? "monthly" : hasHourly ? "hourly" : null;
-      candidates.sort((a, b) => a.total - b.total);
-      return candidates[0].rate;
-    }
-    // Storage: day/week/month granularity
-    if (durationDays >= 30 && hasMonthly) return "monthly";
-    if (durationDays >= 7 && hasWeekly) return "weekly";
-    if (durationDays >= 1 && hasDaily) return "daily";
-    return hasMonthly ? "monthly" : hasWeekly ? "weekly" : hasDaily ? "daily" : hasHourly ? "hourly" : null;
-  })();
-
-  const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
-  const units = !bestRate ? 0
-    : bestRate === "monthly" ? Math.max(Math.ceil(durationHours / (24 * 30)), 1)
-    : bestRate === "weekly" ? Math.max(Math.ceil(durationHours / (24 * 7)), 1)
-    : bestRate === "daily" ? Math.max(Math.ceil(durationHours / 24), 1)
-    : Math.max(Math.ceil(durationHours), 1);
-  const subtotal = +(unitPrice * units).toFixed(2);
-  const gst = +(subtotal * 0.05).toFixed(2);
-  const qst = +(subtotal * 0.09975).toFixed(2);
-  const total = +(subtotal + gst + qst).toFixed(2);
+  const { isParking, durationDays, bestRate, unitPrice, units, subtotal } =
+    computeBookingPricing(listing, startDate, endDate, startTime, endTime);
+  const taxTotal = taxPreview.taxTotal;
+  const total = +(subtotal + taxTotal).toFixed(2);
 
   const applyTime = (d: Date, t: string) => {
     const [h, m] = (t || "").split(":").map(Number);
@@ -308,8 +361,7 @@ export default function ListingDetail() {
       unitPrice,
       units,
       subtotal,
-      gst,
-      qst,
+      taxLineItems: taxPreview.lineItems,
       total,
     };
 
@@ -667,8 +719,11 @@ export default function ListingDetail() {
                           <span className="capitalize">{t(`listingDetail.rateLabel.${bestRate}`)}</span>
                         </div>
                         <div className="flex justify-between"><span>{t("listingDetail.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-muted-foreground text-xs"><span>{t("listingDetail.gst")}</span><span>${gst.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-muted-foreground text-xs"><span>{t("listingDetail.qst")}</span><span>${qst.toFixed(2)}</span></div>
+                        {taxPreview.lineItems.map((item) => (
+                          <div key={item.name} className="flex justify-between text-muted-foreground text-xs">
+                            <span>{item.name}</span><span>${item.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
                         <div className="flex justify-between font-bold text-foreground border-t border-border pt-2"><span>{t("listingDetail.total")}</span><span>${total.toFixed(2)}</span></div>
                       </div>
                     )}

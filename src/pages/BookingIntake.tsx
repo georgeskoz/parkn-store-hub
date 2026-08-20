@@ -37,6 +37,8 @@ import {
   requireSelect,
 } from "@/lib/validators";
 
+type TaxLineItem = { name: string; rate: number; amount: number };
+
 type IncomingState = {
   listingType: string;
   listingId: string;
@@ -48,8 +50,7 @@ type IncomingState = {
   unitPrice: number;
   units: number;
   subtotal: number;
-  gst: number;
-  qst: number;
+  taxLineItems: TaxLineItem[];
   total: number;
 };
 

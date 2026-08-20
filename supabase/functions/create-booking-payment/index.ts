@@ -8,8 +8,149 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PLATFORM_COMMISSION_PERCENT = 10;
+const FALLBACK_COMMISSION_RATE = 0.10; // 10% — matches admin's getCommissionRate() fallback
 const AUTO_RELEASE_HOURS = 24;
+
+// Ported from create-payment-intent's own port of
+// admin/src/lib/commission.ts#getCommissionRate -- same key/value read, same
+// fallback. Kept as a local copy rather than a shared import since these are
+// separate Deno edge functions with no cross-repo module system between them.
+async function getCommissionRate(admin: ReturnType<typeof createClient>): Promise<number> {
+  const { data, error } = await admin
+    .from("platform_settings")
+    .select("value")
+    .eq("key", "commission_rate")
+    .single();
+
+  if (error || !data?.value) return FALLBACK_COMMISSION_RATE;
+
+  const rate = parseFloat(data.value as string) / 100;
+  if (!Number.isFinite(rate) || rate <= 0 || rate >= 1) return FALLBACK_COMMISSION_RATE;
+  return rate;
+}
+
+// Ported verbatim from create-payment-intent's normalizeCountry/
+// deriveCurrency -- same recognized values, same behavior. Kept as a local
+// copy for the same cross-repo/cross-runtime reason as getCommissionRate.
+function normalizeCountry(country?: string | null): "CA" | "US" | "OTHER" {
+  const c = (country ?? "").trim().toLowerCase();
+  if (c === "ca" || c === "can" || c === "canada") return "CA";
+  if (c === "us" || c === "usa" || c === "united states" || c === "united states of america") {
+    return "US";
+  }
+  return "OTHER";
+}
+
+// Currency follows the listing's country, not which app was used to book --
+// a renter in NYC booking a Toronto listing gets charged CAD (the host's
+// currency), not CAD-by-coincidence just because they're on web. Falls back
+// to CAD for missing/unrecognized country (most current listings have none
+// set at all; explicit product decision to allow the booking rather than
+// block it).
+function deriveCurrency(country?: string | null): "cad" | "usd" {
+  return normalizeCountry(country) === "US" ? "usd" : "cad";
+}
+
+// CA fallback only -- used when a listing's province can't be matched to a
+// tax_rates row (missing/unrecognized data). Canada always levies GST
+// federally regardless of province, so this preserves that floor rather than
+// charging $0 tax on an unmatched region. Every real CA province/territory
+// row exists in tax_rates today (verified live, 13/13), so this only fires
+// on bad/unexpected data.
+const GST_RATE = 0.05;
+
+function round2(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
+// tax_rates.region_code is the 2-letter province code (AB, BC, ..., YT).
+// listings.province is free text and, confirmed live, inconsistently
+// formatted -- one real listing has "QC", another has "Ontario". This maps
+// full province/territory names to their code; codes already in this shape
+// pass through the shortcut in resolveCaRegionCode below.
+const CA_PROVINCE_NAME_TO_CODE: Record<string, string> = {
+  "alberta": "AB",
+  "british columbia": "BC",
+  "manitoba": "MB",
+  "new brunswick": "NB",
+  "newfoundland": "NL",
+  "newfoundland and labrador": "NL",
+  "nova scotia": "NS",
+  "northwest territories": "NT",
+  "nunavut": "NU",
+  "ontario": "ON",
+  "prince edward island": "PE",
+  "quebec": "QC",
+  "saskatchewan": "SK",
+  "yukon": "YT",
+};
+const CA_PROVINCE_CODES = new Set(Object.values(CA_PROVINCE_NAME_TO_CODE));
+
+function resolveCaRegionCode(province?: string | null): string | null {
+  const p = (province ?? "").trim().toLowerCase().replace(/é/g, "e");
+  if (!p) return null;
+  const asCode = p.toUpperCase();
+  if (CA_PROVINCE_CODES.has(asCode)) return asCode;
+  return CA_PROVINCE_NAME_TO_CODE[p] ?? null;
+}
+
+type TaxLineItem = { name: string; rate: number; amount: number };
+type TaxRateComponent = { name: string; rate: number };
+
+// Table-driven for both CA and US: one lookup by (country, region_code),
+// expanding tax_rates.components into one line item per entry. This is the
+// same mechanism tax_rates already uses to represent Quebec's GST+QST as two
+// visible line items under a single row (components: [{GST,0.05},
+// {QST,0.09975}]) vs. e.g. Ontario's single HST component -- confirmed live
+// against all 13 CA rows and all 9 US rows, no special-casing needed in code
+// for Quebec (or NY, which already has two US components: State Tax + Local
+// Tax). Falls back to a synthetic single component from tax_name/rate if a
+// row exists but components is empty/null (defensive, not expected to fire
+// against current live data).
+async function calculateBookingTax(
+  admin: ReturnType<typeof createClient>,
+  subtotal: number,
+  listing: { country?: string | null; province?: string | null },
+): Promise<{ lineItems: TaxLineItem[]; taxTotal: number }> {
+  const country = normalizeCountry(listing.country);
+  const lineItems: TaxLineItem[] = [];
+
+  if (country === "CA" || country === "US") {
+    const regionCode = country === "CA"
+      ? resolveCaRegionCode(listing.province)
+      : (listing.province ?? "").trim().toUpperCase() || null;
+
+    if (regionCode) {
+      const { data } = await admin
+        .from("tax_rates")
+        .select("tax_name, rate, components")
+        .eq("country", country)
+        .eq("region_code", regionCode)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (data) {
+        const components: TaxRateComponent[] =
+          Array.isArray(data.components) && data.components.length > 0
+            ? data.components as TaxRateComponent[]
+            : [{ name: data.tax_name as string, rate: Number(data.rate) }];
+        for (const c of components) {
+          const rate = Number(c.rate) || 0;
+          if (rate > 0) {
+            lineItems.push({ name: c.name, rate, amount: round2(subtotal * rate) });
+          }
+        }
+      }
+    }
+
+    if (country === "CA" && lineItems.length === 0) {
+      lineItems.push({ name: "GST", rate: GST_RATE, amount: round2(subtotal * GST_RATE) });
+    }
+  }
+
+  const taxTotal = round2(lineItems.reduce((sum, item) => sum + item.amount, 0));
+  return { lineItems, taxTotal };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -107,11 +248,13 @@ serve(async (req) => {
       // ListingFormTypes.ts's form.seasonal, which the wizard UI never
       // actually sets either, so this isn't a regression, just no longer
       // crashing the entire booking flow along with an already-dead field).
-      .select("city, category, host_id, user_id, price_hourly, price_daily, price_weekly, price_monthly")
+      .select("city, category, country, province, host_id, user_id, price_hourly, price_daily, price_weekly, price_monthly")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
     if (!listing) throw new Error("Listing not found");
+
+    const currency = deriveCurrency((listing as any).country);
 
     const l = listing as any;
     const rateMap: Record<string, number | null> = {
@@ -151,15 +294,21 @@ serve(async (req) => {
 
     const baseSubtotal = +(+unitPrice * unitsNum).toFixed(2);
     const subtotal = +(baseSubtotal * surgeMultiplier).toFixed(2);
-    const gst = +(subtotal * 0.05).toFixed(2);
-    const qst = +(subtotal * 0.09975).toFixed(2);
-    const total = +(subtotal + gst + qst).toFixed(2);
-    const originalTotal = +(baseSubtotal * 1.14975).toFixed(2);
 
+    const listingLocation = { country: (listing as any).country, province: (listing as any).province };
+    const tax = await calculateBookingTax(admin, subtotal, listingLocation);
+    const total = +(subtotal + tax.taxTotal).toFixed(2);
+
+    // originalTotal is the pre-surge comparison total shown in the UI --
+    // needs the same location-aware tax, not the old flat-14.975% multiplier
+    // (which baked in the same always-Quebec-rate assumption as `total` used
+    // to have).
+    const baseTax = await calculateBookingTax(admin, baseSubtotal, listingLocation);
+    const originalTotal = +(baseSubtotal + baseTax.taxTotal).toFixed(2);
+
+    const commissionRate = await getCommissionRate(admin);
     const totalCents = Math.round(total * 100);
-    const platformFeeCents = Math.round(
-      totalCents * PLATFORM_COMMISSION_PERCENT / 100,
-    );
+    const platformFeeCents = Math.round(totalCents * commissionRate);
 
     const autoReleaseAt = new Date(
       new Date(endDate).getTime() + AUTO_RELEASE_HOURS * 3600 * 1000,
@@ -195,10 +344,17 @@ serve(async (req) => {
         status: "pending",
         escrow_status: "pending",
         auto_release_at: autoReleaseAt,
+        currency,
         total_amount: total,
         original_amount: originalTotal,
         surge_multiplier: surgeMultiplier,
-        commission_rate: PLATFORM_COMMISSION_PERCENT,
+        // commissionRate is a decimal (e.g. 0.10) -- bookings.commission_rate
+        // is stored as a percent (e.g. 10), same as this function always
+        // wrote and what booking-detail-client.tsx's commissionRateLabel()
+        // (`${booking.commission_rate}%`) expects. Converting back here
+        // instead of storing the raw decimal, which would silently render
+        // as "0.1%" instead of "10%".
+        commission_rate: commissionRate * 100,
         platform_fee: platformFeeCents / 100,
         category: listing.category,
         city: listing.city,
@@ -226,7 +382,7 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "cad",
+            currency,
             product_data: {
               name: title,
               description: `${listingType} booking: ${address} (${rate} × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}`,
@@ -256,8 +412,7 @@ serve(async (req) => {
         rate,
         units: String(units),
         subtotal: String(subtotal),
-        gst: String(gst),
-        qst: String(qst),
+        tax_line_items: JSON.stringify(tax.lineItems),
         surge_multiplier: String(surgeMultiplier),
         surge_label: surgeLabel || "",
         surge_rule_id: surgeRuleId || "",
@@ -286,8 +441,7 @@ serve(async (req) => {
         surgeMultiplier,
         surgeLabel,
         subtotal,
-        gst,
-        qst,
+        taxLineItems: tax.lineItems,
         total,
         originalTotal,
       }),

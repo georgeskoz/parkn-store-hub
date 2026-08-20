@@ -35,6 +35,8 @@ type IntakePayload =
     }
   | { kind: "none" };
 
+type TaxLineItem = { name: string; rate: number; amount: number };
+
 interface BookingState {
   listingType: string;
   listingId: string;
@@ -46,8 +48,7 @@ interface BookingState {
   unitPrice: number;
   units: number;
   subtotal: number;
-  gst: number;
-  qst: number;
+  taxLineItems: TaxLineItem[];
   total: number;
   intake?: IntakePayload;
 }
@@ -62,8 +63,7 @@ interface SurgePreview {
   multiplier: number;
   label: string | null;
   subtotal: number;
-  gst: number;
-  qst: number;
+  taxLineItems: TaxLineItem[];
   total: number;
 }
 
@@ -80,7 +80,7 @@ export default function BookingConfirmation() {
       try {
         const { data: listing } = await supabase
           .from("listings")
-          .select("city, category")
+          .select("city, category, country, province")
           .eq("id", state.listingId)
           .maybeSingle();
         if (!listing) return;
@@ -101,10 +101,13 @@ export default function BookingConfirmation() {
         }
         if (best.multiplier > 1) {
           const subtotal = +(state.subtotal * best.multiplier).toFixed(2);
-          const gst = +(subtotal * 0.05).toFixed(2);
-          const qst = +(subtotal * 0.09975).toFixed(2);
-          const total = +(subtotal + gst + qst).toFixed(2);
-          setSurge({ multiplier: best.multiplier, label: best.label, subtotal, gst, qst, total });
+          const { data: tax, error: taxError } = await supabase.functions.invoke("preview-booking-tax", {
+            body: { country: listing.country, province: listing.province, subtotal },
+          });
+          const taxLineItems: TaxLineItem[] = !taxError && Array.isArray(tax?.lineItems) ? tax.lineItems : [];
+          const taxTotal = !taxError && typeof tax?.taxTotal === "number" ? tax.taxTotal : 0;
+          const total = +(subtotal + taxTotal).toFixed(2);
+          setSurge({ multiplier: best.multiplier, label: best.label, subtotal, taxLineItems, total });
         }
       } catch (err) {
         console.warn("Surge lookup skipped:", err);
@@ -137,8 +140,7 @@ export default function BookingConfirmation() {
   const end = new Date(state.endDate);
   const displayTotal = surge ? surge.total : state.total;
   const displaySubtotal = surge ? surge.subtotal : state.subtotal;
-  const displayGst = surge ? surge.gst : state.gst;
-  const displayQst = surge ? surge.qst : state.qst;
+  const displayTaxLineItems = surge ? surge.taxLineItems : state.taxLineItems;
 
   const handlePay = async () => {
     if (!user) {
@@ -149,7 +151,7 @@ export default function BookingConfirmation() {
     try {
       const { data, error } = await supabase.functions.invoke("create-booking-payment", { body: state });
       if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
+      if (data?.url) window.location.href = data.url;
       else throw new Error(t("bookingConfirmation.noCheckoutUrl"));
     } catch (err: any) {
       console.error(err);
@@ -240,12 +242,11 @@ export default function BookingConfirmation() {
                 <span className="text-muted-foreground capitalize">{t(`listingDetail.rateLabel.${state.rate}`, { defaultValue: state.rate })} × {state.units}</span>
                 <span>${displaySubtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-muted-foreground text-xs">
-                <span>{t("listingDetail.gst")}</span><span>${displayGst.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground text-xs">
-                <span>{t("listingDetail.qst")}</span><span>${displayQst.toFixed(2)}</span>
-              </div>
+              {displayTaxLineItems.map((item) => (
+                <div key={item.name} className="flex justify-between text-muted-foreground text-xs">
+                  <span>{item.name}</span><span>${item.amount.toFixed(2)}</span>
+                </div>
+              ))}
               <div className="flex justify-between font-bold text-foreground border-t border-border pt-2">
                 <span>{t("listingDetail.total")}</span><span>${displayTotal.toFixed(2)}</span>
               </div>
