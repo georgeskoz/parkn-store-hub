@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getIntlLocale } from "@/lib/dateLocale";
@@ -25,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Star, ChevronDown, ChevronUp, Printer, Mail, Share2 } from "lucide-react";
+import { Loader2, Star, ChevronDown, ChevronUp, Printer, Mail, Share2, Phone, Navigation, MessageSquare } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
@@ -67,8 +68,16 @@ type Booking = {
   storage_size: string | null;
   dropoff_date: string | null;
   dropoff_time: string | null;
-  listings?: { title: string | null } | null;
+  listings?: {
+    title: string | null;
+    address: string | null;
+    province: string | null;
+    postal_code: string | null;
+    country: string | null;
+  } | null;
 };
+
+type HostProfile = { display_name: string | null; phone: string | null };
 
 const REVIEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -91,7 +100,9 @@ const escrowBadge = (s: string | null, t: (key: string) => string) => {
 
 const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [hostProfiles, setHostProfiles] = useState<Record<string, HostProfile>>({});
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<Booking | null>(null);
@@ -100,6 +111,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [extHours, setExtHours] = useState(1);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [printBooking, setPrintBooking] = useState<Booking | null>(null);
+  const [messagingId, setMessagingId] = useState<string | null>(null);
   const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggle = (id: string) =>
@@ -114,7 +126,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     const { data, error } = await supabase
       .from("bookings")
       .select(
-        "id,listing_id,host_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
+        "id,listing_id,host_id,start_date,end_date,total_amount,status,category,city,refund_amount,refund_status,cancelled_at,escrow_status,auto_release_at,overdue_charges_total,completed_by_seeker_at,completed_by_provider_at,released_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title,address,province,postal_code,country)",
       )
       .eq("renter_id", userId)
       .order("start_date", { ascending: false });
@@ -138,6 +150,27 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
       setReviewedIds(new Set((revs || []).map((r: any) => r.booking_id)));
     } else {
       setReviewedIds(new Set());
+    }
+    // profiles_public (not the raw profiles table) is the intended
+    // renter-facing surface for host contact info -- confirmed live under
+    // real anon-key RLS that it exposes phone deliberately, same view
+    // ListingDetail.tsx already uses to show host contact info pre-booking.
+    const hostIds = [...new Set(list.map((b) => b.host_id).filter(Boolean))];
+    if (hostIds.length) {
+      const { data: hosts, error: hostsError } = await supabase
+        .from("profiles_public")
+        .select("id, display_name, phone")
+        .in("id", hostIds);
+      if (hostsError) {
+        console.error("SeekerBookingsList host profile load failed:", hostsError);
+      }
+      const map: Record<string, HostProfile> = {};
+      for (const h of (hosts || []) as any[]) {
+        map[h.id] = { display_name: h.display_name, phone: h.phone };
+      }
+      setHostProfiles(map);
+    } else {
+      setHostProfiles({});
     }
     setLoading(false);
   };
@@ -252,6 +285,20 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     !b.completed_by_seeker_at &&
     Date.now() > new Date(b.end_date).getTime();
 
+  // Full mailing/nav address -- listings.address is the real column
+  // (confirmed live, e.g. "27 Rue De L'abbe-Mangin"), joined with the
+  // booking's own city snapshot (bookings.city is copied from the listing
+  // at booking time, already used elsewhere on this card) plus the
+  // listing's province/postal_code/country, which bookings doesn't
+  // snapshot. Falls back to just the city if the listing join is missing
+  // (shouldn't happen, but the card already tolerates a missing listings
+  // join for the title the same way).
+  const buildFullAddress = (b: Booking): string | null => {
+    const l = b.listings;
+    if (!l?.address) return null;
+    return [l.address, b.city, l.province, l.postal_code, l.country].filter(Boolean).join(", ");
+  };
+
   // Shared by print/email/share so the three surfaces never drift out of
   // sync with each other -- same fields visible on the card.
   const buildBookingSummary = (b: Booking): string[] => {
@@ -262,14 +309,19 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
         : b.category === "storage"
         ? t("search.storage")
         : t("booking.booking");
-    const fmt = (iso: string) => new Date(iso).toLocaleDateString(getIntlLocale());
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleString(getIntlLocale(), { dateStyle: "medium", timeStyle: "short" });
+    const host = hostProfiles[b.host_id];
     const lines = [
       `${t("booking.summaryListing")}: ${listingTitle} (${categoryLabel})`,
-      `${t("booking.summaryLocation")}: ${b.city || t("booking.na")}`,
+      `${t("booking.summaryLocation")}: ${buildFullAddress(b) || b.city || t("booking.na")}`,
       `${t("booking.summaryDates")}: ${fmt(b.start_date)} → ${fmt(b.end_date)}`,
       `${t("booking.summaryPrice")}: $${Number(b.total_amount).toFixed(2)}`,
       `${t("booking.summaryStatus")}: ${t(`booking.status.${b.status}`, { defaultValue: b.status })}`,
     ];
+    if (host?.display_name) {
+      lines.push(`${t("booking.summaryHost")}: ${host.display_name}`);
+    }
     if (b.category === "parking" && (b.vehicle_plate || b.vehicle_make || b.vehicle_type)) {
       const vehicle = [b.vehicle_colour, b.vehicle_make, b.vehicle_type].filter(Boolean).join(" ");
       lines.push(
@@ -333,6 +385,41 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     }
   };
 
+  // conversations is genuinely keyed by booking_id (confirmed live) --
+  // unlike ListingDetail.tsx's pre-booking "message host" flow, which
+  // still tries listing_id/seeker_id/provider_id (none of which exist on
+  // the real table, confirmed live via 42703 errors) and silently fails.
+  // That's a separate, pre-existing bug, tracked separately -- this
+  // find-or-create is deliberately not copy-pasted from it.
+  const handleMessageHost = async (b: Booking) => {
+    setMessagingId(b.id);
+    try {
+      const { data: existing, error: findErr } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("booking_id", b.id)
+        .maybeSingle();
+      if (findErr) throw findErr;
+
+      let conversationId = existing?.id as string | undefined;
+      if (!conversationId) {
+        const { data: created, error: createErr } = await supabase
+          .from("conversations")
+          .insert({ booking_id: b.id })
+          .select("id")
+          .single();
+        if (createErr) throw createErr;
+        conversationId = created.id;
+      }
+      navigate("/messages", { state: { conversationId } });
+    } catch (e: any) {
+      console.error("Message host failed:", e);
+      toast({ title: t("booking.failed"), description: e.message, variant: "destructive" });
+    } finally {
+      setMessagingId(null);
+    }
+  };
+
   return (
     <Card className="card-shadow">
       <CardHeader>
@@ -369,9 +456,18 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                     {isOverdue(b) && <Badge variant="destructive">{t("booking.overdue")}</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {b.city} • {new Date(b.start_date).toLocaleDateString(getIntlLocale())} →{" "}
-                    {new Date(b.end_date).toLocaleDateString(getIntlLocale())}
+                    {buildFullAddress(b) || b.city}
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(b.start_date).toLocaleString(getIntlLocale(), { dateStyle: "medium", timeStyle: "short" })}
+                    {" → "}
+                    {new Date(b.end_date).toLocaleString(getIntlLocale(), { dateStyle: "medium", timeStyle: "short" })}
+                  </p>
+                  {hostProfiles[b.host_id]?.display_name && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("booking.hostedBy", { name: hostProfiles[b.host_id].display_name })}
+                    </p>
+                  )}
                   {Number(b.overdue_charges_total || 0) > 0 && (
                     <p className="text-xs text-destructive mt-1">
                       {t("booking.overdueCharges", { amount: Number(b.overdue_charges_total).toFixed(2) })}
@@ -391,6 +487,53 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                 <div className="text-right space-y-1">
                   <p className="font-semibold">${Number(b.total_amount).toFixed(2)}</p>
                   <div className="flex flex-wrap justify-end gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title={t("booking.messageHost")}
+                      aria-label={t("booking.messageHost")}
+                      onClick={() => handleMessageHost(b)}
+                      disabled={messagingId === b.id}
+                    >
+                      {messagingId === b.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <MessageSquare className="w-4 h-4" />
+                      )}
+                    </Button>
+                    {hostProfiles[b.host_id]?.phone && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        title={t("booking.call")}
+                        aria-label={t("booking.call")}
+                        asChild
+                      >
+                        <a href={`tel:${hostProfiles[b.host_id].phone}`}>
+                          <Phone className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    )}
+                    {buildFullAddress(b) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        title={t("booking.navigate")}
+                        aria-label={t("booking.navigate")}
+                        asChild
+                      >
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(buildFullAddress(b)!)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Navigation className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"

@@ -6,11 +6,19 @@ import ConversationsList from "@/components/messaging/ConversationsList";
 import ConversationPanel from "@/components/messaging/ConversationPanel";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Messages() {
   const { t } = useTranslation();
-  const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
+  // "Message host" buttons (e.g. on the Seeker Dashboard's My Bookings
+  // cards) navigate here with { state: { conversationId } } -- same
+  // navigate(path, { state }) pattern already used elsewhere in this app
+  // (BookingIntake -> BookingConfirmation) -- so this page can open
+  // directly on the right thread instead of always landing on the list.
+  const location = useLocation();
+  const [activeConversationId, setActiveConversationId] = useState<string | undefined>(
+    (location.state as { conversationId?: string } | null)?.conversationId,
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,7 +33,7 @@ export default function Messages() {
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <ConversationsList onSelectConversation={setActiveConversationId} />
+            <ConversationsList onSelectConversation={setActiveConversationId} activeId={activeConversationId} />
           </div>
           <div>
             {activeConversationId ? (
