@@ -25,7 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Star, ChevronDown, ChevronUp, Printer, Mail, Share2 } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
@@ -99,6 +99,7 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
   const [extBooking, setExtBooking] = useState<Booking | null>(null);
   const [extHours, setExtHours] = useState(1);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const [printBooking, setPrintBooking] = useState<Booking | null>(null);
   const { disputes, reload: reloadDisputes } = useDisputes(bookings.map((b) => b.id));
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggle = (id: string) =>
@@ -145,6 +146,22 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     if (userId) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  // window.print() prints synchronously in most browsers but the printable
+  // content needs to be in the DOM first -- set state, let it render, then
+  // print on the next tick. afterprint resets it so the hidden print-only
+  // block doesn't linger with stale content.
+  useEffect(() => {
+    if (!printBooking) return;
+    const timer = setTimeout(() => window.print(), 50);
+    return () => clearTimeout(timer);
+  }, [printBooking]);
+
+  useEffect(() => {
+    const clearPrint = () => setPrintBooking(null);
+    window.addEventListener("afterprint", clearPrint);
+    return () => window.removeEventListener("afterprint", clearPrint);
+  }, []);
 
   const completionTs = (b: Booking) => {
     const cs = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at]
@@ -235,6 +252,87 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
     !b.completed_by_seeker_at &&
     Date.now() > new Date(b.end_date).getTime();
 
+  // Shared by print/email/share so the three surfaces never drift out of
+  // sync with each other -- same fields visible on the card.
+  const buildBookingSummary = (b: Booking): string[] => {
+    const listingTitle = b.listings?.title || t("booking.booking");
+    const categoryLabel =
+      b.category === "parking"
+        ? t("search.parking")
+        : b.category === "storage"
+        ? t("search.storage")
+        : t("booking.booking");
+    const fmt = (iso: string) => new Date(iso).toLocaleDateString(getIntlLocale());
+    const lines = [
+      `${t("booking.summaryListing")}: ${listingTitle} (${categoryLabel})`,
+      `${t("booking.summaryLocation")}: ${b.city || t("booking.na")}`,
+      `${t("booking.summaryDates")}: ${fmt(b.start_date)} → ${fmt(b.end_date)}`,
+      `${t("booking.summaryPrice")}: $${Number(b.total_amount).toFixed(2)}`,
+      `${t("booking.summaryStatus")}: ${t(`booking.status.${b.status}`, { defaultValue: b.status })}`,
+    ];
+    if (b.category === "parking" && (b.vehicle_plate || b.vehicle_make || b.vehicle_type)) {
+      const vehicle = [b.vehicle_colour, b.vehicle_make, b.vehicle_type].filter(Boolean).join(" ");
+      lines.push(
+        `${t("booking.summaryVehicle")}: ${vehicle}${b.vehicle_plate ? ` (${b.vehicle_plate})` : ""}`,
+      );
+      if (b.drivers_license) {
+        lines.push(
+          `${t("booking.summaryDriversLicense")}: ${b.drivers_license}${
+            b.license_province_state ? ` (${b.license_province_state})` : ""
+          }`,
+        );
+      }
+    }
+    if (b.category === "storage") {
+      if (b.storage_size) lines.push(`${t("booking.summaryStorageSize")}: ${b.storage_size}`);
+      if (b.dropoff_date) {
+        lines.push(
+          `${t("booking.summaryDropoff")}: ${fmt(b.dropoff_date)}${b.dropoff_time ? ` ${b.dropoff_time}` : ""}`,
+        );
+      }
+      if (b.storage_notes) lines.push(`${t("booking.summaryStorageNotes")}: ${b.storage_notes}`);
+    }
+    return lines;
+  };
+
+  const handlePrint = (b: Booking) => setPrintBooking(b);
+
+  const handleEmail = (b: Booking) => {
+    const listingTitle = b.listings?.title || t("booking.booking");
+    const subject = t("booking.emailSubject", { title: listingTitle });
+    const body = buildBookingSummary(b).join("\n");
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handleShare = async (b: Booking) => {
+    const listingTitle = b.listings?.title || t("booking.booking");
+    const title = t("booking.emailSubject", { title: listingTitle });
+    const text = buildBookingSummary(b).join("\n");
+    // No per-booking detail page exists in this app to link to (only
+    // /booking/intake, /booking/confirm, /booking/success -- none take a
+    // booking id) -- omitting the optional url field rather than pointing
+    // at something that doesn't resolve to this booking.
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text });
+      } catch (err: any) {
+        // AbortError -- user dismissed the native share sheet, not a failure.
+        if (err?.name !== "AbortError") {
+          console.error("Share failed:", err);
+        }
+      }
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast({ title: t("booking.copiedToClipboard") });
+      } catch (err) {
+        console.error("Clipboard write failed:", err);
+      }
+    }
+  };
+
   return (
     <Card className="card-shadow">
       <CardHeader>
@@ -293,6 +391,36 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                 <div className="text-right space-y-1">
                   <p className="font-semibold">${Number(b.total_amount).toFixed(2)}</p>
                   <div className="flex flex-wrap justify-end gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title={t("booking.print")}
+                      aria-label={t("booking.print")}
+                      onClick={() => handlePrint(b)}
+                    >
+                      <Printer className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title={t("booking.email")}
+                      aria-label={t("booking.email")}
+                      onClick={() => handleEmail(b)}
+                    >
+                      <Mail className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title={t("booking.share")}
+                      aria-label={t("booking.share")}
+                      onClick={() => handleShare(b)}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
                     {inWindow(b) && !b.completed_by_seeker_at && (
                       <Button size="sm" onClick={() => completePickup(b)}>
                         {t("booking.completeAndPickup")}
@@ -463,6 +591,24 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
           onSubmitted={load}
         />
       )}
+
+      {/* Screen: never rendered (hidden). Print: the #booking-print-area
+          rule in index.css hides everything else on the page (nav,
+          sidebar, other cards) and shows only this block, positioned at
+          the page origin -- see that file for the full trick. */}
+      <div id="booking-print-area" className="hidden print:block p-8 text-black">
+        {printBooking && (
+          <>
+            <h1 className="text-xl font-bold mb-1">SpotsVault</h1>
+            <h2 className="text-lg mb-4">{printBooking.listings?.title || t("booking.booking")}</h2>
+            <div className="space-y-1 text-sm">
+              {buildBookingSummary(printBooking).map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </Card>
   );
 };

@@ -175,6 +175,7 @@
     "backToMarketplace": "Retour à la place de marché",
     "backToMarketplaceLower": "Retour à la place de marché",
     "perMonth": "/mois",
+    "perWeek": "/semaine",
     "perDay": "/jour",
     "perHour": "/heure",
     "photoAlt": "{{title}} - photo {{index}}",
@@ -386,6 +387,7 @@
     "applicableUniversitiesPlaceholder": "p. ex. McGill, UdeM, Concordia — laissez vide pour tous",
     "appliedToAllDays": "Appliqué à tous les jours",
     "applyToAllDays": "Appliquer à tous les jours",
+    "atLeastOneRateRequired": "Indiquez au moins un tarif — à l'heure, quotidien, hebdomadaire ou mensuel.",
     "availability": "Disponibilité",
     "availabilitySchedule": "Horaire de disponibilité",
     "availabilityScheduleEditHint": "Les changements ici mettent à jour les heures réservables instantanément et ne nécessitent pas de nouvelle vérification.",
@@ -719,6 +721,9 @@
     "cancelling": "Annulation en cours…",
     "completeAndPickup": "Terminer et récupérer",
     "confirmCancellation": "Confirmer l'annulation",
+    "copiedToClipboard": "Copié dans le presse-papiers",
+    "email": "Courriel",
+    "emailSubject": "Confirmation de réservation SpotsVault – {{title}}",
     "escrow": {
       "disputed": "En litige",
       "held": "En fiducie",
@@ -744,6 +749,7 @@
     "overdue": "En retard",
     "overdueCharges": "Frais de retard : {{amount}} $ (2× le tarif quotidien)",
     "pickupConfirmed": "Récupération confirmée",
+    "print": "Imprimer",
     "providerMustAccept": "Le fournisseur doit accepter. Vous serez facturé automatiquement sur la carte utilisée.",
     "refundBeingProcessed": "Un remboursement de {{amount}} $ ({{percent}} %) est en cours de traitement.",
     "refundLine": "Remboursement : {{amount}} $ ({{status}})",
@@ -753,6 +759,7 @@
     "reviewSubmitted": "Avis soumis ✓",
     "sendRequest": "Envoyer la demande",
     "sending": "Envoi en cours…",
+    "share": "Partager",
     "showStorageDetails": "Afficher les détails d'entreposage",
     "showVehicleDetails": "Afficher les détails du véhicule",
     "status": {
@@ -761,7 +768,17 @@
       "active": "Active",
       "completed": "Terminée",
       "cancelled": "Annulée"
-    }
+    },
+    "summaryDates": "Dates",
+    "summaryDriversLicense": "Permis de conduire",
+    "summaryDropoff": "Dépôt",
+    "summaryListing": "Annonce",
+    "summaryLocation": "Emplacement",
+    "summaryPrice": "Prix",
+    "summaryStatus": "Statut",
+    "summaryStorageNotes": "Notes d'entreposage",
+    "summaryStorageSize": "Taille de l'entreposage",
+    "summaryVehicle": "Véhicule"
   },
   "providerBookings": {
     "extensionAccepted": "Prolongation acceptée",

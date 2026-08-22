@@ -175,6 +175,7 @@
     "backToMarketplace": "Back to Marketplace",
     "backToMarketplaceLower": "Back to marketplace",
     "perMonth": "/month",
+    "perWeek": "/week",
     "perDay": "/day",
     "perHour": "/hour",
     "photoAlt": "{{title}} - photo {{index}}",
@@ -386,6 +387,7 @@
     "applicableUniversitiesPlaceholder": "e.g. McGill, UdeM, Concordia — leave blank for all",
     "appliedToAllDays": "Applied to all days",
     "applyToAllDays": "Apply to all days",
+    "atLeastOneRateRequired": "Set at least one rate — hourly, daily, weekly, or monthly.",
     "availability": "Availability",
     "availabilitySchedule": "Availability Schedule",
     "availabilityScheduleEditHint": "Changes here update bookable hours instantly and do not require re-review.",
@@ -719,6 +721,9 @@
     "cancelling": "Cancelling…",
     "completeAndPickup": "Complete & Pickup",
     "confirmCancellation": "Confirm cancellation",
+    "copiedToClipboard": "Copied to clipboard",
+    "email": "Email",
+    "emailSubject": "SpotsVault Booking Confirmation – {{title}}",
     "escrow": {
       "disputed": "Disputed",
       "held": "In escrow",
@@ -744,6 +749,7 @@
     "overdue": "Overdue",
     "overdueCharges": "Overdue charges: ${{amount}} (2× daily rate)",
     "pickupConfirmed": "Pickup confirmed",
+    "print": "Print",
     "providerMustAccept": "Provider must accept. You'll be charged automatically on the card you used.",
     "refundBeingProcessed": "Refund of ${{amount}} ({{percent}}%) is being processed.",
     "refundLine": "Refund: ${{amount}} ({{status}})",
@@ -753,6 +759,7 @@
     "reviewSubmitted": "Review submitted ✓",
     "sendRequest": "Send request",
     "sending": "Sending…",
+    "share": "Share",
     "showStorageDetails": "Show storage details",
     "showVehicleDetails": "Show vehicle details",
     "status": {
@@ -761,7 +768,17 @@
       "active": "Active",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "summaryDates": "Dates",
+    "summaryDriversLicense": "Driver's license",
+    "summaryDropoff": "Drop-off",
+    "summaryListing": "Listing",
+    "summaryLocation": "Location",
+    "summaryPrice": "Price",
+    "summaryStatus": "Status",
+    "summaryStorageNotes": "Storage notes",
+    "summaryStorageSize": "Storage size",
+    "summaryVehicle": "Vehicle"
   },
   "providerBookings": {
     "extensionAccepted": "Extension accepted",

@@ -128,3 +128,24 @@
     text-wrap: balance;
   }
 }
+
+/* Print a single booking summary (see SeekerBookingsList's
+   #booking-print-area) instead of the whole dashboard page. visibility
+   (not display) is used so a hidden ancestor doesn't take its visible
+   descendants down with it -- the target and its children opt back in
+   individually, then get pulled out of normal flow to the page origin. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #booking-print-area,
+  #booking-print-area * {
+    visibility: visible;
+  }
+  #booking-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
