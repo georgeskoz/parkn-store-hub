@@ -19,11 +19,10 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { MapPin, ArrowLeft, User, Mail, Phone, Check, CalendarIcon, Clock } from "lucide-react";
+import { MapPin, ArrowLeft, User, Phone, Check, CalendarIcon, Clock } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import ConversationPanel from "@/components/messaging/ConversationPanel";
 import ListingReviews, { useListingRatingSummary } from "@/components/reviews/ListingReviews";
 import StarRating from "@/components/reviews/StarRating";
 import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
@@ -166,7 +165,6 @@ export default function ListingDetail() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showMessages, setShowMessages] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [startTime, setStartTime] = useState<string>("09:00");
@@ -574,20 +572,16 @@ export default function ListingDetail() {
                 </div>
 
                 {/* Contact buttons */}
-                <div className="space-y-2 pt-4 border-t border-border">
-                  {profile?.phone && (
+                {profile?.phone && (
+                  <div className="space-y-2 pt-4 border-t border-border">
                     <Button variant="outline" className="w-full justify-start" asChild>
                       <a href={`tel:${profile.phone}`}>
                         <Phone className="w-4 h-4 mr-2" />
                         {profile.phone}
                       </a>
                     </Button>
-                  )}
-                  <Button className="w-full" onClick={() => setShowMessages(true)}>
-                    <Mail className="w-4 h-4 mr-2" />
-                    {t("listingDetail.sendMessage")}
-                  </Button>
-                </div>
+                  </div>
+                )}
 
                 {/* Booking widget */}
                 {price && (
@@ -736,17 +730,6 @@ export default function ListingDetail() {
                 )}
               </CardContent>
             </Card>
-
-            {/* Messaging panel */}
-            {showMessages && (
-              <div className="fixed bottom-4 right-4 z-50">
-                <ConversationPanel
-                  listingId={listing.id}
-                  providerId={listing.user_id}
-                  onClose={() => setShowMessages(false)}
-                />
-              </div>
-            )}
           </div>
         </div>
       </main>

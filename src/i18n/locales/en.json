@@ -189,7 +189,6 @@
     "location": "Location",
     "contactProvider": "Contact Provider",
     "unknownProvider": "Unknown Provider",
-    "sendMessage": "Send Message",
     "startingAt": "Starting at",
     "pickDate": "Pick date",
     "unitsLabel": {
@@ -666,7 +665,7 @@
     "sent": "Sent",
     "typeAMessage": "Type a message...",
     "noConversationsYet": "No conversations yet.",
-    "messageProviderHint": "Message a provider from a listing page.",
+    "messageProviderHint": "Message your host from a booking in My Bookings, once it's confirmed.",
     "lastMessage": "Last message: {{datetime}}"
   },
   "stripeConnect": {

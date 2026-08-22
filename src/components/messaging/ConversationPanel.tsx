@@ -16,20 +16,16 @@ interface Message {
 
 interface Conversation {
   id: string;
-  listing_id: string;
-  seeker_id: string;
-  provider_id: string;
+  booking_id: string;
   last_message_at: string;
 }
 
 interface Props {
-  conversationId?: string;
-  listingId?: string;
-  providerId?: string;
+  conversationId: string;
   onClose: () => void;
 }
 
-export default function ConversationPanel({ conversationId, listingId, providerId, onClose }: Props) {
+export default function ConversationPanel({ conversationId, onClose }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,46 +35,34 @@ export default function ConversationPanel({ conversationId, listingId, providerI
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load or create conversation
+  // Load conversation. Callers always pass a real conversationId now --
+  // conversations are only ever created via the booking_id-keyed flow
+  // (SeekerBookingsList's Message Host button), which has its own RLS
+  // policies and find-or-create logic. This component used to also
+  // support finding/creating a conversation from listingId+providerId for
+  // a pre-booking "message the host" flow, but that queried/inserted
+  // listing_id/seeker_id/provider_id columns that never existed on
+  // conversations (confirmed live: 42703 on all three) -- removed along
+  // with the ListingDetail.tsx button that was its only caller, rather
+  // than redesigning conversations to support a nullable booking_id.
   useEffect(() => {
     if (!user) return;
 
     const load = async () => {
       try {
-        if (conversationId) {
-          const { data: c, error } = await supabase
-            .from("conversations")
-            .select("*")
-            .eq("id", conversationId)
-            .single();
-          if (!error && c) setConv(c);
-        } else if (listingId && providerId) {
-          const { data: existing, error: existingErr } = await supabase
-            .from("conversations")
-            .select("*")
-            .eq("listing_id", listingId)
-            .eq("seeker_id", user.id)
-            .eq("provider_id", providerId)
-            .maybeSingle();
-
-          if (!existingErr && existing) {
-            setConv(existing);
-          } else {
-            const { data: created, error: createErr } = await supabase
-              .from("conversations")
-              .insert({ listing_id: listingId, seeker_id: user.id, provider_id: providerId })
-              .select("*")
-              .single();
-            if (!createErr && created) setConv(created);
-          }
-        }
+        const { data: c, error } = await supabase
+          .from("conversations")
+          .select("*")
+          .eq("id", conversationId)
+          .single();
+        if (!error && c) setConv(c);
       } catch {
         // gracefully ignore conversation load errors
       }
       setLoading(false);
     };
     load();
-  }, [user, conversationId, listingId, providerId]);
+  }, [user, conversationId]);
 
   // Mark unread messages addressed to me as read
   const markRead = async () => {
