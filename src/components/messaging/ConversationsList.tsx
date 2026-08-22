@@ -11,7 +11,11 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 interface ConversationRow {
   id: string;
   booking_id: string;
-  last_message_at: string;
+  // Real column is nullable -- a conversation with no messages yet has
+  // last_message_at = null (confirmed live). new Date(null) formats as
+  // epoch (1969-12-31/1970-01-01 depending on timezone), which is exactly
+  // what was rendering here before messages could actually be sent.
+  last_message_at: string | null;
   bookings?: {
     renter_id: string;
     host_id: string;
@@ -112,7 +116,9 @@ export default function ConversationsList({ onSelectConversation, activeId }: Pr
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                {t("messaging.lastMessage", { datetime: new Date(c.last_message_at).toLocaleString(getIntlLocale()) })}
+                {c.last_message_at
+                  ? t("messaging.lastMessage", { datetime: new Date(c.last_message_at).toLocaleString(getIntlLocale()) })
+                  : t("messaging.noMessagesYet")}
               </p>
             </CardContent>
           </Card>

@@ -666,7 +666,9 @@
     "typeAMessage": "Type a message...",
     "noConversationsYet": "No conversations yet.",
     "messageProviderHint": "Message your host from a booking in My Bookings, once it's confirmed.",
-    "lastMessage": "Last message: {{datetime}}"
+    "lastMessage": "Last message: {{datetime}}",
+    "noMessagesYet": "No messages yet",
+    "sendFailed": "Couldn't send message"
   },
   "stripeConnect": {
     "bankAccountConnected": "Bank account connected",

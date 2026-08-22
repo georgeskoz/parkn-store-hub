@@ -4,12 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { Send, X } from "lucide-react";
 
 interface Message {
   id: string;
   sender_id: string;
-  content: string;
+  // messages.content exists but is dead -- nothing else in either repo
+  // reads or writes it (confirmed via grep). body is the real column:
+  // NOT NULL, and already the one request-extension's system-message
+  // insert uses successfully. Using content here was the actual cause of
+  // every message send failing (23502: null value in column "body").
+  body: string;
   created_at: string;
   read_at: string | null;
 }
@@ -127,12 +133,17 @@ export default function ConversationPanel({ conversationId, onClose }: Props) {
   const handleSend = async () => {
     if (!input.trim() || !conv?.id || !user) return;
     setSending(true);
-    await supabase.from("messages").insert({
+    const { error } = await supabase.from("messages").insert({
       conversation_id: conv.id,
       sender_id: user.id,
-      content: input.trim(),
+      body: input.trim(),
     });
-    setInput("");
+    if (error) {
+      console.error("Send message failed:", error);
+      toast({ title: t("messaging.sendFailed"), description: error.message, variant: "destructive" });
+    } else {
+      setInput("");
+    }
     setSending(false);
   };
 
@@ -168,7 +179,7 @@ export default function ConversationPanel({ conversationId, onClose }: Props) {
           return (
             <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
               <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                {msg.content}
+                {msg.body}
               </div>
               {isMe && (
                 <span className="text-[10px] text-muted-foreground mt-1">

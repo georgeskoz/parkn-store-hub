@@ -666,7 +666,9 @@
     "typeAMessage": "Écrivez un message...",
     "noConversationsYet": "Aucune conversation pour le moment.",
     "messageProviderHint": "Envoyez un message à votre hôte depuis une réservation dans Mes réservations, une fois celle-ci confirmée.",
-    "lastMessage": "Dernier message : {{datetime}}"
+    "lastMessage": "Dernier message : {{datetime}}",
+    "noMessagesYet": "Aucun message pour le moment",
+    "sendFailed": "Impossible d'envoyer le message"
   },
   "stripeConnect": {
     "bankAccountConnected": "Compte bancaire connecté",
