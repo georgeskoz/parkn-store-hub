@@ -33,21 +33,16 @@ type Booking = {
   city: string | null;
   category: string | null;
   escrow_status: string | null;
-  // KNOWN BROKEN, not fixed here: none of these five columns exist on the
-  // real production `bookings` table (verified directly; confirmed no
-  // renamed equivalent exists under any name after extensive probing).
-  // The select() below still 400s because of them even after the
-  // provider_id/seeker_id rename -- the whole dual-confirmation
-  // completion + escrow-release tracking this component (and
-  // complete-rental / release-booking-payout) depends on appears to be
-  // missing from prod's actual schema, not just misnamed. Needs a
-  // product/schema decision, not a mechanical rename -- flagged
-  // separately rather than guessed at here.
+  // overdue_charges_total/completed_by_provider_at/completed_by_seeker_at/
+  // released_at were added by an earlier migration and are real, queryable
+  // columns now (confirmed live with real values). updated_at is the only
+  // one that's still missing from the real production `bookings` table
+  // (confirmed live: "column bookings.updated_at does not exist") -- left
+  // out of the select() below rather than guessed at.
   overdue_charges_total: number | null;
   completed_by_provider_at: string | null;
   completed_by_seeker_at: string | null;
   released_at: string | null;
-  updated_at: string | null;
   vehicle_plate: string | null;
   vehicle_type: string | null;
   vehicle_make: string | null;
@@ -76,11 +71,11 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: bks }, { data: exts }] = await Promise.all([
+    const [{ data: bks, error: bksError }, { data: exts }] = await Promise.all([
       supabase
         .from("bookings")
         .select(
-          "id,listing_id,renter_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,updated_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
+          "id,listing_id,renter_id,start_date,end_date,total_amount,status,city,category,escrow_status,overdue_charges_total,completed_by_provider_at,completed_by_seeker_at,released_at,vehicle_plate,vehicle_type,vehicle_make,vehicle_colour,drivers_license,license_province_state,storage_items,storage_notes,storage_size,dropoff_date,dropoff_time,listings(title)",
         )
         .eq("host_id", userId)
         .neq("status", "cancelled")
@@ -91,6 +86,14 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
         .eq("status", "pending")
         .order("created_at", { ascending: false }),
     ]);
+    if (bksError) {
+      console.error("ProviderActiveBookings load failed:", bksError);
+      toast({
+        title: t("booking.failed"),
+        description: bksError.message,
+        variant: "destructive",
+      });
+    }
     const list = (bks || []) as Booking[];
     setBookings(list);
     setExtensions((exts || []) as Ext[]);
@@ -114,7 +117,7 @@ const ProviderActiveBookings = ({ userId }: { userId: string }) => {
   }, [userId]);
 
   const completionTs = (b: Booking) => {
-    const cs = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at, b.updated_at]
+    const cs = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at]
       .filter(Boolean)
       .map((s) => new Date(s as string).getTime());
     return cs.length ? Math.max(...cs) : 0;

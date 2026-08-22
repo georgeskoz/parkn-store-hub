@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export type ReviewableBooking = {
   id: string;
@@ -11,16 +13,15 @@ export type ReviewableBooking = {
 
 const WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
-// KNOWN BROKEN, not fixed here: released_at/updated_at/completed_by_provider_at/
-// completed_by_seeker_at don't exist on the real production `bookings` table
-// (verified directly; no renamed equivalent found under any name after
-// extensive probing). The select() below still 400s because of them even
-// after the seeker_id/provider_id rename -- this dual-confirmation
-// completion tracking appears to be missing from prod's actual schema, not
-// just misnamed. Needs a product/schema decision, not a mechanical rename.
+// released_at/completed_by_provider_at/completed_by_seeker_at were added by
+// an earlier migration and are real, queryable columns now (confirmed live
+// with real values). updated_at is the only one that's still missing from
+// the real production `bookings` table (confirmed live: "column
+// bookings.updated_at does not exist") -- left out of the select() below
+// rather than guessed at.
 const completionTimestamp = (b: any): string | null => {
-  // Prefer released_at; fall back to latest of completed_by_*; finally updated_at.
-  const candidates = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at, b.updated_at]
+  // Prefer released_at; fall back to latest of completed_by_*.
+  const candidates = [b.released_at, b.completed_by_provider_at, b.completed_by_seeker_at]
     .filter(Boolean)
     .map((s: string) => new Date(s).getTime());
   if (!candidates.length) return null;
@@ -31,6 +32,7 @@ export const useReviewableBookings = (
   userId: string | undefined,
   role: "seeker" | "provider",
 ) => {
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState<ReviewableBooking[]>([]);
   const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -44,14 +46,23 @@ export const useReviewableBookings = (
       const ownCol = role === "seeker" ? "renter_id" : "host_id";
       const counterCol = role === "seeker" ? "host_id" : "renter_id";
 
-      const { data: bks } = await supabase
+      const { data: bks, error } = await supabase
         .from("bookings")
         .select(
-          `id,listing_id,status,${ownCol},${counterCol},released_at,updated_at,completed_by_provider_at,completed_by_seeker_at,listings(title)`,
+          `id,listing_id,status,${ownCol},${counterCol},released_at,completed_by_provider_at,completed_by_seeker_at,listings(title)`,
         )
         .eq(ownCol, userId)
         .eq("status", "completed")
-        .order("updated_at", { ascending: false });
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("useReviewableBookings load failed:", error);
+        toast({
+          title: t("booking.failed"),
+          description: error.message,
+          variant: "destructive",
+        });
+      }
 
       const cutoff = Date.now() - WINDOW_MS;
       const eligible: ReviewableBooking[] = (bks || [])
