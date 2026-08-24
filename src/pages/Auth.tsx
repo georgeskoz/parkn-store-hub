@@ -23,7 +23,11 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const { signIn, signUp, resetPasswordForEmail } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -116,6 +120,24 @@ const Auth = () => {
     setSubmitting(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotSubmitting(true);
+    const { error } = await resetPasswordForEmail(forgotEmail);
+    if (error) {
+      toast({ title: t("auth.resetLinkFailed"), description: error.message, variant: "destructive" });
+    } else {
+      setForgotSent(true);
+    }
+    setForgotSubmitting(false);
+  };
+
+  const exitForgotMode = () => {
+    setForgotMode(false);
+    setForgotSent(false);
+    setForgotEmail("");
+  };
+
   const disableSignupActions = !isLogin && !agreed;
 
   const AgreementCheckbox = (
@@ -152,6 +174,62 @@ const Auth = () => {
       </Label>
     </div>
   );
+
+  if (forgotMode) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="absolute top-4 right-4">
+          <LanguageToggle />
+        </div>
+        <div className="w-full max-w-md">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-foreground justify-center mb-8">
+            <img src="/icon.png" alt="" className="w-8 h-8 rounded-lg" />
+            {t("common.appName")}
+          </Link>
+
+          <Card className="card-shadow">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">{t("auth.resetPasswordTitle")}</CardTitle>
+              <CardDescription>
+                {forgotSent ? t("auth.resetLinkSentDescription", { email: forgotEmail }) : t("auth.resetPasswordDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {forgotSent ? (
+                <Button type="button" variant="outline" className="w-full" onClick={exitForgotMode}>
+                  {t("auth.backToSignIn")}
+                </Button>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgotEmail">{t("auth.email")}</Label>
+                    <Input
+                      id="forgotEmail"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={forgotSubmitting}>
+                    {forgotSubmitting ? t("auth.pleaseWait") : t("auth.sendResetLink")}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={exitForgotMode}
+                    className="w-full text-center text-sm text-muted-foreground hover:underline"
+                  >
+                    {t("auth.backToSignIn")}
+                  </button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -224,7 +302,18 @@ const Auth = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">{t("auth.password")}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.password")}</Label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(true)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {t("auth.forgotPassword")}
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Input
                     id="password"

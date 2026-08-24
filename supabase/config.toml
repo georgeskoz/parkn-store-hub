@@ -1,4 +1,4 @@
-project_id = "skfaqjatbqrmfkojtqsz"
+project_id = "lnjvltwcixacartboxuc"
 
 [functions.create-booking-payment]
 verify_jwt = false

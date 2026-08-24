@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { appRoleToDb, dbRoleToApp, type AppRole } from "@/lib/roleMapping";
@@ -22,6 +23,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName: string, emailRedirectTo?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resetPasswordForEmail: (email: string, redirectTo?: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
   addRole: (role: AppRole) => Promise<void>;
   removeRole: (role: AppRole) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -36,6 +39,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -79,6 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        if (_event === "PASSWORD_RECOVERY") {
+          // Supabase's redirect_to override isn't being honored right now
+          // (unresolved Site URL / Redirect URLs project misconfiguration --
+          // see tonight's admin-side debugging), so a recovery link lands on
+          // whatever the bare Site URL is, not necessarily /reset-password.
+          // supabase-js still parses the recovery token from the URL on
+          // load and fires this event regardless of which page it landed
+          // on, so route to /reset-password from here rather than relying
+          // on the redirect itself. Once the allow-list is fixed this
+          // still works unchanged -- it just becomes a redundant safety net
+          // instead of the only thing making the flow work.
+          navigate("/reset-password", { replace: true });
+        }
         if (session?.user) {
           // Use setTimeout to avoid Supabase deadlock on auth state change
           setTimeout(async () => {
@@ -107,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signUp = async (email: string, password: string, displayName: string, emailRedirectTo?: string) => {
     const { error } = await supabase.auth.signUp({
@@ -134,6 +151,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
   };
 
+  const resetPasswordForEmail = async (email: string, redirectTo?: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectTo ?? `${window.location.origin}/reset-password`,
+    });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  };
+
   const addRole = async (role: AppRole) => {
     if (!user) return;
     const dbRole = appRoleToDb(role);
@@ -153,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, roles, loading, signUp, signIn, signOut, addRole, removeRole, refreshProfile }}
+      value={{ user, session, profile, roles, loading, signUp, signIn, signOut, resetPasswordForEmail, updatePassword, addRole, removeRole, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

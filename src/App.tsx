@@ -13,6 +13,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import StorageListings from "./pages/StorageListings";
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/storage" element={<StorageListings />} />
             <Route path="/storage/:id" element={<RedirectToListing />} />
