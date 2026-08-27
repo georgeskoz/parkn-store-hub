@@ -341,6 +341,13 @@ serve(async (req) => {
         host_id: providerId,
         start_date: startDate,
         end_date: endDate,
+        // Mobile writes this on every booking it creates (same "hourly" |
+        // "daily" | "weekly" | "monthly" vocabulary as `rate` here) and reads
+        // it back for display (bookings.tsx's duration badge) -- this insert
+        // never set it, leaving it null on every web-originated booking and
+        // producing a literal "hostCreate.null" badge on the renter's
+        // mobile bookings list for exactly those rows.
+        duration_type: rate,
         status: "pending",
         escrow_status: "pending",
         auto_release_at: autoReleaseAt,

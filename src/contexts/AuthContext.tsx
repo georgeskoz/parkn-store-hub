@@ -99,9 +99,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           // Use setTimeout to avoid Supabase deadlock on auth state change
           setTimeout(async () => {
+            // The `session` this listener just handed us can already be
+            // stale -- e.g. a long-backgrounded tab whose scheduled
+            // autoRefreshToken timer got throttled -- and firing
+            // fetchProfile/fetchRoles directly off it produced a real
+            // PGRST303 "JWT expired" 401 on user_roles (confirmed live).
+            // getSession() checks expiry itself and transparently calls
+            // _callRefreshToken() first when needed, so the client's
+            // in-memory session (and therefore every .from() call below)
+            // is guaranteed current before these queries fire.
+            const { data: { session: freshSession } } = await supabase.auth.getSession();
+            const userId = freshSession?.user.id ?? session.user.id;
             await Promise.all([
-              fetchProfile(session.user.id),
-              fetchRoles(session.user.id),
+              fetchProfile(userId),
+              fetchRoles(userId),
             ]);
             setLoading(false);
           }, 0);
