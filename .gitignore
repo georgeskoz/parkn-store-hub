@@ -27,3 +27,4 @@ dev-tools/output/
 *.sln
 *.sw?
 .vercel
+.env.vercel.production 
