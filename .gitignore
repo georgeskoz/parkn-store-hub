@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Generated output from dev-tools/ scripts (e.g. sample PDFs) -- never
+# meant to be committed, just local review artifacts.
+dev-tools/output/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
