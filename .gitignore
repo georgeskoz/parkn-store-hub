@@ -28,3 +28,4 @@ dev-tools/output/
 *.sw?
 .vercel
 .env.vercel.production 
+supabase/.temp/ 
