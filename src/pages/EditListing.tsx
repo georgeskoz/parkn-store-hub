@@ -137,8 +137,8 @@ export default function EditListing() {
           city: form.city,
           province: form.province,
           country: form.country,
-          lat: form.lat ?? 0,
-          lng: form.lng ?? 0,
+          lat: form.lat,
+          lng: form.lng,
           amenities: form.features,
           size_sqft: form.sqft ? parseInt(form.sqft) : null,
           price_hourly: form.category === "parking" && form.hourly ? parseFloat(form.hourly) : null,
@@ -289,7 +289,7 @@ export default function EditListing() {
 
             <div className="flex justify-end gap-2 sticky bottom-4">
               <Button variant="outline" asChild><Link to="/dashboard">{t("common.cancel")}</Link></Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving || form.lat == null || form.lng == null}>
                 {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
                 {saving ? t("listingWizard.saving") : t("listingWizard.saveChanges")}
               </Button>

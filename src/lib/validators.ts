@@ -73,10 +73,13 @@ export function validatePlate(v: string): string | null {
   return null;
 }
 
-/** Driver's license: alphanumeric, 5–20 chars. */
+/** Driver's license: alphanumeric, 5–20 chars. Optional -- a blank value is
+ *  valid; the format check only applies once the renter actually types
+ *  something, same "optional unless caller marks required" pattern as
+ *  validatePhone. Only caller is BookingIntake.tsx's vehicle/driver step. */
 export function validateDriversLicense(v: string): string | null {
   const s = (v || "").trim();
-  if (!s) return i18n.t("validators.driversLicenseRequired");
+  if (!s) return null;
   if (!/^[A-Za-z0-9 -]{5,20}$/.test(s)) return i18n.t("validators.driversLicenseFormat");
   return null;
 }

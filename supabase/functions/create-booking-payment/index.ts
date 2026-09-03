@@ -206,7 +206,12 @@ serve(async (req) => {
         intakeFields.vehicle_type = String(intake.vehicle_type || "").slice(0, 40);
         intakeFields.vehicle_make = String(intake.vehicle_make || "").slice(0, 80);
         intakeFields.vehicle_colour = String(intake.vehicle_colour || "").slice(0, 40);
-        intakeFields.drivers_license = String(intake.drivers_license || "").slice(0, 32);
+        // Optional -- unlike the other vehicle/driver fields, a renter can
+        // leave this blank. Sent as null (not ""), matching the nullable
+        // column and the dropoff_date/dropoff_time null convention below.
+        intakeFields.drivers_license = intake.drivers_license
+          ? String(intake.drivers_license).slice(0, 32)
+          : null;
         intakeFields.license_province_state = String(intake.license_province_state || "").slice(0, 16);
       } else if (intake.kind === "storage") {
         intakeFields.storage_items = intake.storage_items && typeof intake.storage_items === "object"

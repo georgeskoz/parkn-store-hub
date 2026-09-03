@@ -210,6 +210,11 @@
     "total": "Total",
     "bookFor": "Book — ${{total}}",
     "selectDatesToBook": "Select dates to book",
+    "timeRoundingNote": {
+      "daily": "Price is calculated in full-day increments — adjusting the time within the same day won't change the total.",
+      "weekly": "Price is calculated in full-week increments — adjusting the time within the same week won't change the total.",
+      "monthly": "Price is calculated in full-month increments — adjusting the time within the same month won't change the total."
+    },
     "ratingSummary_one": "{{avg}} ({{count}} review)",
     "ratingSummary_other": "{{avg}} ({{count}} reviews)",
     "noReviewsYet": "No reviews yet"
@@ -262,7 +267,7 @@
     "specifyMake": "Specify make",
     "specifyTheMake": "Specify the make",
     "driverInformation": "Driver Information",
-    "driversLicenseNumber": "Driver's License Number *",
+    "driversLicenseNumber": "Driver's License Number (optional)",
     "itemCategoriesAndQuantities": "Item categories & quantities",
     "notesOptional": "Notes (optional)",
     "notesPlaceholder": "e.g. fragile items, special handling, access requirements, drop-off time preference",
@@ -374,8 +379,26 @@
   "bookingSuccess": {
     "paymentSuccessful": "Payment Successful!",
     "confirmationMessage": "Your booking has been confirmed and payment processed. You'll receive a confirmation email shortly.",
+    "stillProcessing": "Finalizing your booking — this only takes a moment.",
     "sessionReference": "Session reference:",
     "backToHome": "Back to Home"
+  },
+  "receipt": {
+    "bookingReference": "Booking reference",
+    "renter": "Renter",
+    "host": "Host",
+    "subtotal": "Subtotal",
+    "print": "Print",
+    "resendEmail": "Resend email",
+    "downloadPdf": "Download PDF",
+    "downloadAgreement": "Download agreement",
+    "viewReceipt": "Receipt",
+    "emailResent": "Email sent",
+    "emailResentTo": "Confirmation email resent to {{email}}",
+    "emailResendFailed": "Couldn't resend email",
+    "downloadFailed": "Couldn't generate PDF",
+    "notFound": "Booking not found",
+    "notFoundDescription": "This booking doesn't exist or you don't have access to it."
   },
   "listingWizard": {
     "add": "Add",
@@ -465,6 +488,7 @@
     "photosOfYourSpace": "Photos of Your Space",
     "pinExactLocation": "Pin Your Exact Location",
     "pinExactLocationHint": "Click on the map or drag the pin to set the exact spot.",
+    "pinLocationRequired": "Required — click on the map above to set your exact location.",
     "postalZipCode": "Postal / Zip Code",
     "pricesInCadTaxHint": "Prices in CAD. Quebec taxes (GST 5% + QST 9.975%) will be added at checkout.",
     "pricing": "Pricing",

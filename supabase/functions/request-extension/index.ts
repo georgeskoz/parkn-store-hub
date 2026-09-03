@@ -59,7 +59,7 @@ serve(async (req) => {
         booking_id: bookingId,
         requested_by: user.id,
         extra_hours: extraHours,
-        rate: "hourly",
+        rate: hourly,
         extra_units: extraHours,
         extra_amount: total,
         new_end_date: newEnd,

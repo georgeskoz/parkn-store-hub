@@ -9,8 +9,33 @@ const corsHeaders = {
 
 const MAX_OVERDUE_DAYS = 7;
 
+function callerRole(req: Request): string | null {
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  try {
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded));
+    return typeof claims.role === "string" ? claims.role : null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // config.toml sets verify_jwt = false for this function (it's meant to be
+  // cron-triggered, not per-user), so the platform gate lets ANY caller
+  // through, including totally unauthenticated ones. This is the only check
+  // standing between the public internet and real Stripe charges.
+  if (callerRole(req) !== "service_role") {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
     apiVersion: "2025-08-27.basil",
@@ -103,11 +128,17 @@ serve(async (req) => {
             .update({ status: "succeeded", payment_intent_id: pi.id })
             .eq("id", row?.id);
           // increment total
+          // last_overdue_charge_at intentionally omitted -- confirmed via
+          // information_schema.columns that it doesn't exist on production
+          // bookings. A single UPDATE fails entirely if any target column
+          // is invalid, so including it here was breaking this call every
+          // time an overdue booking was actually found and charged --
+          // after the Stripe charge and overdue_charges row already
+          // succeeded, leaving overdue_charges_total never incremented.
           await admin
             .from("bookings")
             .update({
               overdue_charges_total: Number(b.overdue_charges_total || 0) + amount,
-              last_overdue_charge_at: new Date().toISOString(),
             })
             .eq("id", b.id);
           b.overdue_charges_total = Number(b.overdue_charges_total || 0) + amount;

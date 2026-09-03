@@ -27,6 +27,7 @@ import BookingIntake from "./pages/BookingIntake";
 import ListYourSpace from "./pages/ListYourSpace";
 import EditListing from "./pages/EditListing";
 import BookingSuccess from "./pages/BookingSuccess";
+import BookingReceiptPage from "./pages/BookingReceiptPage";
 import Messages from "./pages/Messages";
 import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/booking/intake" element={<BookingIntake />} />
             <Route path="/booking/confirm" element={<BookingConfirmation />} />
             <Route path="/booking/success" element={<BookingSuccess />} />
+            <Route path="/booking/receipt/:bookingId" element={<ProtectedRoute><BookingReceiptPage /></ProtectedRoute>} />
             <Route path="/list" element={<ProtectedRoute><ListYourSpace /></ProtectedRoute>} />
             <Route path="/listing/:id/edit" element={<ProtectedRoute><EditListing /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />

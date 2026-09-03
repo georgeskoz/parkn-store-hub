@@ -43,10 +43,28 @@ export default function ListYourSpace() {
 
   const canNext = () => {
     if (step === 0) return !!form.category;
-    if (step === 1) return !!form.title && !!form.address && !!form.city && !!form.province && !!form.country;
+    if (step === 1)
+      return (
+        !!form.title &&
+        !!form.address &&
+        !!form.city &&
+        !!form.province &&
+        !!form.country &&
+        // Address fields alone never produce lat/lng -- StepLocation's map pin
+        // is the only thing that sets them, and nothing previously required a
+        // host to actually click/drag it. That's exactly how two real listings
+        // ended up with lat: null, lng: null (map/reviews silently broken for
+        // them, no error anywhere). Requiring it here closes the gap at the
+        // one point that can actually catch it, instead of a silent null.
+        form.lat != null &&
+        form.lng != null
+      );
     if (step === 2) return !!form.type && !!form.description;
     if (step === 3) return true; // photos optional
-    if (step === 4) return form.category === "parking" ? !!form.daily : !!form.monthly;
+    if (step === 4)
+      return form.category === "parking"
+        ? [form.hourly, form.daily, form.weekly, form.monthly].some(Boolean)
+        : !!form.monthly;
     if (step === 5) return true;
     if (step === 6) return form.disclaimerAccepted;
     return true;

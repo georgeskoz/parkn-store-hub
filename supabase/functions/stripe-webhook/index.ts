@@ -112,10 +112,15 @@ serve(async (req) => {
         const bookingId = pi.metadata?.booking_id;
         const extensionId = pi.metadata?.extension_id;
         if (extensionId) {
-          await supabase
+          // Same fail-loud pattern as the bookingId branch below: dormant
+          // today (nothing deployed sets metadata.extension_id yet -- only
+          // respond-extension does, and it isn't live), but must not
+          // silently swallow errors once respond-extension deploys.
+          const { error: extError } = await supabase
             .from("booking_extensions")
-            .update({ status: "paid", paid_at: new Date().toISOString(), payment_intent_id: pi.id })
+            .update({ status: "paid", paid_at: new Date().toISOString(), stripe_payment_intent_id: pi.id })
             .eq("id", extensionId);
+          if (extError) throw extError;
         }
         if (bookingId) {
           // Previously an un-checked await -- a failed write here (e.g. the

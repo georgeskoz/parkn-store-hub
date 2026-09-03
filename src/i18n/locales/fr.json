@@ -210,6 +210,11 @@
     "total": "Total",
     "bookFor": "Réserver — {{total}} $",
     "selectDatesToBook": "Sélectionnez des dates pour réserver",
+    "timeRoundingNote": {
+      "daily": "Le prix est calculé par journée complète — modifier l'heure dans la même journée ne change pas le total.",
+      "weekly": "Le prix est calculé par semaine complète — modifier l'heure dans la même semaine ne change pas le total.",
+      "monthly": "Le prix est calculé par mois complet — modifier l'heure dans le même mois ne change pas le total."
+    },
     "ratingSummary_one": "{{avg}} ({{count}} avis)",
     "ratingSummary_other": "{{avg}} ({{count}} avis)",
     "noReviewsYet": "Aucun avis pour le moment"
@@ -262,7 +267,7 @@
     "specifyMake": "Précisez la marque",
     "specifyTheMake": "Précisez la marque",
     "driverInformation": "Renseignements sur le conducteur",
-    "driversLicenseNumber": "Numéro de permis de conduire *",
+    "driversLicenseNumber": "Numéro de permis de conduire (facultatif)",
     "itemCategoriesAndQuantities": "Catégories d'articles et quantités",
     "notesOptional": "Notes (facultatif)",
     "notesPlaceholder": "p. ex. articles fragiles, manipulation spéciale, exigences d'accès, préférence d'heure de dépôt",
@@ -374,8 +379,26 @@
   "bookingSuccess": {
     "paymentSuccessful": "Paiement réussi!",
     "confirmationMessage": "Votre réservation a été confirmée et le paiement traité. Vous recevrez un courriel de confirmation sous peu.",
+    "stillProcessing": "Finalisation de votre réservation — un instant.",
     "sessionReference": "Référence de session :",
     "backToHome": "Retour à l'accueil"
+  },
+  "receipt": {
+    "bookingReference": "Référence de réservation",
+    "renter": "Locataire",
+    "host": "Hôte",
+    "subtotal": "Sous-total",
+    "print": "Imprimer",
+    "resendEmail": "Renvoyer le courriel",
+    "downloadPdf": "Télécharger le PDF",
+    "downloadAgreement": "Télécharger le contrat",
+    "viewReceipt": "Reçu",
+    "emailResent": "Courriel envoyé",
+    "emailResentTo": "Courriel de confirmation renvoyé à {{email}}",
+    "emailResendFailed": "Échec de l'envoi du courriel",
+    "downloadFailed": "Échec de la génération du PDF",
+    "notFound": "Réservation introuvable",
+    "notFoundDescription": "Cette réservation n'existe pas ou vous n'y avez pas accès."
   },
   "listingWizard": {
     "add": "Ajouter",
@@ -465,6 +488,7 @@
     "photosOfYourSpace": "Photos de votre espace",
     "pinExactLocation": "Épinglez votre emplacement exact",
     "pinExactLocationHint": "Cliquez sur la carte ou faites glisser l'épingle pour définir l'emplacement exact.",
+    "pinLocationRequired": "Obligatoire — cliquez sur la carte ci-dessus pour définir votre emplacement exact.",
     "postalZipCode": "Code postal / ZIP",
     "pricesInCadTaxHint": "Prix en CAD. Les taxes du Québec (TPS 5 % + TVQ 9,975 %) seront ajoutées au paiement.",
     "pricing": "Tarification",

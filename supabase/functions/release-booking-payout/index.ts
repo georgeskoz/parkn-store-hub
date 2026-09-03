@@ -9,8 +9,33 @@ const corsHeaders = {
 
 const PLATFORM_COMMISSION_PERCENT = 10;
 
+function callerRole(req: Request): string | null {
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  try {
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded));
+    return typeof claims.role === "string" ? claims.role : null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // config.toml sets verify_jwt = false for this function (it's meant to be
+  // cron-triggered, not per-user), so the platform gate lets ANY caller
+  // through, including totally unauthenticated ones. This is the only check
+  // standing between the public internet and real Stripe transfers.
+  if (callerRole(req) !== "service_role") {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
     apiVersion: "2025-08-27.basil",
@@ -30,7 +55,7 @@ serve(async (req) => {
     // Find releasable bookings
     let query = admin
       .from("bookings")
-      .select("id, host_id, total_amount, overdue_charges_total, stripe_payment_intent_id, released_transfer_id")
+      .select("id, host_id, total_amount, overdue_charges_total, stripe_payment_intent_id, released_transfer_id, currency")
       .eq("escrow_status", "held")
       .lte("auto_release_at", new Date().toISOString())
       .is("released_at", null);
@@ -62,7 +87,12 @@ serve(async (req) => {
       try {
         const transfer = await stripe.transfers.create({
           amount: payoutCents,
-          currency: "cad",
+          // Read from the booking, not hardcoded. Currency now follows the
+          // listing's country (both create-booking-payment and
+          // create-payment-intent derive it the same way), not which
+          // platform charged it -- a transfer must match whatever currency
+          // actually came in. Fallback covers rows that predate this column.
+          currency: b.currency || "cad",
           destination: provider.stripe_account_id,
           transfer_group: `booking_${b.id}`,
           metadata: { booking_id: b.id },

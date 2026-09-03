@@ -76,7 +76,7 @@ serve(async (req) => {
             status: "paid",
             responded_at: new Date().toISOString(),
             paid_at: new Date().toISOString(),
-            payment_intent_id: pi.id,
+            stripe_payment_intent_id: pi.id,
           })
           .eq("id", extensionId);
         // Bump booking end + auto_release

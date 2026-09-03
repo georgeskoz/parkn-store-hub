@@ -68,6 +68,7 @@ export default function StepReview({ form, update }: Props) {
             <>
               {form.hourly && <span>${form.hourly}{t("listingCard.perHour")}</span>}
               {form.daily && <span>${form.daily}{t("listingCard.perDay")}</span>}
+              {form.weekly && <span>${form.weekly}{t("listingCard.perWeek")}</span>}
               {form.monthly && <span>${form.monthly}{t("listingCard.perMonth")}</span>}
             </>
           ) : (

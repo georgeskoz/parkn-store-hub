@@ -129,10 +129,12 @@ export default function StepLocation({ form, update }: Props) {
         <Label className="mb-1 block">{t("listingWizard.pinExactLocation")}</Label>
         <p className="text-xs text-muted-foreground mb-2">{t("listingWizard.pinExactLocationHint")}</p>
         <div ref={mapRef} className="h-64 rounded-lg border border-border overflow-hidden" />
-        {form.lat && form.lng && (
+        {form.lat != null && form.lng != null ? (
           <p className="text-xs text-muted-foreground mt-1">
             📍 {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
           </p>
+        ) : (
+          <p className="text-xs text-destructive mt-1">{t("listingWizard.pinLocationRequired")}</p>
         )}
       </div>
     </div>

@@ -621,10 +621,12 @@ export default function ListingDetail() {
                             </div>
                           </PopoverContent>
                         </Popover>
-                        <div className="mt-2">
-                          <p className="text-xs text-muted-foreground mb-1">{t("search.startTime")}</p>
-                          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
-                        </div>
+                        {isParking && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">{t("search.startTime")}</p>
+                            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">{t("search.end")}</p>
@@ -652,12 +654,20 @@ export default function ListingDetail() {
                             </div>
                           </PopoverContent>
                         </Popover>
-                        <div className="mt-2">
-                          <p className="text-xs text-muted-foreground mb-1">{t("search.endTime")}</p>
-                          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
-                        </div>
+                        {isParking && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">{t("search.endTime")}</p>
+                            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full h-9 rounded-md border border-input bg-background px-2 text-xs" />
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {isParking && bestRate && bestRate !== "hourly" && (
+                      <p className="text-xs text-muted-foreground -mt-1">
+                        {t(`listingDetail.timeRoundingNote.${bestRate}`)}
+                      </p>
+                    )}
 
                     {isParking ? (
                       <>

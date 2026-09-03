@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getIntlLocale } from "@/lib/dateLocale";
@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Star, ChevronDown, ChevronUp, Printer, Mail, Share2, Phone, Navigation, MessageSquare } from "lucide-react";
+import { Loader2, Star, ChevronDown, ChevronUp, Printer, Mail, Share2, Phone, Navigation, MessageSquare, Receipt } from "lucide-react";
 import ReviewSubmissionModal from "@/components/reviews/ReviewSubmissionModal";
 import DisputeControl from "@/components/disputes/DisputeControl";
 import { useDisputes } from "@/hooks/useDisputes";
@@ -534,6 +534,18 @@ const SeekerBookingsList = ({ userId }: { userId: string }) => {
                         </a>
                       </Button>
                     )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title={t("receipt.viewReceipt")}
+                      aria-label={t("receipt.viewReceipt")}
+                      asChild
+                    >
+                      <Link to={`/booking/receipt/${b.id}`}>
+                        <Receipt className="w-4 h-4" />
+                      </Link>
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"

@@ -66,6 +66,7 @@ export default function StepPricing({ form, update }: Props) {
               <Input type="number" value={form.monthly} onChange={(e) => update("monthly", e.target.value)} />
             </div>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">{t("listingWizard.atLeastOneRateRequired")}</p>
 
           <div>
             <Label>{t("listingWizard.vehiclesSimultaneously")}</Label>
