@@ -103,6 +103,7 @@ const GOOGLE_MAPS_STATIC_KEY = import.meta.env.VITE_GOOGLE_MAPS_STATIC_KEY as st
 type DynamicMap = {
   url: string;
   center: { latitude: number; longitude: number };
+  city: string | null;
 };
 
 function PricePin({ price }: { price: string }) {
@@ -220,7 +221,7 @@ export default function HeroMap() {
       const loaded = await preloadImage(url);
       if (cancelled || !loaded) return;
 
-      setDynamicMap({ url, center: { latitude: lat, longitude: lng } });
+      setDynamicMap({ url, center: { latitude: lat, longitude: lng }, city: geo.city });
     })();
 
     return () => {
@@ -261,6 +262,15 @@ export default function HeroMap() {
 
   const showMap = Boolean(mapImageUrl) && !mapFailed && size;
 
+  // Surfaces the city name fetchVisitorGeo() already resolved (previously
+  // discarded right after building the tile cache key above) — "Near
+  // {city}" when geolocation actually succeeded, a static "Montreal area"
+  // label for the default/fallback point otherwise, so the map always reads
+  // as somewhere specific rather than an unlabeled backdrop.
+  const locationLabel = dynamicMap?.city
+    ? t("home.hero.nearCity", { city: dynamicMap.city })
+    : t("home.hero.defaultAreaLabel");
+
   return (
     <div ref={containerRef} className="absolute inset-0">
       {showMap ? (
@@ -271,6 +281,9 @@ export default function HeroMap() {
             className="w-full h-full object-cover"
             onError={() => setMapFailed(true)}
           />
+          <div className="absolute bottom-3 left-3 rounded-full bg-foreground/35 px-2.5 py-1 text-[11px] font-medium text-primary-foreground/90 backdrop-blur-sm">
+            {locationLabel}
+          </div>
           {activePins.map((pin, i) => {
             const { x, y } = projectToPixel(pin, activeCenter, HERO_MAP_ZOOM, size.width, size.height);
             // Skip pins that would land outside the visible frame (narrow
