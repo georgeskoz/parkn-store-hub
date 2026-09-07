@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import heroBg from "@/assets/hero-bg.jpg";
+import { supabase } from "@/integrations/supabase/client";
 import {
   buildStaticMapUrl,
   bucketCoordinate,
   bucketMapSize,
-  generateDecorativePins,
   projectToPixel,
   slugifyCity,
   HERO_MAP_ZOOM,
@@ -21,18 +21,79 @@ import {
 // break the initial render.
 const MONTREAL_CENTER = { latitude: 45.5017, longitude: -73.5673 };
 
-// Purely decorative, hand-placed on real Montreal streets — not tied to
-// live listing data. Styled like the mobile app's own PricePin marker
-// (rounded navy/white pill), not Google's default pin. Dynamically-loaded
-// cities use generateDecorativePins() instead (see src/lib/staticMap.ts) —
-// there's no real street data to hand-place against for an arbitrary city.
-const MONTREAL_PINS = [
-  { latitude: 45.5017, longitude: -73.5673, price: "$8" },
-  { latitude: 45.5049, longitude: -73.5731, price: "$12" },
-  { latitude: 45.4985, longitude: -73.5613, price: "$6" },
-  { latitude: 45.5072, longitude: -73.5589, price: "$15" },
-  { latitude: 45.4958, longitude: -73.5748, price: "$9" },
-];
+// Real listings only, within this radius of the hero's center point — same
+// 50km "nearby" radius FindASpot.tsx already uses for its own real-listing
+// search (maxDistanceKm). No fabricated fallback: a center point with no
+// approved/active listing this close renders zero pins, not a decorative
+// placeholder that looks like real inventory to a visitor.
+const HERO_LISTINGS_RADIUS_KM = 50;
+const HERO_MAX_PINS = 6;
+
+type HeroPin = { latitude: number; longitude: number; price: string };
+
+// Local copy of FindASpot.tsx's own haversine helper (not exported there) —
+// distance in km between two lat/lng points.
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Same per-listing rate priority as the mobile app's getDisplayRate (daily
+// preferred; hourly/weekly/monthly as fallbacks for a listing with no daily
+// tier set) — one glanceable number per pin, same as before.
+function pickDisplayPrice(listing: {
+  price_hourly: number | null;
+  price_daily: number | null;
+  price_weekly: number | null;
+  price_monthly: number | null;
+}): number | null {
+  if (listing.price_daily != null) return listing.price_daily;
+  if (listing.price_hourly != null) return listing.price_hourly;
+  if (listing.price_weekly != null) return listing.price_weekly;
+  if (listing.price_monthly != null) return listing.price_monthly;
+  return null;
+}
+
+// Real, live listings near the hero's center point. Mirrors FindASpot.tsx's
+// own approach (fetch approved/active listings, sort by client-side
+// haversine distance) rather than the separate nearby_listings Postgres RPC
+// mobile/admin use for actual booking search — this hero is decorative, not
+// a search flow, and this repo already has everything it needs without a
+// second data source. Fails to an empty array (zero pins) on any query
+// error, same as "no listings nearby" — never a fabricated fallback.
+async function fetchNearbyListingPins(center: { latitude: number; longitude: number }): Promise<HeroPin[]> {
+  try {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("lat, lng, price_hourly, price_daily, price_weekly, price_monthly")
+      .eq("is_approved", true)
+      .eq("is_active", true);
+    if (error || !data) return [];
+
+    return data
+      .map((l) => {
+        const lat = Number(l.lat);
+        const lng = Number(l.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        const price = pickDisplayPrice(l);
+        if (price == null) return null;
+        const distanceKm = haversineKm(center.latitude, center.longitude, lat, lng);
+        if (distanceKm > HERO_LISTINGS_RADIUS_KM) return null;
+        return { latitude: lat, longitude: lng, price: `$${Math.round(price)}`, distanceKm };
+      })
+      .filter((p): p is HeroPin & { distanceKm: number } => p !== null)
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, HERO_MAX_PINS)
+      .map(({ latitude, longitude, price }) => ({ latitude, longitude, price }));
+  } catch {
+    return [];
+  }
+}
 
 const GEO_LOOKUP_TIMEOUT_MS = 800;
 const DYNAMIC_MAP_LOAD_TIMEOUT_MS = 4000;
@@ -168,10 +229,18 @@ export default function HeroMap() {
   }, [size]);
 
   const activeCenter = dynamicMap?.center ?? MONTREAL_CENTER;
-  const activePins = useMemo(
-    () => (dynamicMap ? generateDecorativePins(dynamicMap.center) : MONTREAL_PINS),
-    [dynamicMap],
-  );
+
+  const [activePins, setActivePins] = useState<HeroPin[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchNearbyListingPins(activeCenter).then((result) => {
+      if (!cancelled) setActivePins(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCenter.latitude, activeCenter.longitude]);
 
   const mapImageUrl =
     dynamicMap?.url ??

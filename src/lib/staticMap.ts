@@ -141,45 +141,6 @@ export function projectToPixel(
   };
 }
 
-const DECORATIVE_PRICES = ["$6", "$8", "$9", "$12", "$15"];
-
-// Small deterministic pseudo-random generator (mulberry32), seeded from the
-// center coordinates so a given city always gets the same-looking pin
-// scatter across reloads rather than jittering randomly on every visit.
-function seededRandom(seed: number): () => number {
-  let t = seed;
-  return function () {
-    t |= 0;
-    t = (t + 0x6d2b79f5) | 0;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// Generates a small, natural-looking scatter of decorative pin offsets
-// around an arbitrary city center — used for dynamically-loaded cities
-// where, unlike Montreal's hand-placed pins, there's no real street data to
-// place them against (that would need a real geocoding lookup, out of scope
-// for a purely decorative background). Deterministic per center so the same
-// city doesn't re-scatter its pins on every reload.
-export function generateDecorativePins(
-  center: { latitude: number; longitude: number },
-): { latitude: number; longitude: number; price: string }[] {
-  const seed = Math.round((center.latitude + 90) * 100000 + (center.longitude + 180) * 1000);
-  const rand = seededRandom(seed);
-  return DECORATIVE_PRICES.map((price) => {
-    const angle = rand() * Math.PI * 2;
-    const distanceDeg = 0.003 + rand() * 0.004; // roughly 300-700m
-    return {
-      latitude: center.latitude + Math.sin(angle) * distanceDeg,
-      longitude:
-        center.longitude + (Math.cos(angle) * distanceDeg) / Math.cos((center.latitude * Math.PI) / 180),
-      price,
-    };
-  });
-}
-
 export function buildStaticMapUrl(opts: {
   latitude: number;
   longitude: number;
