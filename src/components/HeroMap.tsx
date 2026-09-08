@@ -198,7 +198,14 @@ function PricePin({ price }: { price: string }) {
         </div>
       </div>
 
-      {/* Teardrop pin body — rotated-square technique, same as mobile. */}
+      {/* Teardrop pin body — rotated-square technique, same as mobile, but
+          with the rotation sign corrected (see PIN_HEAD_SIZE comment
+          above): sharp corner is bottom-right, so it needs a CLOCKWISE
+          45deg (rotate(45deg)) to end up pointing straight down. A CSS/RN
+          rotate(-45deg) is counter-clockwise, which swings that same corner
+          to point sideways (toward 3 o'clock) instead — confirmed by
+          rendering this exact markup in isolation and comparing against the
+          intended anchor point before changing anything. */}
       <div
         className="shadow-md"
         style={{
@@ -209,7 +216,11 @@ function PricePin({ price }: { price: string }) {
           borderBottomLeftRadius: PIN_HEAD_SIZE / 2,
           borderBottomRightRadius: 0,
           backgroundColor: PIN_NAVY,
-          transform: "rotate(-45deg)",
+          // White outline so the pin separates from the map at a glance —
+          // the map's own highway color (staticMap.ts's MAP_STYLE) is this
+          // exact navy, so an unbordered pin was blending straight into it.
+          border: "2px solid #FFFFFF",
+          transform: "rotate(45deg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -224,7 +235,11 @@ function PricePin({ price }: { price: string }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transform: "rotate(45deg)",
+            // Cancels the outer rotate(45deg) so the glyph itself stays
+            // upright — this half of the technique was already correct
+            // (confirmed in the isolated repro: the glyph rendered upright
+            // even while the outer teardrop pointed the wrong way).
+            transform: "rotate(-45deg)",
           }}
         >
           <VaultGlyph />
