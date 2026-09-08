@@ -951,6 +951,8 @@
       "imageAlt": "Stylized map showing parking and storage locations",
       "nearCity": "Near {{city}}",
       "defaultAreaLabel": "Montreal area",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
       "titleLine1": "Park & Store,",
       "titleAccent": "Anywhere",
       "subtitle": "Discover available parking spots and storage spaces near you. List your unused space and earn — it's that simple.",

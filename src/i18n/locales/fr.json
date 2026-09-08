@@ -951,6 +951,8 @@
       "imageAlt": "Carte stylisée montrant des espaces de stationnement et d'entreposage",
       "nearCity": "Près de {{city}}",
       "defaultAreaLabel": "Région de Montréal",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
       "titleLine1": "Stationnez et entreposez,",
       "titleAccent": "n'importe où",
       "subtitle": "Découvrez les places de stationnement et les espaces d'entreposage disponibles près de chez vous. Louez votre espace inutilisé et gagnez de l'argent — c'est aussi simple que ça.",

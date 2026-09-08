@@ -16,6 +16,21 @@ const TILE_SIZE = 256;
 // city map (see api/hero-map.ts) look visually consistent.
 export const HERO_MAP_ZOOM = 15;
 
+// Bounds for the hero's +/- zoom controls (HeroMap.tsx). The hero is a
+// static image, not a live viewport — "zoom" there means re-fetching a new
+// image at a different level, so these bound how many distinct Static Maps
+// requests (and CDN cache entries, one per zoom step per city/size bucket)
+// that control can generate. Narrow enough to stay a decorative texture at
+// either end: below 12 the styled roads/water thin out to almost nothing at
+// this hero's typical crop size; above 18 it's block-level street detail,
+// well past what a background image needs.
+export const HERO_MAP_MIN_ZOOM = 12;
+export const HERO_MAP_MAX_ZOOM = 18;
+
+export function clampHeroZoom(zoom: number): number {
+  return Math.min(HERO_MAP_MAX_ZOOM, Math.max(HERO_MAP_MIN_ZOOM, Math.round(zoom)));
+}
+
 // Google Static Maps silently clamps each axis to a max of 640 pre-scale
 // (1280 post `scale=2`) — verified directly against the API, not assumed
 // from docs. Requesting anything larger than that on BOTH axes (as the

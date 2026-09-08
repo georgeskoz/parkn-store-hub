@@ -8,7 +8,7 @@
 // across visitors from the same city and viewports of similar shape. This
 // function re-clamps independently as defense in depth, not as the primary
 // cache mechanism.
-import { buildStaticMapUrl, bucketCoordinate, bucketMapSize, HERO_MAP_ZOOM } from "../src/lib/staticMap";
+import { buildStaticMapUrl, bucketCoordinate, bucketMapSize, clampHeroZoom, HERO_MAP_ZOOM } from "../src/lib/staticMap";
 
 export const config = { runtime: "edge" };
 
@@ -45,6 +45,13 @@ export default async function handler(request: Request): Promise<Response> {
 
   const { width, height } = bucketMapSize(wRaw, hRaw);
 
+  // Optional — the client's zoom control (HeroMap.tsx) sends this to request
+  // a re-zoomed image; clamp defensively (same reasoning as the coordinate/
+  // size re-bucketing above) and fall back to the shared default when absent
+  // or malformed, rather than reject the request.
+  const zoomRaw = Number(url.searchParams.get("zoom"));
+  const zoom = Number.isFinite(zoomRaw) ? clampHeroZoom(zoomRaw) : HERO_MAP_ZOOM;
+
   // Server-only var (no VITE_ prefix — never bundled client-side). Reuses
   // the same key value as the client-side VITE_GOOGLE_MAPS_STATIC_KEY for
   // now: empirically, requests with no Referer header (which is what an
@@ -63,7 +70,7 @@ export default async function handler(request: Request): Promise<Response> {
   const googleUrl = buildStaticMapUrl({
     latitude: lat,
     longitude: lng,
-    zoom: HERO_MAP_ZOOM,
+    zoom,
     width,
     height,
     apiKey,

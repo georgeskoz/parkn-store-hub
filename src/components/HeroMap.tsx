@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Loader2, Minus, Plus } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildStaticMapUrl,
   bucketCoordinate,
   bucketMapSize,
+  clampHeroZoom,
   projectToPixel,
   slugifyCity,
   HERO_MAP_ZOOM,
+  HERO_MAP_MIN_ZOOM,
+  HERO_MAP_MAX_ZOOM,
 } from "@/lib/staticMap";
 
 // Same default as the mobile app's map view (DEFAULT_REGION in
@@ -100,9 +104,13 @@ const DYNAMIC_MAP_LOAD_TIMEOUT_MS = 4000;
 
 const GOOGLE_MAPS_STATIC_KEY = import.meta.env.VITE_GOOGLE_MAPS_STATIC_KEY as string | undefined;
 
-type DynamicMap = {
-  url: string;
-  center: { latitude: number; longitude: number };
+// Visitor's resolved city center — resolved once (see the geo-lookup effect
+// below) and independent of zoom. The actual image URL for this center is
+// built and preloaded separately (see the zoom/image effect), since that
+// part needs to re-run every time the zoom control changes, not just once.
+type GeoCenter = {
+  latitude: number;
+  longitude: number;
   city: string | null;
 };
 
@@ -171,8 +179,27 @@ export default function HeroMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const [mapFailed, setMapFailed] = useState(false);
-  const [dynamicMap, setDynamicMap] = useState<DynamicMap | null>(null);
+  const [geoCenter, setGeoCenter] = useState<GeoCenter | null>(null);
   const dynamicLookupStartedRef = useRef(false);
+
+  // Requested zoom, driven by the +/- controls. HERO_MAP_ZOOM is the
+  // starting level shared with the fixed Montreal image so the two look
+  // consistent before any visitor input.
+  const [zoom, setZoom] = useState(HERO_MAP_ZOOM);
+
+  // The dynamic (geo-resolved) city image is preload-gated, same principle
+  // as the original geo upgrade: never swap the visible map to a new zoom
+  // level until that level's image has actually finished loading, so a slow
+  // or failed re-fetch (a real network round-trip per +/- tap, not a live
+  // pan/zoom) never flashes a broken image — it just leaves the previous
+  // zoom level on screen. dynamicMapZoom tracks which zoom the CURRENTLY
+  // SHOWN dynamicMapUrl actually corresponds to (may lag `zoom` while a
+  // request is in flight), so pin placement below stays aligned with
+  // whatever image pixels are actually visible.
+  const [dynamicMapUrl, setDynamicMapUrl] = useState<string | null>(null);
+  const [dynamicMapZoom, setDynamicMapZoom] = useState<number | null>(null);
+  const [zoomLoading, setZoomLoading] = useState(false);
+  const zoomRequestIdRef = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -194,9 +221,12 @@ export default function HeroMap() {
     return () => observer.disconnect();
   }, []);
 
-  // Background upgrade only — runs once, after the container's size is
-  // first known, and never blocks or delays the Montreal map already on
-  // screen. Any failure at any step just leaves that Montreal map in place.
+  // Resolves WHICH city to center on — runs once, after the container's
+  // size is first known, and never blocks or delays the Montreal map
+  // already on screen. Any failure here just leaves Montreal as the center.
+  // Building/preloading the actual image for this center (and for zoom
+  // changes on it) happens in the effect below, so this one doesn't need to
+  // re-run every time the zoom control changes.
   useEffect(() => {
     if (!size || dynamicLookupStartedRef.current) return;
     dynamicLookupStartedRef.current = true;
@@ -206,22 +236,16 @@ export default function HeroMap() {
       const geo = await fetchVisitorGeo();
       if (cancelled || !geo) return;
 
-      // Bucket lat/lng (and tag with a city slug) before building the
-      // request URL — this is what makes the URL, and therefore the
-      // CDN/Google cache key, shared across visitors from the same city
-      // rather than one fresh entry per exact per-visitor coordinate. See
-      // bucketCoordinate in src/lib/staticMap.ts.
-      const lat = bucketCoordinate(geo.lat);
-      const lng = bucketCoordinate(geo.lng);
-      const { width, height } = bucketMapSize(size.width, size.height);
-      const citySlug = geo.city ? slugifyCity(geo.city) : "";
-      const url =
-        `/api/hero-map?lat=${lat}&lng=${lng}&w=${width}&h=${height}` +
-        (citySlug ? `&city=${citySlug}` : "");
-      const loaded = await preloadImage(url);
-      if (cancelled || !loaded) return;
-
-      setDynamicMap({ url, center: { latitude: lat, longitude: lng }, city: geo.city });
+      // Bucket lat/lng before using them — this is what makes the
+      // downstream request URL, and therefore the CDN/Google cache key,
+      // shared across visitors from the same city rather than one fresh
+      // entry per exact per-visitor coordinate. See bucketCoordinate in
+      // src/lib/staticMap.ts.
+      setGeoCenter({
+        latitude: bucketCoordinate(geo.lat),
+        longitude: bucketCoordinate(geo.lng),
+        city: geo.city,
+      });
     })();
 
     return () => {
@@ -229,7 +253,43 @@ export default function HeroMap() {
     };
   }, [size]);
 
-  const activeCenter = dynamicMap?.center ?? MONTREAL_CENTER;
+  // Builds and preloads the dynamic city image whenever the resolved center,
+  // container size, or requested zoom changes — covering both the initial
+  // geo-upgrade and every subsequent +/- tap through the same preload-then-
+  // swap path. A zoomRequestId guard drops a stale response if the visitor
+  // taps again before the previous request finishes, so a burst of taps
+  // can't land them on an out-of-order zoom level.
+  useEffect(() => {
+    if (!size || !geoCenter) return;
+    const { width, height } = bucketMapSize(size.width, size.height);
+    const citySlug = geoCenter.city ? slugifyCity(geoCenter.city) : "";
+    const url =
+      `/api/hero-map?lat=${geoCenter.latitude}&lng=${geoCenter.longitude}` +
+      `&w=${width}&h=${height}&zoom=${zoom}` +
+      (citySlug ? `&city=${citySlug}` : "");
+
+    const requestId = ++zoomRequestIdRef.current;
+    setZoomLoading(true);
+    let cancelled = false;
+    preloadImage(url).then((loaded) => {
+      if (cancelled || requestId !== zoomRequestIdRef.current) return;
+      setZoomLoading(false);
+      // On failure, deliberately leave dynamicMapUrl/dynamicMapZoom exactly
+      // as they were — same "never worse than the current screen" principle
+      // as the original upgrade-only logic, just now also covering a zoom
+      // re-fetch that comes back broken or times out.
+      if (loaded) {
+        setDynamicMapUrl(url);
+        setDynamicMapZoom(zoom);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [geoCenter, size?.width, size?.height, zoom]);
+
+  const activeCenter = geoCenter ?? MONTREAL_CENTER;
 
   const [activePins, setActivePins] = useState<HeroPin[]>([]);
   useEffect(() => {
@@ -244,12 +304,12 @@ export default function HeroMap() {
   }, [activeCenter.latitude, activeCenter.longitude]);
 
   const mapImageUrl =
-    dynamicMap?.url ??
+    dynamicMapUrl ??
     (GOOGLE_MAPS_STATIC_KEY && size
       ? buildStaticMapUrl({
           latitude: MONTREAL_CENTER.latitude,
           longitude: MONTREAL_CENTER.longitude,
-          zoom: HERO_MAP_ZOOM,
+          zoom,
           // Fit within Google's real per-axis size limit rather than the
           // raw container size — requesting more than that on both axes
           // gets silently clamped to a distorted shape (verified directly
@@ -260,15 +320,28 @@ export default function HeroMap() {
         })
       : null);
 
+  // The zoom level that actually matches mapImageUrl's pixels: the
+  // dynamic-city path is preload-gated (see the effect above), so while a
+  // requested zoom change is still in flight this stays at the OLD level
+  // that's still on screen, keeping pin math aligned with what's actually
+  // visible instead of jumping ahead of the image. The ungated Montreal
+  // fallback has no such lag, so it can track the requested zoom directly.
+  const displayZoom = dynamicMapUrl ? dynamicMapZoom! : zoom;
+
   const showMap = Boolean(mapImageUrl) && !mapFailed && size;
+
+  const canZoomIn = zoom < HERO_MAP_MAX_ZOOM;
+  const canZoomOut = zoom > HERO_MAP_MIN_ZOOM;
+  const handleZoomIn = () => setZoom((z) => clampHeroZoom(z + 1));
+  const handleZoomOut = () => setZoom((z) => clampHeroZoom(z - 1));
 
   // Surfaces the city name fetchVisitorGeo() already resolved (previously
   // discarded right after building the tile cache key above) — "Near
   // {city}" when geolocation actually succeeded, a static "Montreal area"
   // label for the default/fallback point otherwise, so the map always reads
   // as somewhere specific rather than an unlabeled backdrop.
-  const locationLabel = dynamicMap?.city
-    ? t("home.hero.nearCity", { city: dynamicMap.city })
+  const locationLabel = geoCenter?.city
+    ? t("home.hero.nearCity", { city: geoCenter.city })
     : t("home.hero.defaultAreaLabel");
 
   return (
@@ -285,7 +358,7 @@ export default function HeroMap() {
             {locationLabel}
           </div>
           {activePins.map((pin, i) => {
-            const { x, y } = projectToPixel(pin, activeCenter, HERO_MAP_ZOOM, size.width, size.height);
+            const { x, y } = projectToPixel(pin, activeCenter, displayZoom, size.width, size.height);
             // Skip pins that would land outside the visible frame (narrow
             // viewports show less of the map at a fixed zoom) rather than
             // letting them float in the text/gradient area.
@@ -300,6 +373,40 @@ export default function HeroMap() {
               </div>
             );
           })}
+          {/* Static-image "zoom": each tap re-fetches a whole new map image
+              at a different HERO_MAP_ZOOM level (see the effect above) —
+              there's no live viewport here to pan/zoom continuously. Bottom
+              side of the map, opposite the location label pill. */}
+          <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-full bg-foreground/35 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              disabled={!canZoomIn || zoomLoading}
+              aria-label={t("home.hero.zoomIn")}
+              className="flex h-8 w-8 items-center justify-center text-primary-foreground/90 transition-opacity hover:bg-foreground/20 disabled:opacity-30"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+            {/* Swaps in for the divider while a re-fetch is in flight — the
+                only visible cue that a tap did something, since the new
+                image can take a real network round-trip to arrive. */}
+            {zoomLoading ? (
+              <div className="flex h-3 items-center justify-center">
+                <Loader2 className="h-2.5 w-2.5 animate-spin text-primary-foreground/70" />
+              </div>
+            ) : (
+              <div className="h-px bg-primary-foreground/20" />
+            )}
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={!canZoomOut || zoomLoading}
+              aria-label={t("home.hero.zoomOut")}
+              className="flex h-8 w-8 items-center justify-center text-primary-foreground/90 transition-opacity hover:bg-foreground/20 disabled:opacity-30"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+          </div>
         </>
       ) : (
         <img
