@@ -354,7 +354,11 @@ export default function HeroMap() {
             className="w-full h-full object-cover"
             onError={() => setMapFailed(true)}
           />
-          <div className="absolute bottom-3 left-3 rounded-full bg-foreground/35 px-2.5 py-1 text-[11px] font-medium text-primary-foreground/90 backdrop-blur-sm">
+          {/* Top-left, not bottom-left: Google's own required logo watermark
+              is baked into the image at bottom-left (can't be removed or
+              covered per their attribution terms), and a bottom-anchored
+              label there was rendering directly on top of it — unreadable. */}
+          <div className="absolute top-3 left-3 rounded-full bg-foreground/35 px-2.5 py-1 text-[11px] font-medium text-primary-foreground/90 backdrop-blur-sm">
             {locationLabel}
           </div>
           {activePins.map((pin, i) => {
@@ -376,8 +380,11 @@ export default function HeroMap() {
           {/* Static-image "zoom": each tap re-fetches a whole new map image
               at a different HERO_MAP_ZOOM level (see the effect above) —
               there's no live viewport here to pan/zoom continuously. Bottom
-              side of the map, opposite the location label pill. */}
-          <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-full bg-foreground/35 backdrop-blur-sm">
+              side of the map, per the original ask — but bottom-10, not
+              bottom-3: Google's required "Map data © Google" attribution
+              text is baked into the image right at the bottom edge, and
+              bottom-3 was overlapping it. */}
+          <div className="absolute bottom-10 right-3 flex flex-col overflow-hidden rounded-full bg-foreground/35 backdrop-blur-sm">
             <button
               type="button"
               onClick={handleZoomIn}
@@ -415,7 +422,11 @@ export default function HeroMap() {
           className="w-full h-full object-cover"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30" />
+      {/* Purely decorative — pointer-events-none so it never intercepts
+          clicks meant for the zoom buttons/pins underneath it. Without this
+          it sits on top of everything (last in DOM, same stacking context)
+          and silently swallows every click in the hero. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/30 pointer-events-none" />
     </div>
   );
 }
