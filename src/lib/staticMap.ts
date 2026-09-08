@@ -104,14 +104,20 @@ export function slugifyCity(city: string): string {
 }
 
 // Brand-styled map: navy roads (mirrors mobile's NAVY = #1B4F72), muted
-// neutral land, subdued water, and all labels/POI/transit hidden — a clean
-// "map texture" rather than a literal navigable map, matching the decorative
-// intent (same idea as Uber's homepage hero).
+// neutral land, subdued water, POI/transit hidden — a clean "map texture"
+// rather than a literal navigable map, matching the decorative intent (same
+// idea as Uber's homepage hero). Road and locality (city/town) labels are
+// kept, just muted to sit inside the palette instead of Google's default
+// black-on-white — a map with zero text reads as an abstract graphic rather
+// than a real, specific place, which was the whole point of locationLabel
+// (see HeroMap.tsx) existing at all.
 const MAP_STYLE: string[] = [
-  "feature:all|element:labels|visibility:off",
   "feature:poi|visibility:off",
   "feature:transit|visibility:off",
   "feature:administrative|element:geometry|visibility:off",
+  "feature:all|element:labels.icon|visibility:off",
+  "feature:all|element:labels.text.fill|color:0x5A7A8C",
+  "feature:all|element:labels.text.stroke|color:0xEEF1F2|weight:2",
   "feature:landscape|element:geometry|color:0xEEF1F2",
   "feature:water|element:geometry|color:0xAFC9D9",
   "feature:road|element:geometry.stroke|visibility:off",

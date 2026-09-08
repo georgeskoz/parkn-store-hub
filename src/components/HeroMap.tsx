@@ -35,6 +35,61 @@ const HERO_MAX_PINS = 6;
 
 type HeroPin = { latitude: number; longitude: number; price: string };
 
+// Vault-icon teardrop pin — ported from the mobile app's PricePin
+// (mobile/src/app/(tabs)/index.tsx), same navy/vault-glyph brand mark used
+// in the real app and assets/spotsvault app icone.png. Web has no
+// react-native-maps Marker to anchor, so the wrapper's own width/height
+// below stand in for that: the wrapper is sized to exactly the pin body
+// (excluding the floating price tag, same as mobile), and the pin loop
+// further down positions this wrapper's bottom-center — not its
+// center — on the projected coordinate, so the visual tip lands on the
+// point rather than the pin's middle.
+const PIN_HEAD_SIZE = 32;
+// The rotated-square teardrop technique (border-radius on 3 corners, square
+// 4th, rotate -45deg) doesn't change the element's own layout box — only
+// its visual pixels. A square rotated 45deg around its center puts its
+// lowest visual corner HEAD/sqrt(2) below center, i.e.
+// HEAD*(sqrt(2)-1)/2 below the *unrotated* box's own bottom edge.
+// Reserving that as real empty space below the head is what makes the
+// wrapper's true bottom edge (used for positioning below) coincide with the
+// visual tip instead of sitting a few px above it.
+const PIN_TIP_OVERSHOOT = Math.round((PIN_HEAD_SIZE * (Math.SQRT2 - 1)) / 2);
+const PIN_TOTAL_HEIGHT = PIN_HEAD_SIZE + PIN_TIP_OVERSHOOT;
+const PIN_RING_INSET = 4;
+const PIN_TAG_GAP = 6;
+// Rough price-tag height (fontSize 12 + vertical padding) — used only by
+// the near-edge skip check below, not real layout math (the tag sizes
+// itself via flex); an estimate of how much clearance a pin needs above its
+// coordinate before the tag would start overlapping the header, since the
+// static map image has no clipping boundary against that.
+const PIN_TAG_ESTIMATED_HEIGHT = 22;
+const PIN_FULL_VISUAL_HEIGHT = PIN_TOTAL_HEIGHT + PIN_TAG_GAP + PIN_TAG_ESTIMATED_HEIGHT;
+
+// Matches mobile's NAVY/NAVY_DEEP exactly (also close to this app's own
+// --primary token, hsl(204 62% 28%) ≈ #1B4F72) — hardcoded rather than
+// referencing the CSS variable since the pin must match the app icon
+// pixel-for-pixel, not just "look navy-ish".
+const PIN_NAVY = "#1B4F72";
+const PIN_NAVY_DEEP = "#123449";
+
+// Simplified vault/safe glyph — hinge bar, door panel, dial with connecting
+// stub, and two corner crop-marks from the real app icon, redrawn thin
+// enough to survive at this marker size. Identical path data to mobile's
+// VaultGlyph (react-native-svg and plain SVG share the same camelCase JSX
+// prop names for standard SVG attributes, so this ported near verbatim).
+function VaultGlyph() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <line x1={5.5} y1={5} x2={5.5} y2={19} stroke="#FFFFFF" strokeWidth={1.8} strokeLinecap="round" />
+      <rect x={8} y={5} width={11} height={14} rx={1.5} stroke="#FFFFFF" strokeWidth={1.8} />
+      <line x1={5.5} y1={12} x2={9.5} y2={12} stroke="#FFFFFF" strokeWidth={1.8} strokeLinecap="round" />
+      <circle cx={12.5} cy={12} r={2.2} stroke="#FFFFFF" strokeWidth={1.8} />
+      <path d="M15.5 7h2v2" stroke="#FFFFFF" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17.5 15v2h-2" stroke="#FFFFFF" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Local copy of FindASpot.tsx's own haversine helper (not exported there) —
 // distance in km between two lat/lng points.
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -116,8 +171,65 @@ type GeoCenter = {
 
 function PricePin({ price }: { price: string }) {
   return (
-    <div className="rounded-full bg-card text-foreground border border-primary px-2.5 py-1 text-xs font-semibold shadow-md">
-      {price}
+    <div style={{ position: "relative", width: PIN_HEAD_SIZE, height: PIN_TOTAL_HEIGHT }}>
+      {/* Price tag — floats above the pin body. Wide horizontal bleed +
+          centered content, not a fixed width, since price length varies
+          ($5 vs $1,200) and this must stay centered over the tip. */}
+      <div
+        style={{
+          position: "absolute",
+          left: -40,
+          right: -40,
+          bottom: PIN_TOTAL_HEIGHT + PIN_TAG_GAP,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          className="shadow-md"
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 8,
+            padding: "4px 8px",
+            border: `1.5px solid ${PIN_NAVY}`,
+          }}
+        >
+          <span style={{ color: PIN_NAVY, fontWeight: 700, fontSize: 12 }}>{price}</span>
+        </div>
+      </div>
+
+      {/* Teardrop pin body — rotated-square technique, same as mobile. */}
+      <div
+        className="shadow-md"
+        style={{
+          width: PIN_HEAD_SIZE,
+          height: PIN_HEAD_SIZE,
+          borderTopLeftRadius: PIN_HEAD_SIZE / 2,
+          borderTopRightRadius: PIN_HEAD_SIZE / 2,
+          borderBottomLeftRadius: PIN_HEAD_SIZE / 2,
+          borderBottomRightRadius: 0,
+          backgroundColor: PIN_NAVY,
+          transform: "rotate(-45deg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: PIN_HEAD_SIZE - PIN_RING_INSET * 2,
+            height: PIN_HEAD_SIZE - PIN_RING_INSET * 2,
+            borderRadius: (PIN_HEAD_SIZE - PIN_RING_INSET * 2) / 2,
+            backgroundColor: PIN_NAVY_DEEP,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transform: "rotate(45deg)",
+          }}
+        >
+          <VaultGlyph />
+        </div>
+      </div>
     </div>
   );
 }
@@ -200,6 +312,18 @@ export default function HeroMap() {
   const [dynamicMapZoom, setDynamicMapZoom] = useState<number | null>(null);
   const [zoomLoading, setZoomLoading] = useState(false);
   const zoomRequestIdRef = useRef(0);
+
+  // Crossfade on any image change after the first paint (a zoom re-fetch,
+  // almost always — see the effect below): the outgoing image is kept
+  // mounted underneath at full opacity while the incoming one fades in over
+  // it, so a tap reads as "here's your new view" rather than a hard pop.
+  // Deliberately does NOT gate the very first image (previousMapUrl only
+  // ever gets set once a prior mapImageUrl already existed) — the initial
+  // paint keeps its existing "render immediately, no animation" guarantee.
+  const [previousMapUrl, setPreviousMapUrl] = useState<string | null>(null);
+  const lastMapImageUrlRef = useRef<string | null>(null);
+  const crossfadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const CROSSFADE_DURATION_MS = 300; // matches the img-crossfade Tailwind animation
 
   useEffect(() => {
     const el = containerRef.current;
@@ -320,6 +444,30 @@ export default function HeroMap() {
         })
       : null);
 
+  // Tracks mapImageUrl changes to drive the crossfade: whenever it changes
+  // to a genuinely different, non-null value AFTER an image was already
+  // showing, stash the outgoing one in previousMapUrl so both can render
+  // stacked for one crossfade duration. Runs for both the preload-gated
+  // dynamic path and the ungated Montreal-fallback path — on the latter,
+  // the "incoming" layer may still be loading when the fade starts (that
+  // path isn't preloaded), which is no worse than the hard pop it replaces.
+  useEffect(() => {
+    const last = lastMapImageUrlRef.current;
+    if (last && mapImageUrl && last !== mapImageUrl) {
+      setPreviousMapUrl(last);
+      if (crossfadeTimeoutRef.current) clearTimeout(crossfadeTimeoutRef.current);
+      crossfadeTimeoutRef.current = setTimeout(() => setPreviousMapUrl(null), CROSSFADE_DURATION_MS);
+    }
+    lastMapImageUrlRef.current = mapImageUrl;
+  }, [mapImageUrl]);
+
+  useEffect(
+    () => () => {
+      if (crossfadeTimeoutRef.current) clearTimeout(crossfadeTimeoutRef.current);
+    },
+    [],
+  );
+
   // The zoom level that actually matches mapImageUrl's pixels: the
   // dynamic-city path is preload-gated (see the effect above), so while a
   // requested zoom change is still in flight this stays at the OLD level
@@ -348,10 +496,28 @@ export default function HeroMap() {
     <div ref={containerRef} className="absolute inset-0">
       {showMap ? (
         <>
+          {/* Outgoing image stays mounted at full opacity underneath the
+              incoming one for one crossfade duration, so the swap reads as
+              a deliberate transition rather than a hard cut. key={url}
+              forces a remount (and therefore restarts the CSS animation)
+              each time the src actually changes. */}
+          {previousMapUrl ? (
+            <img
+              key={previousMapUrl}
+              src={previousMapUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : null}
           <img
+            key={mapImageUrl}
             src={mapImageUrl!}
             alt={t("home.hero.imageAlt")}
-            className="w-full h-full object-cover"
+            className={
+              "absolute inset-0 w-full h-full object-cover" +
+              (previousMapUrl ? " animate-img-crossfade" : "")
+            }
             onError={() => setMapFailed(true)}
           />
           {/* Top-left, not bottom-left: Google's own required logo watermark
@@ -364,14 +530,27 @@ export default function HeroMap() {
           {activePins.map((pin, i) => {
             const { x, y } = projectToPixel(pin, activeCenter, displayZoom, size.width, size.height);
             // Skip pins that would land outside the visible frame (narrow
-            // viewports show less of the map at a fixed zoom) rather than
-            // letting them float in the text/gradient area.
-            if (x < 24 || x > size.width - 24 || y < 24 || y > size.height - 24) return null;
+            // viewports show less of the map at a fixed zoom), or too close
+            // to the top for the floating price tag above the pin to fit —
+            // same margins as mobile's WebSearchMap guard, sized to this
+            // pin's real footprint now that it's a full teardrop+tag rather
+            // than the old small pill.
+            if (
+              x < PIN_HEAD_SIZE ||
+              x > size.width - PIN_HEAD_SIZE ||
+              y < PIN_FULL_VISUAL_HEIGHT ||
+              y > size.height - 24
+            ) {
+              return null;
+            }
             return (
+              // Bottom-center anchored, not center-anchored: the pin's
+              // visual tip (see PricePin/PIN_TOTAL_HEIGHT above) must land
+              // exactly on the projected coordinate, not the pin's middle.
               <div
                 key={i}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{ left: x, top: y }}
+                className="absolute -translate-x-1/2"
+                style={{ left: x, top: y - PIN_TOTAL_HEIGHT }}
               >
                 <PricePin price={pin.price} />
               </div>

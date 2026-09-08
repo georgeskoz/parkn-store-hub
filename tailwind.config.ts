@@ -88,12 +88,21 @@ export default {
           from: { opacity: "0", transform: "translateX(-24px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        // Opacity-only, no translate — a pure crossfade for swapping one
+        // already-loaded image over another (the hero map's zoom re-fetch),
+        // where a slide would look like the new map is sliding in rather
+        // than the same viewport resolving to a new zoom level.
+        "img-crossfade": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.6s ease-out forwards",
         "slide-in-left": "slide-in-left 0.5s ease-out forwards",
+        "img-crossfade": "img-crossfade 300ms ease-out forwards",
       },
     },
   },
