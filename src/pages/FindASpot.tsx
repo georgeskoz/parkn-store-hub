@@ -13,8 +13,24 @@ import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
 import { filterParkingAvailable, filterStorageAvailable } from "@/lib/availabilityFilter";
+import { ANON_SAFE_LISTING_COLUMNS } from "@/lib/listingsAnonColumns";
 
 type Category = "all" | "parking" | "storage";
+
+// null = "No limit" — the default. A user searching near a destination they
+// don't live in (planning a trip to a landmark, a different city entirely)
+// should see every matching result by default, not be silently capped to a
+// small radius. 100 is the top fixed step ("100km+" — city-to-city
+// distances like Ottawa->Montreal are ~200km, well past it, which is
+// exactly what "No limit" covers) rather than an unbounded free-form input.
+const RADIUS_OPTIONS_KM: (number | null)[] = [null, 0.3, 1, 2, 5, 10, 25, 50, 100];
+
+function formatRadiusLabel(km: number | null, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (km == null) return t("search.radiusNoLimit");
+  if (km < 1) return t("search.radiusLabelM", { m: Math.round(km * 1000) });
+  if (km >= 100) return t("search.radiusLabelKmPlus", { km });
+  return t("search.radiusLabelKm", { km });
+}
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371;
@@ -38,7 +54,13 @@ export default function FindASpot() {
   const [destination, setDestination] = useState("");
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
-  const maxDistanceKm = 50;
+  // User-controlled search radius, in km. null = "No limit" (the default) —
+  // see RADIUS_OPTIONS_KM above. Previously this was a hardcoded
+  // maxDistanceKm = 50 applied unconditionally whenever a destination was
+  // set, which silently returned zero results for any legitimate
+  // longer-distance search (e.g. Ottawa -> Montreal, ~200km) with no error
+  // or "try widening" messaging — confirmed live, not assumed.
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const pickerMode: "parking" | "storage" = category === "storage" ? "storage" : "parking";
   const [when, setWhen] = useState<DateTimeValue>(() => ({
     ...readDateTimeFromParams(searchParams, "parking"),
@@ -52,7 +74,18 @@ export default function FindASpot() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const { data } = await supabase.from("listings").select("*").eq("status", "approved");
+        // Scoped to exactly what anon can read (ANON_SAFE_LISTING_COLUMNS)
+        // — a bare .select("*") fails outright for a signed-out visitor
+        // with "permission denied for table listings", since Postgres
+        // checks column privileges for every column at once, not just the
+        // ones actually used. Confirmed live: this was silently breaking
+        // anonymous browsing on this exact page.
+        const { data, error } = await supabase.from("listings").select(ANON_SAFE_LISTING_COLUMNS).eq("status", "approved");
+        if (error) {
+          console.error("[FindASpot] Supabase listings query failed", error);
+          setListings([]);
+          return;
+        }
         setListings(data || []);
       } catch {
         setListings([]);
@@ -99,7 +132,7 @@ export default function FindASpot() {
     );
   };
 
-  const clearLocation = () => { setUserCoords(null); setDestination(""); };
+  const clearLocation = () => { setUserCoords(null); setDestination(""); setRadiusKm(null); };
 
   const destinationCoords = useMemo(() => {
     if (userCoords) return userCoords;
@@ -138,12 +171,13 @@ export default function FindASpot() {
       );
     }
     if (destinationCoords) {
-      items = items.filter((l) => l.distance !== undefined && l.distance <= maxDistanceKm);
+      // radiusKm === null -> no cutoff at all, every matching result shows.
+      items = items.filter((l) => l.distance !== undefined && (radiusKm == null || l.distance <= radiusKm));
       items.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
     }
     if (availableIds) items = items.filter((l) => availableIds.has(l.id));
     return items;
-  }, [listings, search, category, city, destinationCoords, availableIds]);
+  }, [listings, search, category, city, destinationCoords, radiusKm, availableIds]);
 
   const activeFilters = [city !== "all" && city].filter(Boolean) as string[];
   const clearAll = () => { setCity("all"); setSearchInput(""); setSearch(""); clearLocation(); };
@@ -230,6 +264,33 @@ export default function FindASpot() {
               </Badge>
             )}
           </div>
+
+          {/* Only meaningful once there's a destination to measure from.
+              "No limit" (radiusKm === null) is the first chip and the
+              default — see RADIUS_OPTIONS_KM above. */}
+          {destinationCoords && (
+            <div className="flex flex-wrap gap-2 items-center mt-3">
+              <span className="text-xs text-muted-foreground mr-1">{t("search.radiusLabel")}:</span>
+              {RADIUS_OPTIONS_KM.map((km) => {
+                const active = radiusKm === km;
+                return (
+                  <button
+                    key={km ?? "none"}
+                    type="button"
+                    onClick={() => setRadiusKm(km)}
+                    aria-pressed={active}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:text-foreground"
+                    }`}
+                  >
+                    {formatRadiusLabel(km, t)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {(activeFilters.length > 0 || destinationCoords) && (
             <div className="flex gap-2 mt-3 flex-wrap">

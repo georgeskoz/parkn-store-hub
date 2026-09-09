@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { ANON_SAFE_LISTING_COLUMNS } from "@/lib/listingsAnonColumns";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -160,7 +161,11 @@ export default function ListingDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // authLoading (aliased -- this page already has its own unrelated
+  // `loading` state for the listing fetch below) gates the fetch until auth
+  // has actually resolved, so a signed-in owner never races ahead of that
+  // check and gets stuck on the narrower anon column set for this load.
+  const { user, loading: authLoading } = useAuth();
   const [listing, setListing] = useState<DbListing | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,20 +185,36 @@ export default function ListingDetail() {
 
   useEffect(() => {
     const fetchListing = async () => {
-      if (!id) return;
+      if (!id || authLoading) return;
 
       try {
-        const { data, error: fetchError } = await supabase
+        // Signed-in visitors keep the existing unrestricted select (matches
+        // `authenticated`'s real, unrestricted grant on this table -- no
+        // change for them). Signed-out visitors need the scoped
+        // ANON_SAFE_LISTING_COLUMNS list instead -- a bare select(*) fails
+        // outright for anon ("permission denied for table listings"),
+        // since Postgres checks column privileges for every requested
+        // column at once. Confirmed live this was silently breaking this
+        // exact page for anyone not logged in -- the page every search
+        // result links to, so search being fixed elsewhere still wasn't
+        // enough on its own.
+        const { data: rawData, error: fetchError } = await supabase
           .from("listings")
-          .select("*")
+          .select(user ? "*" : ANON_SAFE_LISTING_COLUMNS)
           .eq("id", id)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
-        if (!data) {
+        if (!rawData) {
           setError(t("listingDetail.listingNotFound"));
           return;
         }
+        // postgrest-js's select-string type parser errors out on a select
+        // this long ("ParserError", a known type-inference limitation, not
+        // a real problem with the query) -- same reason every other page
+        // touched by this fix (ParkingSearch/FindASpot/StorageListings)
+        // already casts its query result rather than fighting it.
+        const data = rawData as any;
 
         // Cast photos safely
         const photoArray = (Array.isArray(data.photos) ? data.photos : []) as { url: string; path: string }[];
@@ -249,7 +270,7 @@ export default function ListingDetail() {
     };
 
     fetchListing();
-  }, [id]);
+  }, [id, authLoading, user]);
 
   // Must be declared here, before the loading/error early returns below --
   // hooks can't be called conditionally. Derives subtotal via

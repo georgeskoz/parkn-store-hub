@@ -12,6 +12,7 @@ import { Search, SlidersHorizontal, X, Warehouse, Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
 import { filterStorageAvailable } from "@/lib/availabilityFilter";
+import { ANON_SAFE_LISTING_COLUMNS } from "@/lib/listingsAnonColumns";
 
 const storageTypes = ["indoor", "outdoor", "heated", "climate-controlled"] as const;
 type Duration = "daily" | "weekly" | "monthly" | "seasonal";
@@ -36,9 +37,14 @@ export default function StorageListings() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
+        // ANON_SAFE_LISTING_COLUMNS, not "*" -- a bare select(*) fails
+        // outright for a signed-out visitor ("permission denied for table
+        // listings"), since anon only has column-level SELECT on a specific
+        // subset (see that file). Confirmed live this was silently
+        // breaking anonymous browsing on this exact page.
         const { data } = await supabase
           .from("listings")
-          .select("*")
+          .select(ANON_SAFE_LISTING_COLUMNS)
           .eq("status", "approved");
         const all = (data as any[]) || [];
         const storageOnly = all.filter((l) => {

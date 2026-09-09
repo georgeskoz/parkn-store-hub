@@ -12,6 +12,7 @@ import DbListingCard from "@/components/listing/DbListingCard";
 import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
 import { filterParkingAvailable } from "@/lib/availabilityFilter";
+import { ANON_SAFE_LISTING_COLUMNS } from "@/lib/listingsAnonColumns";
 
 const ListingsMap = lazy(() => import("@/components/listing/ListingsMap"));
 
@@ -25,16 +26,21 @@ const buildParkingListingsDebugQuery = (location: string, hasDate: boolean) => {
   const filters = ["status = 'approved'"];
   const restFilters = ["status=eq.approved"];
 
+  // city only, not region/address -- anon doesn't have column-level SELECT
+  // on either (see ANON_SAFE_LISTING_COLUMNS), and a filter predicate needs
+  // that privilege just as much as returning the column would. Filtering on
+  // either would fail this whole query for a signed-out visitor the moment
+  // they typed anything, not just omit those columns from the result.
   if (q) {
-    filters.push(`city ilike '%${q}%' OR region ilike '%${q}%' OR address ilike '%${q}%'`);
-    restFilters.push(`or=(city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%)`);
+    filters.push(`city ilike '%${q}%'`);
+    restFilters.push(`city.ilike.%${q}%`);
   }
 
   return {
     table: "listings",
-    select: "*",
-    supabaseJs: `supabase.from("listings").select("*").eq("status", "approved")${q ? `.or("city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%")` : ""}`,
-    restPath: `/rest/v1/listings?select=*&${restFilters.join("&")}`,
+    select: ANON_SAFE_LISTING_COLUMNS,
+    supabaseJs: `supabase.from("listings").select("${ANON_SAFE_LISTING_COLUMNS}").eq("status", "approved")${q ? `.ilike("city", "%${q}%")` : ""}`,
+    restPath: `/rest/v1/listings?select=${ANON_SAFE_LISTING_COLUMNS}&${restFilters.join("&")}`,
     filters,
     availabilityFilter: hasDate ? "applied after listings query" : "skipped - no date selected",
     note: "No category filter is sent to the database; parking/storage matching is applied client-side against category/type when present.",
@@ -65,13 +71,19 @@ export default function ParkingSearch() {
       const shouldDebugOttawa = !hasDate && q.toLowerCase() === "ottawa";
 
       try {
+        // ANON_SAFE_LISTING_COLUMNS, not "*" -- see that file for why a bare
+        // select(*) fails outright for a signed-out visitor. Confirmed live
+        // this was the exact cause of this page returning zero listings for
+        // anyone not logged in.
         let query = supabase
           .from("listings")
-          .select("*")
+          .select(ANON_SAFE_LISTING_COLUMNS)
           .eq("status", "approved");
 
         if (q) {
-          query = query.or(`city.ilike.%${q}%,region.ilike.%${q}%,address.ilike.%${q}%`);
+          // city only -- see buildParkingListingsDebugQuery above for why
+          // region/address can't be part of this filter for anon.
+          query = query.ilike("city", `%${q}%`);
         }
 
         if (shouldDebugOttawa) {
