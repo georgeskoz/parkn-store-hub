@@ -33,7 +33,7 @@ const MONTREAL_CENTER = { latitude: 45.5017, longitude: -73.5673 };
 const HERO_LISTINGS_RADIUS_KM = 50;
 const HERO_MAX_PINS = 6;
 
-type HeroPin = { latitude: number; longitude: number; price: string };
+type HeroPin = { latitude: number; longitude: number; price: string; category: "parking" | "storage" };
 
 // Vault-icon teardrop pin — ported from the mobile app's PricePin
 // (mobile/src/app/(tabs)/index.tsx), same navy/vault-glyph brand mark used
@@ -71,6 +71,21 @@ const PIN_FULL_VISUAL_HEIGHT = PIN_TOTAL_HEIGHT + PIN_TAG_GAP + PIN_TAG_ESTIMATE
 // pixel-for-pixel, not just "look navy-ish".
 const PIN_NAVY = "#1B4F72";
 const PIN_NAVY_DEEP = "#123449";
+// Storage's pin accent — same relationship to PIN_PURPLE as PIN_NAVY_DEEP is
+// to PIN_NAVY (a darker shade of the same hue for the inner ring, not a
+// different color family). Tailwind's violet-500/violet-800 pair, matching
+// mobile's PricePin exactly.
+const PIN_PURPLE = "#8B5CF6";
+const PIN_PURPLE_DEEP = "#5B21B6";
+
+// Category -> the pin's fill (teardrop body + price-tag accent) and its
+// inner-ring shade. Parking stays navy (the existing default, unchanged);
+// storage gets purple — same vault glyph and pin shape for both, only the
+// color differs, matching mobile's PricePin category coloring exactly.
+const PIN_CATEGORY_COLORS: Record<"parking" | "storage", { pin: string; ring: string }> = {
+  parking: { pin: PIN_NAVY, ring: PIN_NAVY_DEEP },
+  storage: { pin: PIN_PURPLE, ring: PIN_PURPLE_DEEP },
+};
 
 // Simplified vault/safe glyph — hinge bar, door panel, dial with connecting
 // stub, and two corner crop-marks from the real app icon, redrawn thin
@@ -129,7 +144,7 @@ async function fetchNearbyListingPins(center: { latitude: number; longitude: num
   try {
     const { data, error } = await supabase
       .from("listings")
-      .select("lat, lng, price_hourly, price_daily, price_weekly, price_monthly")
+      .select("lat, lng, price_hourly, price_daily, price_weekly, price_monthly, category")
       .eq("is_approved", true)
       .eq("is_active", true);
     if (error || !data) return [];
@@ -141,14 +156,20 @@ async function fetchNearbyListingPins(center: { latitude: number; longitude: num
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
         const price = pickDisplayPrice(l);
         if (price == null) return null;
+        // Anything not literally "storage" renders as parking — matches
+        // PricePin's own two-color model (no third "unknown" pin color) and
+        // mirrors how the rest of this app already treats a missing/odd
+        // category value (e.g. ParkingSearch.tsx's own `|| (!cat && !typ)`
+        // parking fallback).
+        const category: HeroPin["category"] = l.category === "storage" ? "storage" : "parking";
         const distanceKm = haversineKm(center.latitude, center.longitude, lat, lng);
         if (distanceKm > HERO_LISTINGS_RADIUS_KM) return null;
-        return { latitude: lat, longitude: lng, price: `$${Math.round(price)}`, distanceKm };
+        return { latitude: lat, longitude: lng, price: `$${Math.round(price)}`, category, distanceKm };
       })
       .filter((p): p is HeroPin & { distanceKm: number } => p !== null)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, HERO_MAX_PINS)
-      .map(({ latitude, longitude, price }) => ({ latitude, longitude, price }));
+      .map(({ latitude, longitude, price, category }) => ({ latitude, longitude, price, category }));
   } catch {
     return [];
   }
@@ -169,7 +190,8 @@ type GeoCenter = {
   city: string | null;
 };
 
-function PricePin({ price }: { price: string }) {
+function PricePin({ price, category }: { price: string; category: "parking" | "storage" }) {
+  const { pin: pinColor, ring: pinRingColor } = PIN_CATEGORY_COLORS[category];
   return (
     <div style={{ position: "relative", width: PIN_HEAD_SIZE, height: PIN_TOTAL_HEIGHT }}>
       {/* Price tag — floats above the pin body. Wide horizontal bleed +
@@ -191,10 +213,10 @@ function PricePin({ price }: { price: string }) {
             backgroundColor: "#FFFFFF",
             borderRadius: 8,
             padding: "4px 8px",
-            border: `1.5px solid ${PIN_NAVY}`,
+            border: `1.5px solid ${pinColor}`,
           }}
         >
-          <span style={{ color: PIN_NAVY, fontWeight: 700, fontSize: 12 }}>{price}</span>
+          <span style={{ color: pinColor, fontWeight: 700, fontSize: 12 }}>{price}</span>
         </div>
       </div>
 
@@ -215,10 +237,12 @@ function PricePin({ price }: { price: string }) {
           borderTopRightRadius: PIN_HEAD_SIZE / 2,
           borderBottomLeftRadius: PIN_HEAD_SIZE / 2,
           borderBottomRightRadius: 0,
-          backgroundColor: PIN_NAVY,
+          backgroundColor: pinColor,
           // White outline so the pin separates from the map at a glance —
           // the map's own highway color (staticMap.ts's MAP_STYLE) is this
           // exact navy, so an unbordered pin was blending straight into it.
+          // Storage's purple doesn't have the same collision, but the same
+          // white outline keeps both categories visually consistent.
           border: "2px solid #FFFFFF",
           transform: "rotate(45deg)",
           display: "flex",
@@ -231,7 +255,7 @@ function PricePin({ price }: { price: string }) {
             width: PIN_HEAD_SIZE - PIN_RING_INSET * 2,
             height: PIN_HEAD_SIZE - PIN_RING_INSET * 2,
             borderRadius: (PIN_HEAD_SIZE - PIN_RING_INSET * 2) / 2,
-            backgroundColor: PIN_NAVY_DEEP,
+            backgroundColor: pinRingColor,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -567,7 +591,7 @@ export default function HeroMap() {
                 className="absolute -translate-x-1/2"
                 style={{ left: x, top: y - PIN_TOTAL_HEIGHT }}
               >
-                <PricePin price={pin.price} />
+                <PricePin price={pin.price} category={pin.category} />
               </div>
             );
           })}
