@@ -29,7 +29,23 @@ serve(async (req) => {
     const user = data.user;
     if (!user) throw new Error("Unauthorized");
 
+    // Mobile has no browser "origin" to read (React Native's fetch never
+    // sends an Origin header the way a browser does), so the old
+    // `origin || "http://localhost:3000"` fallback silently pointed
+    // Stripe's refresh/return URLs at a dead web address for every mobile
+    // caller. Mobile now sends its own deep-link scheme explicitly in the
+    // body; web keeps sending no body at all (unchanged), so it still
+    // falls through to the origin header exactly as before.
+    let requestedReturnUrl: string | undefined;
+    try {
+      const body = await req.json();
+      requestedReturnUrl = typeof body?.returnUrl === "string" ? body.returnUrl : undefined;
+    } catch {
+      // No JSON body (web's `{}` still parses fine; this only catches a
+      // genuinely empty request) -- fall through to the origin-based URL.
+    }
     const origin = req.headers.get("origin") || "http://localhost:3000";
+    const returnUrl = requestedReturnUrl || `${origin}/dashboard`;
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -76,8 +92,8 @@ serve(async (req) => {
     // Create onboarding link
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/dashboard`,
-      return_url: `${origin}/dashboard`,
+      refresh_url: returnUrl,
+      return_url: returnUrl,
       type: "account_onboarding",
     });
 

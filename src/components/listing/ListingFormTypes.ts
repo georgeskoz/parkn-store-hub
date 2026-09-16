@@ -45,6 +45,7 @@ export interface ListingFormData {
   studentUniversities: string;
   nearbyLandmarks: string[];
   customLandmark: string;
+  allowInstallments: boolean;
   // Photos
   photos: UploadedPhoto[];
   // Disclaimer
@@ -93,6 +94,7 @@ export const INITIAL_FORM: ListingFormData = {
   studentUniversities: "",
   nearbyLandmarks: [],
   customLandmark: "",
+  allowInstallments: false,
   photos: [],
   disclaimerAccepted: false,
 };

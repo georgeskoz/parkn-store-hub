@@ -125,6 +125,19 @@ function computeBookingPricing(
   const hasDaily = !!listing.price_daily;
   const hasHourly = !!listing.price_hourly;
 
+  // Weekly/monthly units are billed off the calendar-day span (ignoring
+  // the specific check-in/check-out clock times), same as storage below
+  // and the mobile app's own tier math -- using precise durationHours
+  // here instead was the bug: a booking that's exactly one calendar
+  // month (e.g. Sep 15 -> Oct 15) but with, say, a 9am check-in and 5pm
+  // check-out picks up an extra ~8 hours beyond 30*24h, which was enough
+  // to push Math.ceil(durationHours / (24*30)) from 1 up to 2 -- doubling
+  // the monthly candidate's price for a same-day time difference that
+  // has nothing to do with how many months were actually booked. Daily
+  // and hourly stay duration-precise on purpose: a partial extra day (or
+  // hour) genuinely is another billable day/hour at that granularity.
+  const calendarDaySpan = startDate && endDate ? Math.max(differenceInDays(endDate, startDate), 1) : 0;
+
   // Pick the cheapest applicable rate for the actual duration.
   const bestRate: BestRate = (() => {
     if (!durationMs) return null;
@@ -133,8 +146,8 @@ function computeBookingPricing(
       const candidates: { rate: "hourly" | "daily" | "weekly" | "monthly"; total: number }[] = [];
       if (hasHourly) candidates.push({ rate: "hourly", total: Number(listing.price_hourly) * Math.max(Math.ceil(durationHours), 1) });
       if (hasDaily) candidates.push({ rate: "daily", total: Number(listing.price_daily) * Math.max(Math.ceil(durationHours / 24), 1) });
-      if (hasWeekly && durationHours >= 24 * 7) candidates.push({ rate: "weekly", total: Number(listing.price_weekly) * Math.max(Math.ceil(durationHours / (24 * 7)), 1) });
-      if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(durationHours / (24 * 30)), 1) });
+      if (hasWeekly && durationHours >= 24 * 7) candidates.push({ rate: "weekly", total: Number(listing.price_weekly) * Math.max(Math.ceil(calendarDaySpan / 7), 1) });
+      if (hasMonthly && durationHours >= 24 * 28) candidates.push({ rate: "monthly", total: Number(listing.price_monthly) * Math.max(Math.ceil(calendarDaySpan / 30), 1) });
       if (!candidates.length) return hasDaily ? "daily" : hasWeekly ? "weekly" : hasMonthly ? "monthly" : hasHourly ? "hourly" : null;
       candidates.sort((a, b) => a.total - b.total);
       return candidates[0].rate;
@@ -148,8 +161,8 @@ function computeBookingPricing(
 
   const unitPrice = bestRate ? Number(listing[`price_${bestRate}`]) : 0;
   const units = !bestRate ? 0
-    : bestRate === "monthly" ? Math.max(Math.ceil(durationHours / (24 * 30)), 1)
-    : bestRate === "weekly" ? Math.max(Math.ceil(durationHours / (24 * 7)), 1)
+    : bestRate === "monthly" ? Math.max(Math.ceil(calendarDaySpan / 30), 1)
+    : bestRate === "weekly" ? Math.max(Math.ceil(calendarDaySpan / 7), 1)
     : bestRate === "daily" ? Math.max(Math.ceil(durationHours / 24), 1)
     : Math.max(Math.ceil(durationHours), 1);
   const subtotal = +(unitPrice * units).toFixed(2);
@@ -181,7 +194,24 @@ export default function ListingDetail() {
   const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
   const [openDow, setOpenDow] = useState<Set<number> | null>(null);
   const [bookedDays, setBookedDays] = useState<Set<string>>(new Set());
-  const [taxPreview, setTaxPreview] = useState<{ lineItems: TaxLineItem[]; taxTotal: number }>({ lineItems: [], taxTotal: 0 });
+  const [taxPreview, setTaxPreview] = useState<{ lineItems: TaxLineItem[]; taxTotal: number; platformFee: number }>({ lineItems: [], taxTotal: 0, platformFee: 0 });
+  // Same platform_settings lookup the mobile app's booking screen already
+  // does -- the renter is charged this fee on top of the subtotal (see
+  // create-booking-payment), so the preview needs the real rate rather
+  // than assuming a fixed percentage.
+  const [commissionRate, setCommissionRate] = useState<number>(0.1);
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "commission_rate")
+        .maybeSingle();
+      if (error || !data) return;
+      const pct = parseFloat(data.value as string);
+      if (Number.isFinite(pct)) setCommissionRate(pct / 100);
+    })();
+  }, []);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -278,22 +308,28 @@ export default function ListingDetail() {
   // than duplicating the rate-selection logic.
   useEffect(() => {
     if (!listing || !startDate || !endDate) {
-      setTaxPreview({ lineItems: [], taxTotal: 0 });
+      setTaxPreview({ lineItems: [], taxTotal: 0, platformFee: 0 });
       return;
     }
     const { subtotal } = computeBookingPricing(listing, startDate, endDate, startTime, endTime);
     if (!subtotal) {
-      setTaxPreview({ lineItems: [], taxTotal: 0 });
+      setTaxPreview({ lineItems: [], taxTotal: 0, platformFee: 0 });
       return;
     }
+    // Platform fee is charged on top of the subtotal, then tax is computed
+    // on the fee-inclusive amount -- matching create-booking-payment
+    // exactly, so this preview never disagrees with what actually gets
+    // charged at checkout.
+    const platformFee = +(subtotal * commissionRate).toFixed(2);
+    const feeInclusiveSubtotal = +(subtotal + platformFee).toFixed(2);
     let cancelled = false;
     (async () => {
       try {
         const { data, error } = await supabase.functions.invoke("preview-booking-tax", {
-          body: { country: listing.country, province: listing.province, subtotal },
+          body: { country: listing.country, province: listing.province, subtotal: feeInclusiveSubtotal },
         });
         if (!cancelled && !error && data) {
-          setTaxPreview(data);
+          setTaxPreview({ ...data, platformFee });
         }
       } catch (err) {
         console.warn("Tax preview skipped:", err);
@@ -302,7 +338,7 @@ export default function ListingDetail() {
     return () => {
       cancelled = true;
     };
-  }, [listing, startDate, endDate, startTime, endTime]);
+  }, [listing, startDate, endDate, startTime, endTime, commissionRate]);
 
   if (loading) {
     return (
@@ -355,8 +391,10 @@ export default function ListingDetail() {
 
   const { isParking, durationDays, bestRate, unitPrice, units, subtotal } =
     computeBookingPricing(listing, startDate, endDate, startTime, endTime);
+  const platformFee = taxPreview.platformFee;
+  const feeInclusiveSubtotal = +(subtotal + platformFee).toFixed(2);
   const taxTotal = taxPreview.taxTotal;
-  const total = +(subtotal + taxTotal).toFixed(2);
+  const total = +(feeInclusiveSubtotal + taxTotal).toFixed(2);
 
   const applyTime = (d: Date, t: string) => {
     const [h, m] = (t || "").split(":").map(Number);
@@ -380,8 +418,10 @@ export default function ListingDetail() {
       unitPrice,
       units,
       subtotal,
+      platformFee,
       taxLineItems: taxPreview.lineItems,
       total,
+      allowInstallments: !!listing.allow_installments,
     };
 
     if (!user) {
@@ -751,6 +791,10 @@ export default function ListingDetail() {
                           <span className="capitalize">{t(`listingDetail.rateLabel.${bestRate}`)}</span>
                         </div>
                         <div className="flex justify-between"><span>{t("listingDetail.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground text-xs">
+                          <span>{t("bookingConfirmation.platformFee")} ({Math.round(commissionRate * 100)}%)</span>
+                          <span>${platformFee.toFixed(2)}</span>
+                        </div>
                         {taxPreview.lineItems.map((item) => (
                           <div key={item.name} className="flex justify-between text-muted-foreground text-xs">
                             <span>{item.name}</span><span>${item.amount.toFixed(2)}</span>

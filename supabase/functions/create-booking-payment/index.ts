@@ -192,11 +192,22 @@ serve(async (req) => {
       units,
       listingType,
       intake,
+      installments,
     } = body;
 
     if (!listingId || !title || !startDate || !endDate || !rate || !units) {
       throw new Error("Missing booking details");
     }
+
+    // installments: { frequency: "weekly" | "monthly" } | null — renter's
+    // choice, gated on the listing's own allow_installments opt-in (checked
+    // below once the listing row is loaded). Anything else is ignored rather
+    // than rejected outright, since a stale/replayed client payload here
+    // should degrade to "pay in full", not fail the whole booking.
+    const installmentFrequency: "weekly" | "monthly" | null =
+      installments && (installments.frequency === "weekly" || installments.frequency === "monthly")
+        ? installments.frequency
+        : null;
 
     // Normalize intake fields (safe against missing/invalid payload)
     const intakeFields: Record<string, unknown> = {};
@@ -253,11 +264,15 @@ serve(async (req) => {
       // ListingFormTypes.ts's form.seasonal, which the wizard UI never
       // actually sets either, so this isn't a regression, just no longer
       // crashing the entire booking flow along with an already-dead field).
-      .select("city, category, country, province, host_id, user_id, price_hourly, price_daily, price_weekly, price_monthly")
+      .select("city, category, country, province, host_id, user_id, price_hourly, price_daily, price_weekly, price_monthly, allow_installments")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError) throw new Error(`Listing lookup failed: ${listingError.message}`);
     if (!listing) throw new Error("Listing not found");
+
+    if (installmentFrequency && !(listing as any).allow_installments) {
+      throw new Error("This listing does not support paying in installments");
+    }
 
     const currency = deriveCurrency((listing as any).country);
 
@@ -300,26 +315,111 @@ serve(async (req) => {
     const baseSubtotal = +(+unitPrice * unitsNum).toFixed(2);
     const subtotal = +(baseSubtotal * surgeMultiplier).toFixed(2);
 
+    // Platform fee is charged TO THE RENTER on top of the subtotal, then
+    // tax is computed on the fee-inclusive amount -- matching the mobile
+    // app's booking/[id].tsx exactly (grandTotal = surgedBase +
+    // platformFee, tax on grandTotal). This used to be computed from
+    // `total` (subtotal+tax) and only ever deducted from the host's
+    // payout, never actually charged to the renter, so the web checkout
+    // summary had nothing to show as a "platform fee" line -- the renter
+    // simply wasn't paying one. Moved above the tax calls since tax now
+    // depends on the fee-inclusive subtotal, not the other way around.
+    const commissionRate = await getCommissionRate(admin);
+    const platformFee = +(subtotal * commissionRate).toFixed(2);
+    const feeInclusiveSubtotal = +(subtotal + platformFee).toFixed(2);
+
     const listingLocation = { country: (listing as any).country, province: (listing as any).province };
-    const tax = await calculateBookingTax(admin, subtotal, listingLocation);
-    const total = +(subtotal + tax.taxTotal).toFixed(2);
+    const tax = await calculateBookingTax(admin, feeInclusiveSubtotal, listingLocation);
+    const total = +(feeInclusiveSubtotal + tax.taxTotal).toFixed(2);
 
     // originalTotal is the pre-surge comparison total shown in the UI --
-    // needs the same location-aware tax, not the old flat-14.975% multiplier
-    // (which baked in the same always-Quebec-rate assumption as `total` used
-    // to have).
-    const baseTax = await calculateBookingTax(admin, baseSubtotal, listingLocation);
-    const originalTotal = +(baseSubtotal + baseTax.taxTotal).toFixed(2);
+    // needs the same fee-then-tax treatment as `total` above, or a surge
+    // listing's "before surge" comparison price would silently exclude
+    // the fee that the real total includes, making the surge delta look
+    // bigger than it actually is.
+    const baseFee = +(baseSubtotal * commissionRate).toFixed(2);
+    const baseFeeInclusiveSubtotal = +(baseSubtotal + baseFee).toFixed(2);
+    const baseTax = await calculateBookingTax(admin, baseFeeInclusiveSubtotal, listingLocation);
+    const originalTotal = +(baseFeeInclusiveSubtotal + baseTax.taxTotal).toFixed(2);
 
-    const commissionRate = await getCommissionRate(admin);
     const totalCents = Math.round(total * 100);
-    const platformFeeCents = Math.round(totalCents * commissionRate);
+    const platformFeeCents = Math.round(platformFee * 100);
+
+    // Installments: fixed-date-range booking, total split into N weekly/
+    // monthly payments. N = ceil(duration / period) -- a booking shorter
+    // than one period collapses to N=1, which is just "pay in full", so
+    // installmentFrequency is only honored when it actually produces more
+    // than one payment. Only installment 1 is charged now, through the
+    // same Checkout Session as a full-pay booking (just for a smaller
+    // amount); rows for installments 2..N are inserted into
+    // booking_installments below and picked up later by charge-installments
+    // (off-session, same pattern as charge-overdue).
+    //
+    // Each of subtotal/platformFee/tax is split independently across N
+    // parts in cents, so they always sum back to totalCents exactly -- the
+    // last installment absorbs whatever the integer division leaves over,
+    // rather than every installment's total being a rounded (and therefore
+    // possibly non-summing) fraction.
+    function splitCents(wholeCents: number, n: number): number[] {
+      const base = Math.floor(wholeCents / n);
+      const parts = new Array(n).fill(base);
+      parts[n - 1] = wholeCents - base * (n - 1);
+      return parts;
+    }
+
+    const durationDays = Math.max(
+      1,
+      (new Date(endDate).getTime() - new Date(startDate).getTime()) / (24 * 3600 * 1000),
+    );
+    const periodDays = installmentFrequency === "weekly" ? 7 : installmentFrequency === "monthly" ? 30 : null;
+    const installmentCount = periodDays ? Math.max(1, Math.ceil(durationDays / periodDays)) : 1;
+    const isInstallmentPlan = installmentFrequency !== null && installmentCount > 1;
+
+    const subtotalCentsForSplit = Math.round(subtotal * 100);
+    const taxCents = Math.round(tax.taxTotal * 100);
+
+    let installmentSchedule: Array<{
+      sequence: number;
+      dueDate: string;
+      amount: number;
+      platformFee: number;
+      taxAmount: number;
+      totalAmount: number;
+    }> = [];
+    let chargeNowCents = totalCents;
+
+    if (isInstallmentPlan) {
+      const subtotalParts = splitCents(subtotalCentsForSplit, installmentCount);
+      const feeParts = splitCents(platformFeeCents, installmentCount);
+      const taxParts = splitCents(taxCents, installmentCount);
+      installmentSchedule = subtotalParts.map((amountCents, i) => {
+        const totalCentsI = amountCents + feeParts[i] + taxParts[i];
+        const dueDate = new Date(
+          new Date(startDate).getTime() + i * (periodDays as number) * 24 * 3600 * 1000,
+        ).toISOString().slice(0, 10);
+        return {
+          sequence: i + 1,
+          dueDate,
+          amount: amountCents / 100,
+          platformFee: feeParts[i] / 100,
+          taxAmount: taxParts[i] / 100,
+          totalAmount: totalCentsI / 100,
+        };
+      });
+      chargeNowCents = installmentSchedule[0].totalAmount * 100;
+    }
 
     const autoReleaseAt = new Date(
       new Date(endDate).getTime() + AUTO_RELEASE_HOURS * 3600 * 1000,
     ).toISOString();
 
     // Prevent double-booking: reject if any active booking overlaps this range.
+    // This early check is a fast, friendly pre-filter only -- it is a
+    // SELECT-then-INSERT and therefore NOT race-condition-safe on its own
+    // (two near-simultaneous checkouts can both pass it before either
+    // INSERT lands). The bookings_no_overlap EXCLUDE constraint added in
+    // migration 20260915180000 is the actual guard; the insert below is
+    // what catches a conflict this pre-check missed.
     const { data: overlaps, error: overlapErr } = await admin
       .from("bookings")
       .select("id")
@@ -368,13 +468,28 @@ serve(async (req) => {
         // as "0.1%" instead of "10%".
         commission_rate: commissionRate * 100,
         platform_fee: platformFeeCents / 100,
+        // tax was already computed above (line ~317) but never persisted --
+        // it only ever made it into Stripe session metadata, leaving this
+        // column NULL on every web booking. payout-executor.ts's payout
+        // math needs it to exclude tax from the host's share correctly.
+        tax_amount: tax.taxTotal,
+        tax_breakdown: tax.lineItems,
         category: listing.category,
         city: listing.city,
         ...intakeFields,
       })
       .select("id")
       .single();
-    if (bookingError) throw new Error(bookingError.message);
+    if (bookingError) {
+      // 23P01 = exclusion_violation -- the bookings_no_overlap constraint
+      // caught a real race the pre-check above missed (two checkouts landing
+      // within the same narrow window). Same user-facing message as the
+      // pre-check, not the raw Postgres error.
+      if ((bookingError as { code?: string }).code === "23P01") {
+        throw new Error("This time slot was just booked by someone else. Please pick another time.");
+      }
+      throw new Error(bookingError.message);
+    }
 
     // Reuse or create Stripe customer (needed for off_session overdue charges)
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -397,9 +512,9 @@ serve(async (req) => {
             currency,
             product_data: {
               name: title,
-              description: `${listingType} booking: ${address} (${rate} × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}`,
+              description: `${listingType} booking: ${address} (${rate} × ${units})${surgeLabel ? ` • Surge: ${surgeLabel}` : ""}${isInstallmentPlan ? ` • Installment 1 of ${installmentCount} (${installmentFrequency})` : ""}`,
             },
-            unit_amount: totalCents,
+            unit_amount: chargeNowCents,
           },
           quantity: 1,
         },
@@ -408,7 +523,10 @@ serve(async (req) => {
       payment_intent_data: {
         // Funds land on Spotsvault platform account (escrow). Transfer is created
         // later by release-booking-payout. transfer_group lets us tie transfers
-        // back to this booking.
+        // back to this booking. setup_future_usage saves this payment method
+        // for reuse off-session -- needed for overdue charges always, and for
+        // charge-installments (installments 2..N below) when this is an
+        // installment plan.
         transfer_group: `booking_${booking.id}`,
         setup_future_usage: "off_session",
         metadata: {
@@ -432,6 +550,8 @@ serve(async (req) => {
         platform_fee_cents: String(platformFeeCents),
         provider_payout_cents: String(totalCents - platformFeeCents),
         user_id: user.id,
+        installment_frequency: installmentFrequency || "",
+        installment_count: String(installmentCount),
       },
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/booking/confirm`,
@@ -446,6 +566,34 @@ serve(async (req) => {
         stripe_session_id: session.id,
       })
       .eq("id", booking.id);
+
+    // Installment 1 is charged through the Checkout session above (already
+    // reflected in chargeNowCents) -- only rows for 2..N go into
+    // booking_installments here. charge-installments picks these up by
+    // due_date, off-session, once stripe-webhook has captured this session's
+    // payment method onto the booking (same setup_future_usage flow
+    // charge-overdue already depends on).
+    if (isInstallmentPlan && installmentSchedule.length > 1) {
+      const { error: installmentsError } = await admin.from("booking_installments").insert(
+        installmentSchedule.slice(1).map((inst) => ({
+          booking_id: booking.id,
+          sequence: inst.sequence,
+          due_date: inst.dueDate,
+          amount: inst.amount,
+          platform_fee: inst.platformFee,
+          tax_amount: inst.taxAmount,
+          total_amount: inst.totalAmount,
+          status: "pending",
+        })),
+      );
+      if (installmentsError) {
+        // Don't fail the whole booking over this -- the renter has already
+        // been sent to Stripe Checkout for installment 1. Log loudly so
+        // it's visible that installments 2..N need to be reconstructed or
+        // charged manually for this booking.
+        console.error("BOOKING_INSTALLMENTS_INSERT_FAILED:", { bookingId: booking.id, message: installmentsError.message });
+      }
+    }
 
     return new Response(
       JSON.stringify({

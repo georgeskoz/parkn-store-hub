@@ -25,4 +25,4 @@
 // to) parses as an opaque error type instead, silently losing type-checking
 // on every field the caller reads off the result.
 export const ANON_SAFE_LISTING_COLUMNS =
-  "id,user_id,host_id,category,type,title,description,city,province,country,lat,lng,size_sqft,price_hourly,price_daily,price_weekly,price_monthly,nearby_venues,photos,created_at,updated_at,status,instant_book,is_active,is_approved,amenities,avg_rating,event_pricing_enabled,event_pricing,ai_moderation" as const;
+  "id,user_id,host_id,category,type,title,description,city,province,country,lat,lng,size_sqft,price_hourly,price_daily,price_weekly,price_monthly,nearby_venues,photos,created_at,updated_at,status,instant_book,allow_installments,is_active,is_approved,amenities,avg_rating,event_pricing_enabled,event_pricing,ai_moderation" as const;

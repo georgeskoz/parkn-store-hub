@@ -380,11 +380,22 @@
     "checkIn": "Arrivée",
     "checkOut": "Départ",
     "eventSurgePricing": "Tarification événementielle majorée — {{multiplier}}x",
-    "platformFee": "Frais de plateforme (10 %)",
-    "providerPayout": "Versement au fournisseur (90 %)",
+    "platformFee": "Frais de plateforme",
+    "providerPayout": "Versement au fournisseur",
     "processing": "Traitement en cours...",
     "payAmount": "Payer {{amount}} $ CAD",
-    "browseMore": "Voir plus d'options"
+    "browseMore": "Voir plus d'options",
+    "howToPay": "Comment souhaitez-vous payer?",
+    "payInFull": "Payer en totalité",
+    "installmentOption": {
+      "weekly": "Hebdomadaire ({{count}} paiements)",
+      "monthly": "Mensuel ({{count}} paiements)"
+    },
+    "installmentSummary": "{{count}} paiements {{frequency}} de {{amount}} $ CAD, à partir d'aujourd'hui.",
+    "frequencyAdverb": {
+      "weekly": "hebdomadaires",
+      "monthly": "mensuels"
+    }
   },
   "bookingSuccess": {
     "paymentSuccessful": "Paiement réussi!",
@@ -413,6 +424,8 @@
   "listingWizard": {
     "add": "Ajouter",
     "addCustomLandmarkPlaceholder": "Ajouter un point de repère personnalisé…",
+    "allowInstallments": "Paiement en plusieurs fois",
+    "allowInstallmentsDescription": "Permettre aux locataires de diviser les longues réservations en paiements hebdomadaires ou mensuels",
     "addSlot": "Ajouter une plage",
     "addressLabel": "Adresse",
     "applicableUniversities": "Universités admissibles (facultatif)",

@@ -11,7 +11,8 @@ import LanguageToggle from "@/components/LanguageToggle";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  const displayName = profile?.display_name || user?.email || "";
   const { total: unreadTotal } = useUnreadMessages();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -40,6 +41,9 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <span className="text-sm text-muted-foreground truncate max-w-[160px]" title={displayName}>
+                  {t("nav.greeting", { name: displayName })}
+                </span>
                 <Button variant="ghost" size="sm" className="relative" onClick={() => navigate("/messages")}>
                   <MessageSquare className="w-4 h-4 mr-1" />
                   {t("nav.messages")}
@@ -92,6 +96,11 @@ const Navbar = () => {
             <Link to="/list" className="block px-3 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
               {t("nav.listYourSpace")}
             </Link>
+            {user && (
+              <div className="px-3 py-1 text-sm text-muted-foreground truncate">
+                {t("nav.greeting", { name: displayName })}
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 pt-2 px-3">
               <div className="flex gap-2 flex-1">
                 {user ? (

@@ -98,6 +98,7 @@ export default function ListYourSpace() {
           price_monthly: form.monthly ? parseFloat(form.monthly) : null,
           nearby_venues: form.nearbyLandmarks,
           photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
+          allow_installments: form.allowInstallments,
           is_approved: false,
           status: "pending",
         })

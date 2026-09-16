@@ -111,6 +111,7 @@ export default function EditListing() {
           seasonEndMonth: terms?.season_end_month?.toString() ?? "4",
           nearbyLandmarks: (l as any).nearby_venues ?? [],
           photos,
+          allowInstallments: (l as any).allow_installments ?? false,
           disclaimerAccepted: true,
         });
       } catch (err: any) {
@@ -147,6 +148,7 @@ export default function EditListing() {
           price_monthly: form.monthly ? parseFloat(form.monthly) : null,
           nearby_venues: form.nearbyLandmarks,
           photos: form.photos.map((p) => ({ url: p.url, path: p.path })),
+          allow_installments: form.allowInstallments,
           host_id: user.id,
           is_approved: false,
           status: "pending",

@@ -48,10 +48,14 @@ interface BookingState {
   unitPrice: number;
   units: number;
   subtotal: number;
+  platformFee?: number;
   taxLineItems: TaxLineItem[];
   total: number;
   intake?: IntakePayload;
+  allowInstallments?: boolean;
 }
+
+type InstallmentFrequency = "weekly" | "monthly";
 
 // Must match the literal string thrown by create-booking-payment's
 // double-booking guard -- matched exactly (not by substring) so unrelated
@@ -63,6 +67,7 @@ interface SurgePreview {
   multiplier: number;
   label: string | null;
   subtotal: number;
+  platformFee: number;
   taxLineItems: TaxLineItem[];
   total: number;
 }
@@ -73,6 +78,29 @@ export default function BookingConfirmation() {
   const { user } = useAuth();
   const [paying, setPaying] = useState(false);
   const [surge, setSurge] = useState<SurgePreview | null>(null);
+  // null = pay in full. Only offered when the listing opts in
+  // (state.allowInstallments) -- the actual eligible frequencies (weekly
+  // needs >=2 weeks of booking, monthly >=2 months) are computed below
+  // once `state` is available, same N = ceil(duration/period) rule the
+  // create-booking-payment edge function uses server-side.
+  const [installmentFrequency, setInstallmentFrequency] = useState<InstallmentFrequency | null>(null);
+  // Same platform_settings lookup ListingDetail.tsx uses -- keeps the fee
+  // shown/charged here consistent with the estimate the renter already saw.
+  // Falls back to 10% if the row is missing so this never renders $0 fee.
+  const [commissionRate, setCommissionRate] = useState<number>(0.1);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "commission_rate")
+        .maybeSingle();
+      if (error || !data) return;
+      const pct = parseFloat(data.value as string);
+      if (Number.isFinite(pct)) setCommissionRate(pct / 100);
+    })();
+  }, []);
 
   useEffect(() => {
     if (!state) return;
@@ -101,19 +129,21 @@ export default function BookingConfirmation() {
         }
         if (best.multiplier > 1) {
           const subtotal = +(state.subtotal * best.multiplier).toFixed(2);
+          const platformFee = +(subtotal * commissionRate).toFixed(2);
+          const feeInclusiveSubtotal = +(subtotal + platformFee).toFixed(2);
           const { data: tax, error: taxError } = await supabase.functions.invoke("preview-booking-tax", {
-            body: { country: listing.country, province: listing.province, subtotal },
+            body: { country: listing.country, province: listing.province, subtotal: feeInclusiveSubtotal },
           });
           const taxLineItems: TaxLineItem[] = !taxError && Array.isArray(tax?.lineItems) ? tax.lineItems : [];
           const taxTotal = !taxError && typeof tax?.taxTotal === "number" ? tax.taxTotal : 0;
-          const total = +(subtotal + taxTotal).toFixed(2);
-          setSurge({ multiplier: best.multiplier, label: best.label, subtotal, taxLineItems, total });
+          const total = +(feeInclusiveSubtotal + taxTotal).toFixed(2);
+          setSurge({ multiplier: best.multiplier, label: best.label, subtotal, platformFee, taxLineItems, total });
         }
       } catch (err) {
         console.warn("Surge lookup skipped:", err);
       }
     })();
-  }, [state]);
+  }, [state, commissionRate]);
 
   if (!state) {
     return (
@@ -141,6 +171,30 @@ export default function BookingConfirmation() {
   const displayTotal = surge ? surge.total : state.total;
   const displaySubtotal = surge ? surge.subtotal : state.subtotal;
   const displayTaxLineItems = surge ? surge.taxLineItems : state.taxLineItems;
+  // state.platformFee comes from ListingDetail.tsx's estimate; fall back to
+  // recomputing it for older nav states that predate that field.
+  const displayPlatformFee = surge
+    ? surge.platformFee
+    : state.platformFee ?? +(state.subtotal * commissionRate).toFixed(2);
+
+  // Client-side preview only -- the authoritative split (which also has to
+  // divide the fee and tax, not just the total) happens server-side in
+  // create-booking-payment. This just tells the renter roughly what N is
+  // and what the first payment will be, using the same N = ceil(duration /
+  // period) rule, collapsed to "not offered" (not "pay 1 installment") when
+  // a period doesn't fit at least twice into the booking.
+  const durationDays = Math.max(1, (end.getTime() - start.getTime()) / (24 * 3600 * 1000));
+  const weeklyCount = Math.ceil(durationDays / 7);
+  const monthlyCount = Math.ceil(durationDays / 30);
+  const installmentOptions: { frequency: InstallmentFrequency; count: number }[] = [
+    ...(weeklyCount >= 2 ? [{ frequency: "weekly" as const, count: weeklyCount }] : []),
+    ...(monthlyCount >= 2 ? [{ frequency: "monthly" as const, count: monthlyCount }] : []),
+  ];
+  const canOfferInstallments = !!state.allowInstallments && installmentOptions.length > 0;
+  const selectedInstallment = installmentOptions.find((o) => o.frequency === installmentFrequency) ?? null;
+  const firstPaymentAmount = selectedInstallment
+    ? +(displayTotal / selectedInstallment.count).toFixed(2)
+    : displayTotal;
 
   const handlePay = async () => {
     if (!user) {
@@ -149,7 +203,11 @@ export default function BookingConfirmation() {
     }
     setPaying(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-booking-payment", { body: state });
+      const body = {
+        ...state,
+        installments: canOfferInstallments && selectedInstallment ? { frequency: selectedInstallment.frequency } : null,
+      };
+      const { data, error } = await supabase.functions.invoke("create-booking-payment", { body });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;
       else throw new Error(t("bookingConfirmation.noCheckoutUrl"));
@@ -185,8 +243,9 @@ export default function BookingConfirmation() {
     }
   };
 
-  const platformFee = +(displayTotal * 0.1).toFixed(2);
-  const providerPayout = +(displayTotal - platformFee).toFixed(2);
+  // Host payout = total minus the fee the renter is charged (the fee no
+  // longer comes out of the host's cut -- see create-booking-payment).
+  const providerPayout = +(displayTotal - displayPlatformFee).toFixed(2);
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,6 +301,10 @@ export default function BookingConfirmation() {
                 <span className="text-muted-foreground capitalize">{t(`listingDetail.rateLabel.${state.rate}`, { defaultValue: state.rate })} × {state.units}</span>
                 <span>${displaySubtotal.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between text-muted-foreground text-xs">
+                <span>{t("bookingConfirmation.platformFee")} ({Math.round(commissionRate * 100)}%)</span>
+                <span>${displayPlatformFee.toFixed(2)}</span>
+              </div>
               {displayTaxLineItems.map((item) => (
                 <div key={item.name} className="flex justify-between text-muted-foreground text-xs">
                   <span>{item.name}</span><span>${item.amount.toFixed(2)}</span>
@@ -253,9 +316,44 @@ export default function BookingConfirmation() {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-              <div className="flex justify-between"><span>{t("bookingConfirmation.platformFee")}</span><span>${platformFee.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>{t("bookingConfirmation.providerPayout")}</span><span>${providerPayout.toFixed(2)}</span></div>
             </div>
+
+            {canOfferInstallments && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">{t("bookingConfirmation.howToPay")}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant={installmentFrequency === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInstallmentFrequency(null)}
+                  >
+                    {t("bookingConfirmation.payInFull")}
+                  </Button>
+                  {installmentOptions.map((opt) => (
+                    <Button
+                      key={opt.frequency}
+                      type="button"
+                      variant={installmentFrequency === opt.frequency ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setInstallmentFrequency(opt.frequency)}
+                    >
+                      {t(`bookingConfirmation.installmentOption.${opt.frequency}`, { count: opt.count })}
+                    </Button>
+                  ))}
+                </div>
+                {selectedInstallment && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("bookingConfirmation.installmentSummary", {
+                      count: selectedInstallment.count,
+                      amount: firstPaymentAmount.toFixed(2),
+                      frequency: t(`bookingConfirmation.frequencyAdverb.${selectedInstallment.frequency}`),
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
 
             {state.intake && state.intake.kind !== "none" && (
               <BookingIntakeDetails
@@ -271,7 +369,7 @@ export default function BookingConfirmation() {
               {paying ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("bookingConfirmation.processing")}</>
               ) : (
-                <><CreditCard className="w-4 h-4 mr-2" /> {t("bookingConfirmation.payAmount", { amount: displayTotal.toFixed(2) })}</>
+                <><CreditCard className="w-4 h-4 mr-2" /> {t("bookingConfirmation.payAmount", { amount: firstPaymentAmount.toFixed(2) })}</>
               )}
             </Button>
           </CardContent>

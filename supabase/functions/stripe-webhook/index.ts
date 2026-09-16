@@ -128,15 +128,33 @@ serve(async (req) => {
           // Stripe never retried and the failure was invisible. Match
           // checkout.session.completed's pattern: capture the error and throw,
           // so a real failure surfaces as a 500 and Stripe retries it.
+          //
+          // escrow_status must NOT be unconditionally set to "held" here.
+          // This handler also fires for mobile's create-payment-intent
+          // destination charges (application_fee_amount + transfer_data.
+          // destination) -- those pay the host directly at charge time and
+          // create-payment-intent deliberately leaves escrow_status/
+          // auto_release_at unset for that case, precisely so
+          // processBookingPayout's escrow-state guard (payout-executor.ts)
+          // refuses to fire a second transfer for money that already left
+          // the platform. Blindly overwriting that here with "held" would
+          // have silently reopened that exact double-pay vector on every
+          // mobile booking with a Connect-onboarded host -- caught while
+          // building the "pay in installments" feature, which depends on
+          // this same escrow_status invariant actually holding.
+          const isDestinationCharge = !!pi.transfer_data?.destination;
+          const update: Record<string, unknown> = {
+            status: "confirmed",
+            stripe_payment_intent_id: pi.id,
+            stripe_payment_method_id:
+              typeof pi.payment_method === "string" ? pi.payment_method : null,
+          };
+          if (!isDestinationCharge) {
+            update.escrow_status = "held";
+          }
           const { error } = await supabase
             .from("bookings")
-            .update({
-              status: "confirmed",
-              escrow_status: "held",
-              stripe_payment_intent_id: pi.id,
-              stripe_payment_method_id:
-                typeof pi.payment_method === "string" ? pi.payment_method : null,
-            })
+            .update(update)
             .eq("id", bookingId);
           if (error) throw error;
         }

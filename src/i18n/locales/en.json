@@ -380,11 +380,22 @@
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "eventSurgePricing": "Event Surge Pricing — {{multiplier}}x",
-    "platformFee": "Platform fee (10%)",
-    "providerPayout": "Provider payout (90%)",
+    "platformFee": "Platform fee",
+    "providerPayout": "Provider payout",
     "processing": "Processing...",
     "payAmount": "Pay ${{amount}} CAD",
-    "browseMore": "Browse More"
+    "browseMore": "Browse More",
+    "howToPay": "How would you like to pay?",
+    "payInFull": "Pay in full",
+    "installmentOption": {
+      "weekly": "Weekly ({{count}} payments)",
+      "monthly": "Monthly ({{count}} payments)"
+    },
+    "installmentSummary": "{{count}} {{frequency}} payments of ${{amount}} CAD, starting today.",
+    "frequencyAdverb": {
+      "weekly": "weekly",
+      "monthly": "monthly"
+    }
   },
   "bookingSuccess": {
     "paymentSuccessful": "Payment Successful!",
@@ -413,6 +424,8 @@
   "listingWizard": {
     "add": "Add",
     "addCustomLandmarkPlaceholder": "Add a custom landmark…",
+    "allowInstallments": "Pay in Installments",
+    "allowInstallmentsDescription": "Let renters split long bookings into weekly or monthly payments",
     "addSlot": "Add slot",
     "addressLabel": "Address",
     "applicableUniversities": "Applicable universities (optional)",

@@ -35,6 +35,42 @@ function fmtDate(iso: string | null | undefined): string {
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
+// Same recompute-from-stored-dates approach used on the mobile app's
+// confirmation screen and receipt PDF (this booking row only carries
+// duration_type + start/end timestamps, not the renter's originally
+// picked hour/day count) -- kept in English-only like the rest of this
+// email's copy, since these emails aren't localized.
+function fmtDurationLabel(
+  durationType: string | null | undefined,
+  startIso: string | null | undefined,
+  endIso: string | null | undefined,
+): string | null {
+  if (!startIso || !endIso) return null;
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  const hours = (end - start) / (60 * 60 * 1000);
+  const days = Math.max(1, Math.round(hours / 24));
+  switch (durationType) {
+    case "hourly": {
+      const rounded = Math.round(hours * 10) / 10;
+      return `${rounded} hour${rounded === 1 ? "" : "s"}`;
+    }
+    case "daily":
+      return `${days} day${days === 1 ? "" : "s"}`;
+    case "weekly": {
+      const weeks = Math.ceil(days / 7);
+      return `${weeks} week${weeks === 1 ? "" : "s"}`;
+    }
+    case "monthly": {
+      const months = Math.ceil(days / 30);
+      return `${months} month${months === 1 ? "" : "s"}`;
+    }
+    default:
+      return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -60,13 +96,14 @@ serve(async (req) => {
       .from("bookings")
       .select(`
         id, total_amount, payout_amount, start_date, end_date, renter_id, host_id,
-        listings ( id, title, user_id )
+        duration_type, original_amount, platform_fee, tax_amount,
+        listings ( id, title, address, user_id )
       `)
       .eq("id", bookingId)
       .maybeSingle();
     if (!booking) throw new Error("Booking not found");
 
-    const listing = booking.listings as { id?: string; title?: string; user_id?: string } | null;
+    const listing = booking.listings as { id?: string; title?: string; address?: string | null; user_id?: string } | null;
     const hostId = (booking.host_id ?? listing?.user_id ?? null) as string | null;
     const renterId = booking.renter_id as string | null;
 
@@ -75,9 +112,18 @@ serve(async (req) => {
     if (!isRenter && !isHost) throw new Error("Not authorized for this booking");
 
     const listingTitle = listing?.title ?? "—";
+    const listingAddress = listing?.address ?? "";
     const startDate = fmtDate(booking.start_date as string | null);
     const endDate = fmtDate(booking.end_date as string | null);
     const total = Number(booking.total_amount ?? 0);
+    const durationLabel = fmtDurationLabel(
+      booking.duration_type as string | null,
+      booking.start_date as string | null,
+      booking.end_date as string | null,
+    );
+    const basePrice = booking.original_amount != null ? Number(booking.original_amount) : null;
+    const platformFee = booking.platform_fee != null ? Number(booking.platform_fee) : null;
+    const taxAmount = booking.tax_amount != null ? Number(booking.tax_amount) : null;
 
     const { data: myProfile } = await admin
       .from("profiles")
@@ -90,12 +136,21 @@ serve(async (req) => {
     let data: Record<string, unknown>;
 
     if (isRenter) {
+      const { data: hostProfile } = hostId
+        ? await admin.from("profiles").select("display_name, full_name").eq("id", hostId).maybeSingle()
+        : { data: null };
       template = "booking_confirmed";
       data = {
         seeker_name: myName,
         listing_title: listingTitle,
+        listing_address: listingAddress,
+        host_name: hostProfile?.display_name ?? hostProfile?.full_name ?? "",
         start_date: startDate,
         end_date: endDate,
+        duration_label: durationLabel ?? "",
+        base_price: basePrice != null ? basePrice.toFixed(2) : "",
+        platform_fee: platformFee != null ? platformFee.toFixed(2) : "",
+        tax_amount: taxAmount != null ? taxAmount.toFixed(2) : "",
         total_amount: total.toFixed(2),
         booking_id: bookingId,
         stripe_receipt_url: "",
@@ -110,8 +165,11 @@ serve(async (req) => {
         host_name: myName,
         seeker_name: renterProfile?.display_name ?? renterProfile?.full_name ?? "Guest",
         listing_title: listingTitle,
+        listing_address: listingAddress,
         start_date: startDate,
         end_date: endDate,
+        duration_label: durationLabel ?? "",
+        platform_fee: platformFee != null ? platformFee.toFixed(2) : "",
         payout_amount: payoutAmount.toFixed(2),
         booking_id: bookingId,
       };

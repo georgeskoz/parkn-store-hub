@@ -32,6 +32,7 @@ interface DbListing {
   spots: number | null;
   student_discount: boolean;
   student_discount_percent: number | null;
+  allow_installments?: boolean | null;
 }
 
 interface Props {

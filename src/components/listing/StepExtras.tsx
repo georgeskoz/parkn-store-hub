@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { GraduationCap, Landmark, X } from "lucide-react";
+import { CreditCard, GraduationCap, Landmark, X } from "lucide-react";
 import type { ListingFormData } from "./ListingFormTypes";
 import { COMMON_LANDMARKS, getLandmarkLabel } from "./ListingFormTypes";
 
@@ -42,6 +42,18 @@ export default function StepExtras({ form, update, toggleLandmark, addCustomLand
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pay in Installments */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-primary mb-1">
+          <CreditCard className="w-5 h-5" />
+          <span className="font-semibold text-foreground">{t("listingWizard.allowInstallments")}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Switch checked={form.allowInstallments} onCheckedChange={(v) => update("allowInstallments", v)} />
+          <Label>{t("listingWizard.allowInstallmentsDescription")}</Label>
+        </div>
       </div>
 
       {/* Nearby Landmarks */}
