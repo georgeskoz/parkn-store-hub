@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +14,14 @@ import { useSearchParams } from "react-router-dom";
 import DateTimePicker, { DateTimeValue, readDateTimeFromParams } from "@/components/search/DateTimePicker";
 import { filterParkingAvailable, filterStorageAvailable } from "@/lib/availabilityFilter";
 import { ANON_SAFE_LISTING_COLUMNS } from "@/lib/listingsAnonColumns";
+
+// Same split map+list view ParkingSearch.tsx (/parking) already has --
+// FindASpot (/find) is what the landing page's unified search bar actually
+// navigates to (see HeroSection.tsx's handleSearch), so it was the one
+// results page missing the map. Lazy + Suspense, matching ParkingSearch,
+// since leaflet/leaflet.markercluster are a real bundle-size cost not worth
+// paying on every page that doesn't render a map.
+const ListingsMap = lazy(() => import("@/components/listing/ListingsMap"));
 
 type Category = "all" | "parking" | "storage";
 
@@ -304,22 +312,33 @@ export default function FindASpot() {
         </section>
 
         <section className="container mx-auto px-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {loading ? t("common.loading") : t("search.resultsFound", { count: filtered.length })}
-          </p>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <p className="text-sm text-muted-foreground mb-4">
+                {loading ? t("common.loading") : t("search.resultsFound", { count: filtered.length })}
+              </p>
 
-          {!loading && filtered.length === 0 ? (
-            <div className="text-center py-20 border border-dashed border-border rounded-xl">
-              <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-foreground font-medium">{t("search.noListingsFound")}</p>
-              <p className="text-sm text-muted-foreground mt-1">{t("search.tryAdjustingFilters")}</p>
-              <Button variant="outline" className="mt-4" onClick={clearAll}>{t("search.resetFilters")}</Button>
+              {!loading && filtered.length === 0 ? (
+                <div className="text-center py-20 border border-dashed border-border rounded-xl">
+                  <MapPin className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-foreground font-medium">{t("search.noListingsFound")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("search.tryAdjustingFilters")}</p>
+                  <Button variant="outline" className="mt-4" onClick={clearAll}>{t("search.resetFilters")}</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {filtered.map((l) => <DbListingCard key={l.id} listing={l} distance={l.distance} />)}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filtered.map((l) => <DbListingCard key={l.id} listing={l} distance={l.distance} />)}
+            <div className="hidden lg:block">
+              <div className="sticky top-24 h-[calc(100vh-8rem)] rounded-xl overflow-hidden border border-border">
+                <Suspense fallback={<div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">{t("search.loadingMap")}</div>}>
+                  <ListingsMap listings={filtered} />
+                </Suspense>
+              </div>
             </div>
-          )}
+          </div>
         </section>
       </main>
       <Footer />
