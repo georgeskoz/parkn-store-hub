@@ -166,3 +166,17 @@
 .hero-map-price-tooltip::before {
   display: none;
 }
+
+/* The Navbar is `fixed top-0 ... z-50` and spans the full width of the
+   page at height ~65px, while HeroLiveMap fills the entire hero section
+   starting at that same y=0. Leaflet's default zoom control renders in
+   the top-left corner of its container (top:10px; left:10px), which
+   lands it directly underneath the navbar -- confirmed live: clicking
+   where the +/- buttons visually should be actually hits the <nav>
+   element, not the control, so the buttons look present but never
+   respond. Push this map's top-left control group down below the
+   navbar instead of relocating it, so it stays somewhere the user
+   expects it (top-left) but is no longer covered. */
+.hero-live-map .leaflet-top.leaflet-left {
+  top: 76px;
+}
