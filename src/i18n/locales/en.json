@@ -32,6 +32,7 @@
     "profile": "Profile",
     "dashboard": "Dashboard",
     "logOut": "Log Out",
+    "greeting": "Hi, {{name}}",
     "logIn": "Log In",
     "signUp": "Sign Up",
     "openMenu": "Open menu",
@@ -123,7 +124,11 @@
     "monthly": "Monthly",
     "spotsFound_one": "{{count}} spot found",
     "spotsFound_other": "{{count}} spots found",
-    "loadingMap": "Loading map…"
+    "loadingMap": "Loading map…",
+    "locationNotFound": "Couldn't find that location. Try a nearby city, address, or venue.",
+    "eventPricing": "Event pricing",
+    "viewAllListings": "View all in list",
+    "searchThisLocation": "Search a city, address, or venue…"
   },
   "storageListings": {
     "title": "Find Storage",

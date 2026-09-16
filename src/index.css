@@ -149,3 +149,20 @@
     width: 100%;
   }
 }
+
+/* HeroLiveMap.tsx's price tooltips -- overrides Leaflet's default white
+   box + pointer-arrow tooltip chrome with a plain dark pill, since the
+   default styling reads as a browser tooltip, not a price tag. */
+.hero-map-price-tooltip {
+  background: hsl(210 40% 10%);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.hero-map-price-tooltip::before {
+  display: none;
+}

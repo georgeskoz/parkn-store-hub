@@ -32,6 +32,7 @@
     "profile": "Profil",
     "dashboard": "Tableau de bord",
     "logOut": "Se déconnecter",
+    "greeting": "Bonjour, {{name}}",
     "logIn": "Se connecter",
     "signUp": "S'inscrire",
     "openMenu": "Ouvrir le menu",
@@ -123,7 +124,11 @@
     "monthly": "Mensuel",
     "spotsFound_one": "{{count}} espace trouvé",
     "spotsFound_other": "{{count}} espaces trouvés",
-    "loadingMap": "Chargement de la carte…"
+    "loadingMap": "Chargement de la carte…",
+    "locationNotFound": "Emplacement introuvable. Essayez une ville, une adresse ou un lieu voisin.",
+    "eventPricing": "Tarification événementielle",
+    "viewAllListings": "Voir tout dans la liste",
+    "searchThisLocation": "Rechercher une ville, une adresse ou un lieu…"
   },
   "storageListings": {
     "title": "Trouver un entrepôt",
