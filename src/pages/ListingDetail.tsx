@@ -554,9 +554,16 @@ export default function ListingDetail() {
               <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.location")}</h2>
               <div className="h-80 rounded-lg overflow-hidden border border-border">
                 <MapContainer center={[listing.lat, listing.lng]} zoom={15} style={{ height: "100%", width: "100%" }}>
+                  {/* CARTO's free "light_all" basemap tiles started requiring
+                      an API key (confirmed live -- tiles were rendering with
+                      "API KEY REQUIRED" baked into them instead of real map
+                      data), so this now uses the same plain, keyless OSM
+                      tile server ListingsMap.tsx and HeroLiveMap.tsx already
+                      use, rather than depending on a second tile provider
+                      whose free tier can change under us again. */}
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   <Marker position={[listing.lat, listing.lng]} icon={defaultMarkerIcon}>
                     <Popup>{listing.title}</Popup>
