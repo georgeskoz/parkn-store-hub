@@ -12,6 +12,7 @@ interface Profile {
   bio: string | null;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  stripe_bank_last4: string | null;
 }
 
 interface AuthContextType {
@@ -47,16 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await (supabase as any)
-      .from("profiles_public")
-      .select("id, display_name, avatar_url, bio, phone")
-      .eq("id", userId)
-      .maybeSingle();
-    setProfile(
-      data
-        ? { ...data, stripe_account_id: null, stripe_onboarding_complete: false }
-        : null,
-    );
+    const { data, error } = await supabase.rpc("get_my_profile");
+    if (error) {
+      console.error("Failed to fetch profile:", error.message);
+      setProfile(null);
+      return;
+    }
+    setProfile((data as unknown as Profile) ?? null);
   };
 
   const fetchRoles = async (userId: string) => {

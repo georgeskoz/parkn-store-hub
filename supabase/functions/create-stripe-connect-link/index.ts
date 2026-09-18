@@ -78,13 +78,21 @@ serve(async (req) => {
     const account = await stripe.accounts.retrieve(accountId);
     const onboardingComplete = account.charges_enabled && account.payouts_enabled;
 
+    const bankAccount = account.external_accounts?.data.find(
+      (ext): ext is Stripe.BankAccount => ext.object === "bank_account",
+    );
+    const bankLast4 = bankAccount?.last4 ?? null;
+    if (bankLast4) {
+      await admin.from("profiles").update({ stripe_bank_last4: bankLast4 }).eq("id", user.id);
+    }
+
     if (onboardingComplete) {
       await admin
         .from("profiles")
         .update({ stripe_onboarding_complete: true })
         .eq("id", user.id);
       return new Response(
-        JSON.stringify({ status: "complete", accountId }),
+        JSON.stringify({ status: "complete", accountId, bankLast4 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
       );
     }

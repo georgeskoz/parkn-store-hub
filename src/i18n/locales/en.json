@@ -737,7 +737,10 @@
     "needBankDetails": "Your bank account and routing/transit numbers",
     "needBusinessType": "Whether you're an individual host or a registered business (most hosts choose \"Individual\")",
     "needEmailNote": "You'll sign in or create a Stripe account — any email works, it doesn't need to match your Spotsvault login",
-    "afterSubmitNote": "After you submit, your account may show as \"Restricted\" for a short time while Stripe reviews it — that's expected."
+    "afterSubmitNote": "After you submit, your account may show as \"Restricted\" for a short time while Stripe reviews it — that's expected.",
+    "bankEndingIn": "Bank account ending in {{last4}}",
+    "underReview": "Payout setup in review",
+    "underReviewDescription": "Your info was submitted to Stripe and is being reviewed. This usually takes a few minutes to a day — you'll be able to receive payouts as soon as it's approved."
   },
   "myListings": {
     "failedToLoad": "Failed to load your listings",

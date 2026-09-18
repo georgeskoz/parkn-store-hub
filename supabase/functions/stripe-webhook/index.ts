@@ -182,10 +182,15 @@ serve(async (req) => {
       case "account.updated": {
         const account = event.data.object as Stripe.Account;
         const onboardingComplete = !!(account.charges_enabled && account.payouts_enabled);
-        await supabase
-          .from("profiles")
-          .update({ stripe_onboarding_complete: onboardingComplete })
-          .eq("stripe_account_id", account.id);
+        const update: Record<string, unknown> = { stripe_onboarding_complete: onboardingComplete };
+        try {
+          const fresh = await stripe.accounts.retrieve(account.id);
+          const bankAccount = fresh.external_accounts?.data.find(
+            (ext): ext is Stripe.BankAccount => ext.object === "bank_account",
+          );
+          if (bankAccount?.last4) update.stripe_bank_last4 = bankAccount.last4;
+        } catch (_) {}
+        await supabase.from("profiles").update(update).eq("stripe_account_id", account.id);
         break;
       }
     }

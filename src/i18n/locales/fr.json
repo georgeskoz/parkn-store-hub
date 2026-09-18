@@ -737,7 +737,10 @@
     "needBankDetails": "Votre numéro de compte bancaire et de transit/acheminement",
     "needBusinessType": "Si vous êtes un particulier ou une entreprise enregistrée (la plupart des hôtes choisissent « Particulier »)",
     "needEmailNote": "Vous vous connecterez ou créerez un compte Stripe — n'importe quel courriel fonctionne, il n'a pas besoin de correspondre à votre compte Spotsvault",
-    "afterSubmitNote": "Après l'envoi, votre compte peut afficher « Restreint » pendant un court moment pendant que Stripe l'examine — c'est normal."
+    "afterSubmitNote": "Après l'envoi, votre compte peut afficher « Restreint » pendant un court moment pendant que Stripe l'examine — c'est normal.",
+    "bankEndingIn": "Compte bancaire se terminant par {{last4}}",
+    "underReview": "Configuration des versements en cours d'examen",
+    "underReviewDescription": "Vos informations ont été envoyées à Stripe et sont en cours d'examen. Cela prend généralement de quelques minutes à une journée — vous pourrez recevoir des versements dès que ce sera approuvé."
   },
   "myListings": {
     "failedToLoad": "Échec du chargement de vos annonces",

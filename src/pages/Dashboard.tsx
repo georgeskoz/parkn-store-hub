@@ -236,6 +236,7 @@ const MessagesTab = () => {
 
 const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) => {
   const { t } = useTranslation();
+  const { refreshProfile } = useAuth();
   const [activeBookings, setActiveBookings] = useState(0);
   const [revenue, setRevenue] = useState(0);
 
@@ -280,6 +281,8 @@ const ProviderView = ({ profile, userId }: { profile: any; userId?: string }) =>
         <StripeConnectCard
           stripeAccountId={profile?.stripe_account_id}
           onboardingComplete={profile?.stripe_onboarding_complete}
+          bankLast4={profile?.stripe_bank_last4}
+          onRefresh={refreshProfile}
         />
         <Card className="card-shadow">
           <CardHeader>

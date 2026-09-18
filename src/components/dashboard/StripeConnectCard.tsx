@@ -12,10 +12,11 @@ import { toast } from "@/hooks/use-toast";
 interface StripeConnectCardProps {
   stripeAccountId?: string | null;
   onboardingComplete?: boolean;
+  bankLast4?: string | null;
   onRefresh?: () => void;
 }
 
-export default function StripeConnectCard({ stripeAccountId, onboardingComplete, onRefresh }: StripeConnectCardProps) {
+export default function StripeConnectCard({ stripeAccountId, onboardingComplete, bankLast4, onRefresh }: StripeConnectCardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -67,6 +68,11 @@ export default function StripeConnectCard({ stripeAccountId, onboardingComplete,
         </CardHeader>
         <CardContent className="space-y-3">
           <Badge variant="outline" className="text-green-700 border-green-300">{t("stripeConnect.stripeConnected")}</Badge>
+          {bankLast4 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("stripeConnect.bankEndingIn", { last4: bankLast4 })}
+            </p>
+          ) : null}
           <Button variant="outline" size="sm" className="w-full" onClick={handleSetup} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             {t("stripeConnect.managePayouts")}
@@ -76,18 +82,25 @@ export default function StripeConnectCard({ stripeAccountId, onboardingComplete,
     );
   }
 
+  const inReview = !!stripeAccountId;
+
   return (
     <Card className="card-shadow border-yellow-500/50 bg-yellow-500/5">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-yellow-600" />
-          {t("stripeConnect.setUpPayouts")}
+          {inReview ? t("stripeConnect.underReview") : t("stripeConnect.setUpPayouts")}
         </CardTitle>
         <CardDescription>
-          {t("stripeConnect.setUpPayoutsDescription")}
+          {inReview ? t("stripeConnect.underReviewDescription") : t("stripeConnect.setUpPayoutsDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {inReview && bankLast4 ? (
+          <p className="text-sm text-muted-foreground">
+            {t("stripeConnect.bankEndingIn", { last4: bankLast4 })}
+          </p>
+        ) : null}
         <details className="rounded-md border border-yellow-500/30 bg-background/50 px-3 py-2 text-sm">
           <summary className="cursor-pointer font-medium text-foreground">
             {t("stripeConnect.whatToExpect")}
