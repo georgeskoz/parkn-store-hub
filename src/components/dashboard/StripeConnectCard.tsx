@@ -87,7 +87,22 @@ export default function StripeConnectCard({ stripeAccountId, onboardingComplete,
           {t("stripeConnect.setUpPayoutsDescription")}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        <details className="rounded-md border border-yellow-500/30 bg-background/50 px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium text-foreground">
+            {t("stripeConnect.whatToExpect")}
+          </summary>
+          <div className="mt-2 space-y-2 text-muted-foreground">
+            <p>{t("stripeConnect.needToKnowIntro")}</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>{t("stripeConnect.needIdentityDoc")}</li>
+              <li>{t("stripeConnect.needBankDetails")}</li>
+              <li>{t("stripeConnect.needBusinessType")}</li>
+            </ul>
+            <p>{t("stripeConnect.needEmailNote")}</p>
+            <p>{t("stripeConnect.afterSubmitNote")}</p>
+          </div>
+        </details>
         <Button className="w-full" onClick={handleSetup} disabled={loading}>
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <DollarSign className="w-4 h-4 mr-2" />}
           {stripeAccountId ? t("stripeConnect.completeOnboarding") : t("stripeConnect.connectBankAccount")}

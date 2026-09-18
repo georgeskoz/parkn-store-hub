@@ -730,7 +730,14 @@
     "setUpPayouts": "Set up payouts",
     "setUpPayoutsDescription": "Set up payouts to receive earnings from your bookings.",
     "completeOnboarding": "Complete Onboarding",
-    "connectBankAccount": "Connect Bank Account"
+    "connectBankAccount": "Connect Bank Account",
+    "whatToExpect": "What to expect before you start",
+    "needToKnowIntro": "This takes about 10–15 minutes. Have these ready:",
+    "needIdentityDoc": "A government-issued photo ID",
+    "needBankDetails": "Your bank account and routing/transit numbers",
+    "needBusinessType": "Whether you're an individual host or a registered business (most hosts choose \"Individual\")",
+    "needEmailNote": "You'll sign in or create a Stripe account — any email works, it doesn't need to match your Spotsvault login",
+    "afterSubmitNote": "After you submit, your account may show as \"Restricted\" for a short time while Stripe reviews it — that's expected."
   },
   "myListings": {
     "failedToLoad": "Failed to load your listings",

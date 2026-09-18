@@ -730,7 +730,14 @@
     "setUpPayouts": "Configurer les versements",
     "setUpPayoutsDescription": "Configurez les versements pour recevoir les gains de vos réservations.",
     "completeOnboarding": "Terminer l'inscription",
-    "connectBankAccount": "Connecter un compte bancaire"
+    "connectBankAccount": "Connecter un compte bancaire",
+    "whatToExpect": "À quoi s'attendre avant de commencer",
+    "needToKnowIntro": "Cela prend environ 10 à 15 minutes. Ayez ceci à portée de main :",
+    "needIdentityDoc": "Une pièce d'identité officielle avec photo",
+    "needBankDetails": "Votre numéro de compte bancaire et de transit/acheminement",
+    "needBusinessType": "Si vous êtes un particulier ou une entreprise enregistrée (la plupart des hôtes choisissent « Particulier »)",
+    "needEmailNote": "Vous vous connecterez ou créerez un compte Stripe — n'importe quel courriel fonctionne, il n'a pas besoin de correspondre à votre compte Spotsvault",
+    "afterSubmitNote": "Après l'envoi, votre compte peut afficher « Restreint » pendant un court moment pendant que Stripe l'examine — c'est normal."
   },
   "myListings": {
     "failedToLoad": "Échec du chargement de vos annonces",
