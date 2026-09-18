@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+// @ts-ignore - MarkerClusterGroup is added to L namespace
+import "leaflet.markercluster";
 
 // Same Leaflet/OpenStreetMap stack as ListingsMap.tsx (the /parking and
 // /find results map) — this is the homepage's equivalent, but it never
@@ -9,13 +13,25 @@ import "leaflet/dist/leaflet.css";
 // preview lives in React state as an overlay card, matching the mobile
 // app's bottom-sheet-over-the-map pattern instead of navigating or
 // opening a native map popup.
+//
+// priceText/distanceText arrive already translated from HeroSection.tsx
+// (which has the i18n `t` function; this component doesn't). They used to
+// be a raw `price`/`priceLabel` pair with `priceLabel` being an untranslated
+// i18n KEY like "listingCard.perHour" -- concatenated straight into the
+// tooltip as literal text ("$10listingCard.perHour"), never passed through
+// t(). Pre-formatting the full display string in the one place that
+// already has `t` fixes that at the source instead of teaching this
+// component its own i18n dependency.
 
 export interface HeroMapListing {
   id: string;
   lat: number;
   lng: number;
-  price: number | null;
-  priceLabel: string;
+  priceText: string;
+  // Only set when a search is active -- distance from the fixed Montreal
+  // default center isn't meaningful to a visitor who hasn't searched
+  // anything yet, so HeroSection.tsx passes null until they have.
+  distanceText?: string | null;
   category: "parking" | "storage";
   eventPricing?: boolean;
 }
@@ -55,8 +71,9 @@ function dotIcon(listing: HeroMapListing, selected: boolean) {
 }
 
 function tooltipLabel(listing: HeroMapListing) {
-  const price = listing.price != null ? `$${listing.price}${listing.priceLabel}` : "—";
-  return `${price}${listing.eventPricing ? " ⚡" : ""}`;
+  const parts = [listing.priceText];
+  if (listing.distanceText) parts.push(listing.distanceText);
+  return `${parts.join(" · ")}${listing.eventPricing ? " ⚡" : ""}`;
 }
 
 interface Props {
@@ -84,6 +101,14 @@ export default function HeroLiveMap({
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const circleRef = useRef<L.Circle | null>(null);
+  // Same leaflet.markercluster group ListingsMap.tsx already uses -- pins
+  // that sit within a few dozen pixels of each other (three spots on the
+  // same block, say) now collapse into a single numbered cluster bubble
+  // instead of stacking their permanent price tooltips on top of one
+  // another illegibly. Clicking a cluster zooms/spiderfies it apart;
+  // individual markers still report clicks to onMarkerClick exactly as
+  // before once they're not clustered.
+  const clusterRef = useRef<any>(null);
 
   // Init once.
   useEffect(() => {
@@ -92,6 +117,15 @@ export default function HeroLiveMap({
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
+    clusterRef.current = (L as any).markerClusterGroup({
+      maxClusterRadius: 44,
+      // Past this zoom, always show individual pins even if pixel-close --
+      // a visitor zoomed in this far is looking at specific nearby spots,
+      // not a neighborhood overview, so collapsing them would hide exactly
+      // what they zoomed in to see.
+      disableClusteringAtZoom: 17,
+    });
+    map.addLayer(clusterRef.current);
     map.on("click", () => onBackgroundClick?.());
     mapInstance.current = map;
     return () => {
@@ -101,29 +135,23 @@ export default function HeroLiveMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recenter/zoom when the searched place OR the radius changes. Using
-  // flyToBounds on a circle built from radiusKm (instead of always flying
-  // to the fixed `zoom` prop) is what makes the map actually zoom in for
-  // a tight radius and back out for a wide one -- Leaflet computes the
-  // correct zoom for the current container size itself, so this adapts
-  // automatically instead of guessing a km->zoom formula. maxZoom caps
-  // how far a very small radius (e.g. 1km) zooms in, so it still lands on
-  // legible street-level tiles rather than the absolute max.
+  // Recenter AND re-zoom whenever the searched place or radius changes.
+  //
+  // Previously this only called flyTo(center, zoom) with `zoom` pinned at
+  // the fixed default (12) forever -- picking a 1km vs a 50km radius never
+  // changed what the camera actually showed, only the (barely visible)
+  // circle outline underneath it. That's what made "zooming in" feel
+  // impossible: the radius control was disconnected from the actual view.
+  // ListingsMap.tsx (the /find results map) already does this right via
+  // fitBounds() -- this mirrors that, using Leaflet's LatLng.toBounds()
+  // (a box of the given diameter in meters, centered on the point) so the
+  // camera always fits the exact circle the radius control is showing.
   useEffect(() => {
     const map = mapInstance.current;
     if (!map) return;
     if (radiusKm && radiusKm > 0) {
-      // NOT L.circle(...).getBounds() -- Circle.getBounds() reads
-      // this._map internally, which is only set once the circle has
-      // actually been added to a map (onAdd). A circle built just to
-      // compute bounds and never .addTo(map)'d throws "Cannot read
-      // properties of undefined (reading 'layerPointToLatLng')" on
-      // every single page load -- confirmed live, this was blanking the
-      // entire homepage (uncaught render-time exception, white screen).
-      // L.latLng(...).toBounds(sizeInMeters) computes the same bounding
-      // box purely from the coordinates/radius, with no map dependency.
-      const bounds = L.latLng(center.lat, center.lng).toBounds(radiusKm * 1000 * 2);
-      map.flyToBounds(bounds, { duration: 0.6, padding: [48, 48], maxZoom: 16 });
+      const bounds = L.latLng(center.lat, center.lng).toBounds(radiusKm * 2 * 1000);
+      map.flyToBounds(bounds, { duration: 0.6, padding: [24, 24] });
     } else {
       map.flyTo([center.lat, center.lng], zoom, { duration: 0.6 });
     }
@@ -151,7 +179,8 @@ export default function HeroLiveMap({
   // Markers.
   useEffect(() => {
     const map = mapInstance.current;
-    if (!map) return;
+    const cluster = clusterRef.current;
+    if (!map || !cluster) return;
 
     const seen = new Set<string>();
     listings.forEach((l) => {
@@ -165,18 +194,17 @@ export default function HeroLiveMap({
         existing.setZIndexOffset(selected ? 1000 : 0);
         existing.setTooltipContent(tooltipLabel(l));
       } else {
-        const marker = L.marker([l.lat, l.lng], { icon: dotIcon(l, selected) })
-          .addTo(map)
-          .bindTooltip(tooltipLabel(l), {
-            permanent: true,
-            direction: "top",
-            offset: [0, -DOT_SIZE / 2 - 2],
-            className: "hero-map-price-tooltip",
-          });
+        const marker = L.marker([l.lat, l.lng], { icon: dotIcon(l, selected) }).bindTooltip(tooltipLabel(l), {
+          permanent: true,
+          direction: "top",
+          offset: [0, -DOT_SIZE / 2 - 2],
+          className: "hero-map-price-tooltip",
+        });
         marker.on("click", (e) => {
           L.DomEvent.stopPropagation(e as unknown as Event);
           onMarkerClick?.(l.id);
         });
+        cluster.addLayer(marker);
         markersRef.current.set(l.id, marker);
       }
     });
@@ -184,16 +212,12 @@ export default function HeroLiveMap({
     // Remove markers for listings no longer in range.
     for (const [id, marker] of markersRef.current) {
       if (!seen.has(id)) {
-        map.removeLayer(marker);
+        cluster.removeLayer(marker);
         markersRef.current.delete(id);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings, selectedId]);
 
-  // "hero-live-map" is a stable hook for index.css to target this map's
-  // Leaflet zoom control specifically (see the comment there) -- kept
-  // separate from `className` since callers may pass their own sizing
-  // classes that shouldn't be relied on for that CSS selector.
-  return <div ref={mapRef} className={`hero-live-map ${className ?? "w-full h-full"}`} />;
+  return <div ref={mapRef} className={className ?? "w-full h-full"} />;
 }

@@ -252,16 +252,7 @@ const HeroSection = () => {
           actual UI chrome below. */}
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none z-[1]" />
 
-      {/* pointer-events-none here, re-enabled below only on the actual UI
-          cards (search bar + radius control) -- without this, this div's
-          full bounding box (container-width, from the headline down past
-          the radius control) sits in front of the map at z-10 and
-          silently swallows clicks and scroll-wheel-zoom over any "empty"
-          area inside it, even though nothing visible is there and the
-          map is plainly visible through it. Confirmed live: elementFromPoint
-          over parts of the map that look untouched was landing on this
-          div instead of the Leaflet container underneath. */}
-      <div className="container mx-auto px-4 relative z-10 pb-10 pt-32 pointer-events-none">
+      <div className="container mx-auto px-4 relative z-10 pb-10 pt-32">
         <div className="max-w-2xl">
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
@@ -288,7 +279,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="mt-6 max-w-3xl pointer-events-auto"
+          className="mt-6 max-w-3xl"
         >
           <div className="bg-card rounded-xl p-2 card-shadow flex flex-col sm:flex-row gap-2">
             <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary/50">
