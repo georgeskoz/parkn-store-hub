@@ -101,10 +101,33 @@ export default function HeroLiveMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recenter when the searched place changes.
+  // Recenter/zoom when the searched place OR the radius changes. Using
+  // flyToBounds on a circle built from radiusKm (instead of always flying
+  // to the fixed `zoom` prop) is what makes the map actually zoom in for
+  // a tight radius and back out for a wide one -- Leaflet computes the
+  // correct zoom for the current container size itself, so this adapts
+  // automatically instead of guessing a km->zoom formula. maxZoom caps
+  // how far a very small radius (e.g. 1km) zooms in, so it still lands on
+  // legible street-level tiles rather than the absolute max.
   useEffect(() => {
-    mapInstance.current?.flyTo([center.lat, center.lng], zoom, { duration: 0.6 });
-  }, [center.lat, center.lng, zoom]);
+    const map = mapInstance.current;
+    if (!map) return;
+    if (radiusKm && radiusKm > 0) {
+      // NOT L.circle(...).getBounds() -- Circle.getBounds() reads
+      // this._map internally, which is only set once the circle has
+      // actually been added to a map (onAdd). A circle built just to
+      // compute bounds and never .addTo(map)'d throws "Cannot read
+      // properties of undefined (reading 'layerPointToLatLng')" on
+      // every single page load -- confirmed live, this was blanking the
+      // entire homepage (uncaught render-time exception, white screen).
+      // L.latLng(...).toBounds(sizeInMeters) computes the same bounding
+      // box purely from the coordinates/radius, with no map dependency.
+      const bounds = L.latLng(center.lat, center.lng).toBounds(radiusKm * 1000 * 2);
+      map.flyToBounds(bounds, { duration: 0.6, padding: [48, 48], maxZoom: 16 });
+    } else {
+      map.flyTo([center.lat, center.lng], zoom, { duration: 0.6 });
+    }
+  }, [center.lat, center.lng, radiusKm, zoom]);
 
   // Radius circle.
   useEffect(() => {
@@ -168,5 +191,9 @@ export default function HeroLiveMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings, selectedId]);
 
-  return <div ref={mapRef} className={className ?? "w-full h-full"} />;
+  // "hero-live-map" is a stable hook for index.css to target this map's
+  // Leaflet zoom control specifically (see the comment there) -- kept
+  // separate from `className` since callers may pass their own sizing
+  // classes that shouldn't be relied on for that CSS selector.
+  return <div ref={mapRef} className={`hero-live-map ${className ?? "w-full h-full"}`} />;
 }
