@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.create-stripe-connect-link]
 verify_jwt = false
 
+[functions.create-connect-account-session]
+verify_jwt = false
+
 [functions.release-booking-payout]
 verify_jwt = true
 
