@@ -28,7 +28,7 @@ import ListingReviews, { useListingRatingSummary } from "@/components/reviews/Li
 import StarRating from "@/components/reviews/StarRating";
 import AvailabilitySlots from "@/components/listing/AvailabilitySlots";
 import StorageAvailabilityCalendar from "@/components/listing/StorageAvailabilityCalendar";
-import { addMonths } from "date-fns";
+import { addMonths, addDays } from "date-fns";
 import SEO from "@/components/SEO";
 import { getDateFnsLocale } from "@/lib/dateLocale";
 
@@ -415,8 +415,43 @@ export default function ListingDetail() {
     return x;
   };
 
-  const handleBook = () => {
-    if (!startDate || !endDate || !bestRate || !listing) return;
+  // Shared by the manual "Select dates to book" button (which reads the
+  // dates/times already chosen in state) and the pricing-tile shortcuts
+  // below (which compute a default date range on the spot and want to
+  // jump straight to booking in the same click, before that state change
+  // has actually re-rendered). Takes explicit values instead of always
+  // reading from state so both call sites can share one code path.
+  //
+  // Always re-fetches the tax preview for the resulting subtotal instead
+  // of trusting the debounced `taxPreview` state: quickBook navigates in
+  // the same click that changes the dates, before the effect that keeps
+  // that state in sync has had a chance to run, and passing a stale/empty
+  // preview here would understate the total shown on the confirmation
+  // page (the real charge in create-booking-payment recomputes tax
+  // itself regardless, so nothing is undercharged -- but the summary
+  // shown before that charge shouldn't lie about what it'll be).
+  const goToBooking = async (sd: Date, ed: Date, sTime: string, eTime: string) => {
+    if (!listing) return;
+    const pricing = computeBookingPricing(listing, sd, ed, sTime, eTime);
+    if (!pricing.bestRate) return;
+
+    const platformFee = +(pricing.subtotal * commissionRate).toFixed(2);
+    const feeInclusiveSubtotal = +(pricing.subtotal + platformFee).toFixed(2);
+    let lineItems = taxPreview.lineItems;
+    let taxTotal = taxPreview.taxTotal;
+    try {
+      const { data, error } = await supabase.functions.invoke("preview-booking-tax", {
+        body: { country: listing.country, province: listing.province, subtotal: feeInclusiveSubtotal },
+      });
+      if (!error && data) {
+        lineItems = data.lineItems;
+        taxTotal = data.taxTotal;
+      }
+    } catch (err) {
+      console.warn("Tax preview skipped:", err);
+    }
+    const total = +(feeInclusiveSubtotal + taxTotal).toFixed(2);
+
     const needsIntake = listing.category === "parking" || listing.category === "storage";
     const target = needsIntake ? `/booking/intake` : `/booking/confirm`;
     const bookingState = {
@@ -424,14 +459,14 @@ export default function ListingDetail() {
       listingId: listing.id,
       title: listing.title,
       address: `${listing.address}, ${listing.city}`,
-      startDate: applyTime(startDate, startTime).toISOString(),
-      endDate: applyTime(endDate, endTime).toISOString(),
-      rate: bestRate,
-      unitPrice,
-      units,
-      subtotal,
+      startDate: applyTime(sd, sTime).toISOString(),
+      endDate: applyTime(ed, eTime).toISOString(),
+      rate: pricing.bestRate,
+      unitPrice: pricing.unitPrice,
+      units: pricing.units,
+      subtotal: pricing.subtotal,
       platformFee,
-      taxLineItems: taxPreview.lineItems,
+      taxLineItems: lineItems,
       total,
       allowInstallments: !!listing.allow_installments,
     };
@@ -446,6 +481,39 @@ export default function ListingDetail() {
 
     navigate(target, { state: bookingState });
   };
+
+  const handleBook = () => {
+    if (!startDate || !endDate || !bestRate) return;
+    goToBooking(startDate, endDate, startTime, endTime);
+  };
+
+  // Quick-book shortcuts for the pricing tiles below -- tapping a rate
+  // (Hourly/Daily/Weekly/Monthly) fills in a sensible default date range
+  // for that tier (today -> +1 of that unit) and jumps straight to
+  // booking, instead of making the visitor first work out which
+  // Start/End date combination the app will actually price at that tier.
+  // Georges: "instead of client go through so many way to get to monthly
+  // or weekly, can click on it and go right away to booking". Visitors
+  // who want a custom range still have that -- this only shortcuts the
+  // common "I just want the listed rate" case; the Start/End pickers
+  // below are untouched and still work exactly as before.
+  function quickBook(rate: "hourly" | "daily" | "weekly" | "monthly") {
+    if (!listing) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sTime = isParking ? "09:00" : "00:00";
+    const eTime = isParking ? "17:00" : "00:00";
+    let ed = today;
+    if (rate === "daily") ed = addDays(today, 1);
+    else if (rate === "weekly") ed = addDays(today, 7);
+    else if (rate === "monthly") ed = addMonths(today, 1);
+
+    setStartDate(today);
+    setEndDate(ed);
+    setStartTime(sTime);
+    setEndTime(eTime);
+    goToBooking(today, ed, sTime, eTime);
+  }
 
 
   const seoTitle = `${listing.title} — ${[listing.city, listing.region].filter(Boolean).join(", ")} | SpotsVault`;
@@ -551,29 +619,53 @@ export default function ListingDetail() {
               <h2 className="text-lg font-semibold text-foreground mb-3">{t("listingDetail.pricing")}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {listing.price_hourly && (
-                  <div className="p-4 rounded-lg border border-border text-center">
+                  <button
+                    type="button"
+                    onClick={() => quickBook("hourly")}
+                    className="p-4 rounded-lg border border-border text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
                     <p className="text-sm text-muted-foreground">{t("search.hourly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_hourly}</p>
-                  </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">{t("listingDetail.tapToBook", { defaultValue: "Tap to book" })}</p>
+                  </button>
                 )}
                 {listing.price_daily && (
-                  <div className="p-4 rounded-lg border border-border text-center">
+                  <button
+                    type="button"
+                    onClick={() => quickBook("daily")}
+                    className="p-4 rounded-lg border border-border text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
                     <p className="text-sm text-muted-foreground">{t("search.daily")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_daily}</p>
-                  </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">{t("listingDetail.tapToBook", { defaultValue: "Tap to book" })}</p>
+                  </button>
                 )}
                 {listing.price_weekly && (
-                  <div className="p-4 rounded-lg border border-border text-center">
+                  <button
+                    type="button"
+                    onClick={() => quickBook("weekly")}
+                    className="p-4 rounded-lg border border-border text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
                     <p className="text-sm text-muted-foreground">{t("storageListings.duration.weekly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_weekly}</p>
-                  </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">{t("listingDetail.tapToBook", { defaultValue: "Tap to book" })}</p>
+                  </button>
                 )}
                 {listing.price_monthly && (
-                  <div className="p-4 rounded-lg border border-border text-center">
+                  <button
+                    type="button"
+                    onClick={() => quickBook("monthly")}
+                    className="p-4 rounded-lg border border-border text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                  >
                     <p className="text-sm text-muted-foreground">{t("search.monthly")}</p>
                     <p className="text-xl font-bold text-foreground mt-1">${listing.price_monthly}</p>
-                  </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">{t("listingDetail.tapToBook", { defaultValue: "Tap to book" })}</p>
+                  </button>
                 )}
+                {/* Seasonal isn't a bookable rate tier in computeBookingPricing
+                    (it's a display-only price point), so it stays a plain,
+                    non-interactive tile rather than promising a quick-book
+                    shortcut that doesn't exist yet. */}
                 {listing.seasonal && (
                   <div className="p-4 rounded-lg border border-border text-center">
                     <p className="text-sm text-muted-foreground">{t("storageListings.duration.seasonal")}</p>
