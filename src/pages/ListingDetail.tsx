@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -191,6 +191,11 @@ export default function ListingDetail() {
   const [endOpen, setEndOpen] = useState(false);
   const [tempStart, setTempStart] = useState<Date | undefined>();
   const [tempEnd, setTempEnd] = useState<Date | undefined>();
+  // Scroll target for the pricing-tile quick-book shortcuts (quickBook,
+  // below) -- lets a tap on "Monthly"/"Weekly"/etc bring the visitor
+  // straight to the already-prefilled booking summary/button instead of
+  // leaving them wondering why nothing visibly happened above the fold.
+  const bookingCardRef = useRef<HTMLDivElement>(null);
   const [blockedDays, setBlockedDays] = useState<Set<string>>(new Set());
   const [openDow, setOpenDow] = useState<Set<number> | null>(null);
   const [bookedDays, setBookedDays] = useState<Set<string>>(new Set());
@@ -489,14 +494,22 @@ export default function ListingDetail() {
 
   // Quick-book shortcuts for the pricing tiles below -- tapping a rate
   // (Hourly/Daily/Weekly/Monthly) fills in a sensible default date range
-  // for that tier (today -> +1 of that unit) and jumps straight to
-  // booking, instead of making the visitor first work out which
-  // Start/End date combination the app will actually price at that tier.
-  // Georges: "instead of client go through so many way to get to monthly
-  // or weekly, can click on it and go right away to booking". Visitors
-  // who want a custom range still have that -- this only shortcuts the
-  // common "I just want the listed rate" case; the Start/End pickers
-  // below are untouched and still work exactly as before.
+  // for that tier (today -> +1 of that unit) and scrolls straight to the
+  // booking summary/button, instead of making the visitor first work out
+  // which Start/End date combination the app will actually price at that
+  // tier. Georges: "instead of client go through so many way to get to
+  // monthly or weekly, can click on it and go right away to booking
+  // unless wants to specify".
+  //
+  // This prefills rather than navigating outright -- an earlier version
+  // called goToBooking() directly from here, which sent the visitor
+  // straight to the next page with no way back to change the day or
+  // month (Georges: "won't let you choose what day or what month and so
+  // on"). Prefilling instead means the Start/End buttons below already
+  // show the tapped rate's default range and the "Book for $X" button is
+  // already live -- one more click books it as-is, or they can open
+  // either date popover first and pick a different day/month before
+  // that click, exactly like picking dates manually always could.
   function quickBook(rate: "hourly" | "daily" | "weekly" | "monthly") {
     if (!listing) return;
     const today = new Date();
@@ -510,9 +523,11 @@ export default function ListingDetail() {
 
     setStartDate(today);
     setEndDate(ed);
+    setTempStart(today);
+    setTempEnd(ed);
     setStartTime(sTime);
     setEndTime(eTime);
-    goToBooking(today, ed, sTime, eTime);
+    bookingCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
 
@@ -719,7 +734,7 @@ export default function ListingDetail() {
 
           {/* Right — Contact sidebar */}
           <div>
-            <Card className="card-shadow sticky top-24">
+            <Card ref={bookingCardRef} className="card-shadow sticky top-24">
               <CardHeader>
                 <CardTitle className="text-lg">{t("listingDetail.contactProvider")}</CardTitle>
               </CardHeader>
