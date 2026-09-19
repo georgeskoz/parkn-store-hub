@@ -1,10 +1,6 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet.markercluster/dist/MarkerCluster.css";
-import "leaflet.markercluster/dist/MarkerCluster.Default.css";
-// @ts-ignore - MarkerClusterGroup is added to L namespace
-import "leaflet.markercluster";
 
 // Same Leaflet/OpenStreetMap stack as ListingsMap.tsx (the /parking and
 // /find results map) — this is the homepage's equivalent, but it never
@@ -22,6 +18,18 @@ import "leaflet.markercluster";
 // t(). Pre-formatting the full display string in the one place that
 // already has `t` fixes that at the source instead of teaching this
 // component its own i18n dependency.
+//
+// NOTE: this deliberately does NOT use leaflet.markercluster (unlike
+// ListingsMap.tsx). The agreed scope for the homepage map is that every
+// listing's price/distance is always visible directly on its pin, with no
+// click or hover needed -- clustering collapses close-together pins into a
+// numbered bubble and hides their individual price tags behind it, which
+// directly defeats that. A prior version of this file added clustering to
+// solve pin overlap, but that traded "always-visible prices" for "fewer
+// overlapping pins," which isn't the tradeoff that was agreed. If overlap
+// at low zoom becomes a real problem again, revisit with a design that
+// doesn't hide price tags (e.g. only clustering pins that are within a
+// couple of pixels of each other), not full spiderfy-style clustering.
 
 export interface HeroMapListing {
   id: string;
@@ -101,14 +109,6 @@ export default function HeroLiveMap({
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const circleRef = useRef<L.Circle | null>(null);
-  // Same leaflet.markercluster group ListingsMap.tsx already uses -- pins
-  // that sit within a few dozen pixels of each other (three spots on the
-  // same block, say) now collapse into a single numbered cluster bubble
-  // instead of stacking their permanent price tooltips on top of one
-  // another illegibly. Clicking a cluster zooms/spiderfies it apart;
-  // individual markers still report clicks to onMarkerClick exactly as
-  // before once they're not clustered.
-  const clusterRef = useRef<any>(null);
 
   // Init once.
   useEffect(() => {
@@ -117,15 +117,6 @@ export default function HeroLiveMap({
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
-    clusterRef.current = (L as any).markerClusterGroup({
-      maxClusterRadius: 44,
-      // Past this zoom, always show individual pins even if pixel-close --
-      // a visitor zoomed in this far is looking at specific nearby spots,
-      // not a neighborhood overview, so collapsing them would hide exactly
-      // what they zoomed in to see.
-      disableClusteringAtZoom: 17,
-    });
-    map.addLayer(clusterRef.current);
     map.on("click", () => onBackgroundClick?.());
     mapInstance.current = map;
     return () => {
@@ -176,11 +167,12 @@ export default function HeroLiveMap({
     }
   }, [center.lat, center.lng, radiusKm]);
 
-  // Markers.
+  // Markers -- added straight to the map (no clustering, see the note at
+  // the top of this file), so every pin's permanent price tooltip is
+  // always visible, exactly as agreed.
   useEffect(() => {
     const map = mapInstance.current;
-    const cluster = clusterRef.current;
-    if (!map || !cluster) return;
+    if (!map) return;
 
     const seen = new Set<string>();
     listings.forEach((l) => {
@@ -204,7 +196,7 @@ export default function HeroLiveMap({
           L.DomEvent.stopPropagation(e as unknown as Event);
           onMarkerClick?.(l.id);
         });
-        cluster.addLayer(marker);
+        marker.addTo(map);
         markersRef.current.set(l.id, marker);
       }
     });
@@ -212,7 +204,7 @@ export default function HeroLiveMap({
     // Remove markers for listings no longer in range.
     for (const [id, marker] of markersRef.current) {
       if (!seen.has(id)) {
-        cluster.removeLayer(marker);
+        map.removeLayer(marker);
         markersRef.current.delete(id);
       }
     }

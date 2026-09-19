@@ -1,13 +1,33 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
+// This function is the pre-checkout tax PREVIEW shown on ListingDetail.tsx
+// and BookingConfirmation.tsx (its surge-repricing branch) -- purely
+// read-only, no booking is created or charged here. It is listed in
+// config.toml (verify_jwt = false) and was invoked from both of those
+// pages already, but the function itself was never actually written to
+// this functions/ directory, so every call 404'd. supabase.functions.invoke()
+// on both callers wraps the call in try/catch and silently falls back to
+// {lineItems: [], taxTotal: 0} on any failure -- so instead of an error,
+// renters just saw a booking summary with no tax line at all, and a total
+// that (wrongly, from their POV) matched subtotal + platform fee exactly.
+// The *real* charge, taken by create-booking-payment at actual checkout
+// time, already computes and charges tax correctly (and persists it to
+// bookings.tax_amount/tax_breakdown) -- so tax was never actually missing
+// from anyone's bill, only from this preview screen shown before paying.
+//
+// calculateBookingTax/normalizeCountry/resolveCaRegionCode below are
+// ported verbatim from create-booking-payment/index.ts so this preview can
+// never disagree with what actually gets charged. Kept as a local copy
+// (not a shared import) for the same cross-function/cross-Deno-runtime
+// reason every other port in this functions/ directory already documents.
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Ported verbatim from create-booking-payment's normalizeCountry.
 function normalizeCountry(country?: string | null): "CA" | "US" | "OTHER" {
   const c = (country ?? "").trim().toLowerCase();
   if (c === "ca" || c === "can" || c === "canada") return "CA";
@@ -17,15 +37,20 @@ function normalizeCountry(country?: string | null): "CA" | "US" | "OTHER" {
   return "OTHER";
 }
 
-// CA fallback only -- see create-booking-payment for the full rationale.
+// CA fallback only -- used when a listing's province can't be matched to a
+// tax_rates row (missing/unrecognized data). Canada always levies GST
+// federally regardless of province, so this preserves that floor rather than
+// previewing $0 tax on an unmatched region.
 const GST_RATE = 0.05;
 
 function round2(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
-// Ported verbatim from create-booking-payment's CA_PROVINCE_NAME_TO_CODE /
-// resolveCaRegionCode.
+// tax_rates.region_code is the 2-letter province code (AB, BC, ..., YT).
+// listings.province is free text and inconsistently formatted (e.g. "QC" vs
+// "Ontario") -- this maps full province/territory names to their code;
+// codes already in this shape pass through the shortcut below.
 const CA_PROVINCE_NAME_TO_CODE: Record<string, string> = {
   "alberta": "AB",
   "british columbia": "BC",
@@ -55,14 +80,6 @@ function resolveCaRegionCode(province?: string | null): string | null {
 type TaxLineItem = { name: string; rate: number; amount: number };
 type TaxRateComponent = { name: string; rate: number };
 
-// Ported verbatim from create-booking-payment's calculateBookingTax. Kept in
-// sync manually -- no cross-function module system between separate Deno
-// edge functions. This function exists solely to let pre-checkout previews
-// (ListingDetail, BookingConfirmation) show real tax_rates-driven amounts:
-// the client can't read tax_rates directly (RLS blocks anon/authenticated,
-// confirmed live against the 22-row table), and the actual charge is always
-// computed authoritatively again, server-side, in create-booking-payment --
-// so this endpoint is display-only and safe to keep public.
 async function calculateBookingTax(
   admin: ReturnType<typeof createClient>,
   subtotal: number,
@@ -108,12 +125,6 @@ async function calculateBookingTax(
   return { lineItems, taxTotal };
 }
 
-// Intentionally public (verify_jwt = false, no internal role check either):
-// display-only preview, no side effects, no privileged data returned beyond
-// the tax rate itself. Trusts client-supplied country/province rather than
-// re-fetching the listing row -- a manipulated preview has zero financial
-// impact since create-booking-payment recomputes tax from the real listing
-// row server-side before ever creating a Stripe session.
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -121,28 +132,35 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { country, province } = body;
-    const subtotal = Number(body.subtotal);
-    if (!Number.isFinite(subtotal) || subtotal < 0) {
+    const { country, province, subtotal } = body;
+
+    const sub = Number(subtotal);
+    if (!Number.isFinite(sub) || sub < 0) {
       throw new Error("Invalid subtotal");
     }
 
+    // service_role, not the caller's own session -- this is a read-only
+    // preview against tax_rates (a small, non-sensitive reference table),
+    // and the caller may not even be signed in yet (ListingDetail.tsx runs
+    // this preview for signed-out visitors too). No RLS policy needs to
+    // exist on tax_rates for anon/authenticated for this to work.
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const tax = await calculateBookingTax(admin, subtotal, { country, province });
+    const result = await calculateBookingTax(admin, sub, { country, province });
 
-    return new Response(JSON.stringify(tax), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
+    console.error("PREVIEW_BOOKING_TAX_ERROR:", error);
     const msg = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: msg }), {
-      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
     });
   }
 });
