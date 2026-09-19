@@ -246,8 +246,20 @@ export default function ListingDetail() {
         // already casts its query result rather than fighting it.
         const data = rawData as any;
 
-        // Cast photos safely
-        const photoArray = (Array.isArray(data.photos) ? data.photos : []) as { url: string; path: string }[];
+        // Normalize photos -- the `photos` jsonb column holds two different
+        // shapes across existing rows: newer listings store
+        // [{ url, path }, ...], but older/test ones (confirmed live via a
+        // few Ottawa-area listings) still store a plain array of URL
+        // strings, [ "https://...", ... ]. This used to cast the raw value
+        // straight to { url, path }[] without checking each entry's actual
+        // shape, so a string entry's `.url` read as undefined and the
+        // <img src={photo.url}> below rendered a broken image icon instead
+        // of the photo. Map each entry to its url regardless of which
+        // shape it arrived in, and drop anything that still isn't a usable
+        // string afterward (e.g. a malformed/empty entry).
+        const photoArray = (Array.isArray(data.photos) ? data.photos : [])
+          .map((p: unknown) => (typeof p === "string" ? { url: p, path: p } : (p as { url?: string; path?: string })))
+          .filter((p: { url?: string }): p is { url: string; path: string } => typeof p?.url === "string" && p.url.length > 0);
         setListing({ ...data, photos: photoArray } as unknown as DbListing);
 
         // Fetch profile info

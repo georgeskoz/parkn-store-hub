@@ -224,12 +224,24 @@ const HeroSection = () => {
     resetRadius();
   }
 
+  // HeroLiveMap's HeroMapListing wants a pre-formatted priceText/distanceText
+  // pair, not the raw price/priceLabel this used to send -- that stale shape
+  // (left over from before HeroLiveMap.tsx was refactored to expect
+  // pre-translated strings) meant `listing.priceText` was always undefined,
+  // so tooltipLabel()'s `[priceText, distanceText].join(" · ")` silently
+  // rendered every pin's price tooltip as an empty string. TypeScript
+  // doesn't catch this because Vite's build doesn't type-check (confirmed
+  // live: a listing near Parliament Hill with price_hourly=5.00 in the DB
+  // still showed a blank tooltip on the map). distanceText is gated on
+  // searchedPlace, same as the inline preview panel below and the comment
+  // in HeroLiveMap.tsx -- distance from the fixed Montreal default center
+  // isn't meaningful before a visitor has actually searched.
   const mapListings: HeroMapListing[] = nearby.map((l) => ({
     id: l.id,
     lat: l.lat,
     lng: l.lng,
-    price: l.price,
-    priceLabel: l.priceLabel,
+    priceText: l.price != null ? `$${l.price} ${t(l.priceLabel)}` : t("listingCard.contactForPricing"),
+    distanceText: searchedPlace ? t("listingCard.distanceKm", { distance: l.distanceKm.toFixed(1) }) : null,
     category: l.category,
     eventPricing: l.eventPricing,
   }));
