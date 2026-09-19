@@ -44,39 +44,111 @@ export interface HeroMapListing {
   eventPricing?: boolean;
 }
 
+// Matches mobile's NAVY/NAVY_DEEP and PURPLE/PURPLE_DEEP exactly (mobile/src/
+// app/(tabs)/index.tsx's PricePin, and the now-unused HeroMap.tsx's own port
+// of it) -- hardcoded rather than referencing a CSS variable since the pin
+// has to match the real app icon pixel-for-pixel, not just "look navy-ish".
 const NAVY = "#1B4F72";
 const NAVY_DEEP = "#123449";
 const PURPLE = "#8B5CF6";
 const PURPLE_DEEP = "#5B21B6";
 
-// A fixed-size dot, not a dynamic-width price tag -- the price itself is a
-// permanent Leaflet tooltip (bound below), which Leaflet positions and
-// centers on its own regardless of the text's rendered width. A divIcon
-// whose anchor has to match dynamically-sized HTML content (a price
-// string of varying length) is a real, easy-to-get-wrong footgun --
-// Leaflet's default iconSize/iconAnchor math assumes a fixed box, so a
-// percentage-based CSS transform inside it ends up centered against that
-// fixed box, not the actual visible content. Keeping the icon itself
-// fixed-size sidesteps that entirely.
-const DOT_SIZE = 16;
+// Vault-icon teardrop pin -- ported from the mobile app's PricePin
+// (mobile/src/app/(tabs)/index.tsx) and HeroMap.tsx's own dead-code port of
+// it (that file rendered a static Google Maps image with pins positioned in
+// plain CSS; it's no longer imported anywhere, superseded by this live
+// Leaflet map, but its PricePin/VaultGlyph markup is what's ported below).
+// This is the actual brand mark (same ring + vault glyph as assets/spotsvault
+// app icone.png), not a generic colored dot -- and, being a real pin shape
+// rather than a 16px dot, it's also simply bigger and easier to see.
+//
+// This is still a FIXED-size icon per selected/unselected state (same as the
+// dot it replaces) -- the price/distance text lives in the separately-bound
+// permanent tooltip below, never inside this icon's own HTML, so the
+// divIcon anchor footgun this file used to warn about (a dynamically-sized
+// icon fighting Leaflet's fixed iconSize/iconAnchor math) still doesn't
+// apply here.
+const PIN_HEAD_SIZE = 32;
+const PIN_HEAD_SIZE_SELECTED = 38;
+const PIN_RING_INSET = 4;
+
+// A rotated square (border-radius on 3 corners, square 4th corner, then
+// rotated 45deg) doesn't change the element's own layout box -- only its
+// visual pixels. A square rotated 45deg around its center puts its lowest
+// visual corner HEAD/sqrt(2) below center, i.e. HEAD*(sqrt(2)-1)/2 below the
+// *unrotated* box's own bottom edge. This computes that overshoot so the
+// icon's real height (and therefore its Leaflet iconAnchor) reaches all the
+// way to the visual tip, matching mobile's PricePin/PIN_TOTAL_HEIGHT math
+// exactly -- otherwise the marker's coordinate lands ~7px above where the
+// pin actually points.
+function pinTotalHeight(headSize: number): number {
+  return headSize + Math.round((headSize * (Math.SQRT2 - 1)) / 2);
+}
+
+// Simplified vault/safe glyph -- hinge bar, door panel, dial with connecting
+// stub, and two corner crop-marks from the real app icon, redrawn thin
+// enough to survive at this marker size. Identical path data to mobile's
+// VaultGlyph and HeroMap.tsx's own port of it -- plain SVG markup (not JSX),
+// since this whole icon has to be a string for Leaflet's L.divIcon.
+const VAULT_GLYPH_SVG = `
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <line x1="5.5" y1="5" x2="5.5" y2="19" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="8" y="5" width="11" height="14" rx="1.5" stroke="#FFFFFF" stroke-width="1.8"/>
+    <line x1="5.5" y1="12" x2="9.5" y2="12" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="12.5" cy="12" r="2.2" stroke="#FFFFFF" stroke-width="1.8"/>
+    <path d="M15.5 7h2v2" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M17.5 15v2h-2" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+`;
 
 function dotIcon(listing: HeroMapListing, selected: boolean) {
   const colors = listing.category === "storage" ? { pin: PURPLE, ring: PURPLE_DEEP } : { pin: NAVY, ring: NAVY_DEEP };
-  const size = selected ? DOT_SIZE + 6 : DOT_SIZE;
+  const headSize = selected ? PIN_HEAD_SIZE_SELECTED : PIN_HEAD_SIZE;
+  const totalHeight = pinTotalHeight(headSize);
+  const ringSize = headSize - PIN_RING_INSET * 2;
+  const html = `
+    <div style="width:${headSize}px;height:${totalHeight}px;">
+      <div style="
+        width:${headSize}px;height:${headSize}px;
+        border-top-left-radius:${headSize / 2}px;
+        border-top-right-radius:${headSize / 2}px;
+        border-bottom-left-radius:${headSize / 2}px;
+        border-bottom-right-radius:0;
+        background:${colors.pin};
+        border:2px solid #FFFFFF;
+        transform:rotate(45deg);
+        display:flex;align-items:center;justify-content:center;
+        box-shadow:0 1px 4px rgba(0,0,0,0.4)${selected ? ", 0 0 0 3px rgba(0,0,0,0.12)" : ""};
+        cursor:pointer;
+      ">
+        <div style="
+          width:${ringSize}px;height:${ringSize}px;
+          border-radius:50%;
+          background:${colors.ring};
+          display:flex;align-items:center;justify-content:center;
+          transform:rotate(-45deg);
+        ">
+          ${VAULT_GLYPH_SVG}
+        </div>
+      </div>
+    </div>
+  `;
   return L.divIcon({
-    html: `<div style="
-      width:${size}px;height:${size}px;
-      background:${colors.pin};
-      border:2px solid ${selected ? "#fff" : colors.ring};
-      border-radius:50%;
-      box-shadow:0 1px 4px rgba(0,0,0,0.4);
-      cursor:pointer;
-    "></div>`,
+    html,
     className: "",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [headSize, totalHeight],
+    // Bottom-center, not center -- the visual tip (see pinTotalHeight above)
+    // has to land exactly on the marker's coordinate, matching mobile's
+    // Marker anchor={x:0.5,y:1} for the same teardrop shape.
+    iconAnchor: [headSize / 2, totalHeight],
   });
 }
+
+// Distance from the icon's anchor (now the pin's tip, at the bottom) up to
+// where the price tooltip should float -- past the whole pin body plus a
+// small gap, using the *unselected* height so the tooltip doesn't jump up
+// and down as a pin is selected/deselected.
+const TOOLTIP_OFFSET_Y = -(pinTotalHeight(PIN_HEAD_SIZE) + 4);
 
 function tooltipLabel(listing: HeroMapListing) {
   const parts = [listing.priceText];
@@ -189,7 +261,7 @@ export default function HeroLiveMap({
         const marker = L.marker([l.lat, l.lng], { icon: dotIcon(l, selected) }).bindTooltip(tooltipLabel(l), {
           permanent: true,
           direction: "top",
-          offset: [0, -DOT_SIZE / 2 - 2],
+          offset: [0, TOOLTIP_OFFSET_Y],
           className: "hero-map-price-tooltip",
         });
         marker.on("click", (e) => {
