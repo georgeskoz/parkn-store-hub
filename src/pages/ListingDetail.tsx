@@ -406,6 +406,17 @@ export default function ListingDetail() {
           ? t("listingDetail.perHour")
           : "";
 
+  // Per-unit label for whichever rate the current date selection actually
+  // resolves to (hourly/daily/weekly/monthly), reusing the same wording
+  // as the static `priceLabel` above so the two never look inconsistent
+  // with each other.
+  const perLabelForRate: Record<"hourly" | "daily" | "weekly" | "monthly", string> = {
+    hourly: t("listingDetail.perHour"),
+    daily: t("listingDetail.perDay"),
+    weekly: t("listingDetail.perWeek"),
+    monthly: t("listingDetail.perMonth"),
+  };
+
   const { isParking, durationDays, bestRate, unitPrice, units, subtotal } =
     computeBookingPricing(listing, startDate, endDate, startTime, endTime);
   const platformFee = taxPreview.platformFee;
@@ -773,11 +784,27 @@ export default function ListingDetail() {
                 {/* Booking widget */}
                 {price && (
                   <div className="pt-4 border-t border-border space-y-3">
+                    {/* Once a date range resolves to an actual rate (via
+                        the pricing-tile shortcuts or the Start/End
+                        pickers), this switches from the listing's generic
+                        "starting at" teaser to the rate that's actually
+                        about to be booked -- otherwise a visitor who
+                        tapped "Hourly" or picked a 2-hour window kept
+                        seeing the listing's highest-priority price here
+                        (e.g. "$350/month") sitting right above a $13.23
+                        hourly total below it, which read as a bug even
+                        though the breakdown itself was correct. */}
                     <div>
-                      <p className="text-xs text-muted-foreground">{t("listingDetail.startingAt")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {durationDays > 0 && bestRate
+                          ? t("listingDetail.thisBooking", { defaultValue: "This booking" })
+                          : t("listingDetail.startingAt")}
+                      </p>
                       <p className="text-2xl font-bold text-foreground">
-                        ${price}
-                        <span className="text-sm text-muted-foreground ml-1">{priceLabel}</span>
+                        ${durationDays > 0 && bestRate ? unitPrice : price}
+                        <span className="text-sm text-muted-foreground ml-1">
+                          {durationDays > 0 && bestRate ? perLabelForRate[bestRate] : priceLabel}
+                        </span>
                       </p>
                     </div>
 
