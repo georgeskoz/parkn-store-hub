@@ -45,6 +45,54 @@ function callerRole(req: Request): string | null {
   }
 }
 
+// Transfers a single installment's host share, given a hostId already
+// resolved by the caller. Shared by the main charge loop below and the
+// self-healing retry pass, so both go through the exact same guard/update
+// logic instead of two copies that could drift.
+async function releaseInstallmentPayout(
+  admin: ReturnType<typeof createClient>,
+  stripe: any,
+  inst: { id: string; booking_id: string; amount: number; sequence: number },
+  hostId: string,
+  currency: string,
+): Promise<Record<string, unknown>> {
+  const { data: hostProfile } = await admin
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", hostId)
+    .maybeSingle();
+  if (!hostProfile?.stripe_account_id) {
+    return { id: inst.id, payout_skipped: "host_not_onboarded" };
+  }
+
+  const hostPayoutAmount = Number(inst.amount);
+  const payoutCents = Math.round(hostPayoutAmount * 100);
+  try {
+    const transfer = await stripe.transfers.create({
+      amount: payoutCents,
+      currency,
+      destination: hostProfile.stripe_account_id,
+      transfer_group: `booking_${inst.booking_id}`,
+      metadata: { booking_id: inst.booking_id, installment_id: inst.id, sequence: String(inst.sequence) },
+    });
+    await admin
+      .from("booking_installments")
+      .update({
+        host_payout_amount: hostPayoutAmount,
+        host_transfer_id: transfer.id,
+        released_at: new Date().toISOString(),
+      })
+      .eq("id", inst.id);
+    return { id: inst.id, payout: hostPayoutAmount, transfer_id: transfer.id };
+  } catch (payoutErr) {
+    const payoutMsg = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
+    // Charge already succeeded -- leave host_transfer_id null so the
+    // self-healing retry pass below picks this row up again next hour
+    // instead of the payout being silently lost.
+    return { id: inst.id, payout_error: payoutMsg };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -127,48 +175,14 @@ serve(async (req) => {
         // A missing/incomplete Connect account is not a charge failure --
         // the charge already succeeded -- so this is logged as a skip, not
         // retried as an error; host_transfer_id staying null is exactly
-        // what marks it as still owed.
+        // what marks it as still owed, and the self-healing retry pass
+        // below picks it up on a later run once onboarding completes.
         const hostId = b.host_id ?? b.listings?.user_id;
         if (!hostId) {
           results.push({ id: inst.id, payout_skipped: "no_host" });
           continue;
         }
-        const { data: hostProfile } = await admin
-          .from("profiles")
-          .select("stripe_account_id")
-          .eq("id", hostId)
-          .maybeSingle();
-        if (!hostProfile?.stripe_account_id) {
-          results.push({ id: inst.id, payout_skipped: "host_not_onboarded" });
-          continue;
-        }
-
-        const hostPayoutAmount = Number(inst.amount);
-        const payoutCents = Math.round(hostPayoutAmount * 100);
-        try {
-          const transfer = await stripe.transfers.create({
-            amount: payoutCents,
-            currency,
-            destination: hostProfile.stripe_account_id,
-            transfer_group: `booking_${inst.booking_id}`,
-            metadata: { booking_id: inst.booking_id, installment_id: inst.id, sequence: String(inst.sequence) },
-          });
-          await admin
-            .from("booking_installments")
-            .update({
-              host_payout_amount: hostPayoutAmount,
-              host_transfer_id: transfer.id,
-              released_at: new Date().toISOString(),
-            })
-            .eq("id", inst.id);
-          results.push({ id: inst.id, payout: hostPayoutAmount, transfer_id: transfer.id });
-        } catch (payoutErr) {
-          const payoutMsg = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
-          // Charge succeeded but the transfer failed -- leave host_transfer_id
-          // null so this is retried by a later run (or released manually via
-          // processInstallmentPayout) rather than silently lost.
-          results.push({ id: inst.id, payout_error: payoutMsg });
-        }
+        results.push(await releaseInstallmentPayout(admin, stripe, inst, hostId, currency));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await admin
@@ -177,6 +191,47 @@ serve(async (req) => {
           .eq("id", inst.id);
         results.push({ id: inst.id, error: msg });
       }
+    }
+
+    // Self-healing retry pass: an installment already marked 'succeeded'
+    // (charge went through) but with host_transfer_id still null -- a
+    // transient Stripe error on the transfer, or a host who finished
+    // Connect onboarding only after the charge already happened -- would
+    // otherwise be stuck forever, since the due-installments query above
+    // only ever selects status='pending' rows and this row's status is no
+    // longer 'pending'. This re-attempts exactly those rows. It runs once
+    // per hourly cron firing (not concurrently), so there's no risk of the
+    // same row being transferred twice within a single run.
+    const { data: unpaidInstallments } = await admin
+      .from("booking_installments")
+      .select("id, booking_id, sequence, amount")
+      .eq("status", "succeeded")
+      .is("host_transfer_id", null);
+
+    for (const inst of unpaidInstallments || []) {
+      const { data: booking } = await admin
+        .from("bookings")
+        .select("host_id, currency, listings ( user_id )")
+        .eq("id", inst.booking_id)
+        .maybeSingle();
+      const b = booking as any;
+      if (!b) {
+        results.push({ id: inst.id, retry: true, retry_skipped: "booking_not_found" });
+        continue;
+      }
+      const hostId = b.host_id ?? b.listings?.user_id;
+      if (!hostId) {
+        results.push({ id: inst.id, retry: true, retry_skipped: "no_host" });
+        continue;
+      }
+      const retryResult = await releaseInstallmentPayout(
+        admin,
+        stripe,
+        inst,
+        hostId,
+        (b.currency || "cad").toLowerCase(),
+      );
+      results.push({ retry: true, ...retryResult });
     }
 
     return new Response(JSON.stringify({ processed: results.length, results }), {
