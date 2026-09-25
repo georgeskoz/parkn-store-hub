@@ -82,11 +82,20 @@ serve(async (req) => {
         Math.max(1, Math.ceil((nowMs - endMs) / (24 * 3600 * 1000))),
       );
 
-      // Check existing charge rows
-      const { data: existing } = await admin
+      // Check existing charge rows. Fail loud (skip this booking entirely)
+      // rather than silently treating a query error as "nothing charged yet"
+      // -- that exact silent-error pattern (unchecked destructure of `data`
+      // without `error`) is what let this function run for weeks against a
+      // schema-mismatched overdue_charges table with its duplicate-charge
+      // protection completely inert while still firing real Stripe charges.
+      const { data: existing, error: existingErr } = await admin
         .from("overdue_charges")
         .select("charge_date")
         .eq("booking_id", b.id);
+      if (existingErr) {
+        results.push({ id: b.id, skipped: "overdue_charges_lookup_failed", error: existingErr.message });
+        continue;
+      }
       const chargedDates = new Set((existing || []).map((r: any) => r.charge_date));
 
       for (let day = 1; day <= daysOverdue; day++) {
@@ -98,7 +107,7 @@ serve(async (req) => {
         const amount = +(baseRate * 2).toFixed(2);
         const amountCents = Math.round(amount * 100);
 
-        const { data: row } = await admin
+        const { data: row, error: insertErr } = await admin
           .from("overdue_charges")
           .insert({
             booking_id: b.id,
@@ -110,6 +119,20 @@ serve(async (req) => {
           })
           .select("id")
           .single();
+
+        if (insertErr || !row) {
+          // Same fail-loud fix as above: without a row to track this charge
+          // attempt, there's no idempotency record and no way to log the
+          // outcome, so skip charging rather than firing a real Stripe
+          // charge with no ledger entry behind it.
+          results.push({
+            id: b.id,
+            skipped: "overdue_charges_insert_failed",
+            error: insertErr?.message,
+            date: chargeDate,
+          });
+          continue;
+        }
 
         try {
           const pi = await stripe.paymentIntents.create({
@@ -126,7 +149,7 @@ serve(async (req) => {
           await admin
             .from("overdue_charges")
             .update({ status: "succeeded", payment_intent_id: pi.id })
-            .eq("id", row?.id);
+            .eq("id", row.id);
           // increment total
           // last_overdue_charge_at intentionally omitted -- confirmed via
           // information_schema.columns that it doesn't exist on production
@@ -148,7 +171,7 @@ serve(async (req) => {
           await admin
             .from("overdue_charges")
             .update({ status: "failed", error_message: msg })
-            .eq("id", row?.id);
+            .eq("id", row.id);
           results.push({ id: b.id, error: msg, date: chargeDate });
         }
       }
