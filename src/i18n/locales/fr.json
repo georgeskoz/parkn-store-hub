@@ -979,6 +979,36 @@
     "nextSlide": "Diapositive suivante",
     "close": "Fermer"
   },
+  "onboarding": {
+    "skip": "Passer",
+    "getStarted": "Commencer",
+    "screens": {
+      "welcome": {
+        "title": "Bienvenue sur SpotsVault",
+        "subtitle": "Trouvez du stationnement et de l'entreposage à proximité, ou générez un revenu en partageant votre propre espace"
+      },
+      "findParking": {
+        "title": "Trouvez un stationnement",
+        "subtitle": "Réservez une place près de chez vous"
+      },
+      "storeThings": {
+        "title": "Entreposez vos affaires",
+        "subtitle": "Louez un espace d'entreposage sécuritaire auprès d'hôtes de votre région"
+      },
+      "becomeHost": {
+        "title": "Devenez hôte",
+        "subtitle": "Publiez votre stationnement ou votre espace d'entreposage et commencez à gagner de l'argent"
+      },
+      "bookedConfidence": {
+        "title": "Réservez en toute confiance",
+        "subtitle": "Hôtes vérifiés, paiements sécurisés et assistance 24/7"
+      },
+      "allSet": {
+        "title": "Vous êtes prêt",
+        "subtitle": "Explorez les espaces disponibles près de chez vous, ou publiez le vôtre et commencez à gagner de l'argent"
+      }
+    }
+  },
   "home": {
     "hero": {
       "imageAlt": "Carte stylisée montrant des espaces de stationnement et d'entreposage",

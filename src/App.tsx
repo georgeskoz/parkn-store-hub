@@ -9,6 +9,7 @@ import HostnameGuard from "@/components/HostnameGuard";
 import MaintenanceBanner from "@/components/MaintenanceBanner";
 import BroadcastBanner from "@/components/notifications/BroadcastBanner";
 import ScrollToTop from "@/components/ScrollToTop";
+import OnboardingWelcomeModal from "@/components/OnboardingWelcomeModal";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -59,6 +60,7 @@ const App = () => (
           <HostnameGuard />
           <MaintenanceBanner />
           <BroadcastBanner />
+          <OnboardingWelcomeModal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />

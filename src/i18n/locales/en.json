@@ -979,6 +979,36 @@
     "nextSlide": "Next slide",
     "close": "Close"
   },
+  "onboarding": {
+    "skip": "Skip",
+    "getStarted": "Get Started",
+    "screens": {
+      "welcome": {
+        "title": "Welcome to SpotsVault",
+        "subtitle": "Find parking and storage nearby, or earn by sharing your own space"
+      },
+      "findParking": {
+        "title": "Find parking",
+        "subtitle": "Book a spot near you"
+      },
+      "storeThings": {
+        "title": "Store your things",
+        "subtitle": "Rent secure storage space from hosts in your area"
+      },
+      "becomeHost": {
+        "title": "Become a host",
+        "subtitle": "List your spot or storage space and start earning"
+      },
+      "bookedConfidence": {
+        "title": "Booked with confidence",
+        "subtitle": "Verified hosts, secure payments, and 24/7 support"
+      },
+      "allSet": {
+        "title": "You're all set",
+        "subtitle": "Explore spots near you, or list your own space and start earning"
+      }
+    }
+  },
   "home": {
     "hero": {
       "imageAlt": "Stylized map showing parking and storage locations",
