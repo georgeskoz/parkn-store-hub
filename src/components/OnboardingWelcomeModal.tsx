@@ -89,7 +89,17 @@ const OnboardingWelcomeModal = () => {
         <DialogTitle className="sr-only">{t("onboarding.screens.welcome.title")}</DialogTitle>
         <DialogDescription className="sr-only">{t("onboarding.screens.welcome.subtitle")}</DialogDescription>
 
-        <Carousel setApi={setApi} className="w-full pt-4">
+        {/* min-w-0 is the fix: DialogContent is `display:grid` with implicit
+            auto-sized columns (no grid-cols-N, so no built-in minmax(0,1fr)
+            floor). Without it, the grid track sizes to this carousel's
+            max-content width -- which for a flex row of 6 basis-full slides
+            is their SUMMED width (~965px), not the container's 448px -- and
+            overflow-hidden then clips the visual box while embla measures
+            and lays out slides against that oversized width, producing the
+            squished/cut-off modal seen in production. min-w-0 tells grid to
+            ignore this item's intrinsic content width when sizing the
+            track, letting it shrink to the actual 448px column instead. */}
+        <Carousel setApi={setApi} className="w-full min-w-0 pt-4">
           <CarouselContent className="ml-0">
             {SCREENS.map(({ key, Icon }) => (
               <CarouselItem key={key} className="pl-0">
