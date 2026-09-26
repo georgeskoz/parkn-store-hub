@@ -26,6 +26,15 @@ const SCREENS = [
 
 const LAST_INDEX = SCREENS.length - 1;
 
+// TEMP, for the campaign launch: show the walkthrough on every visit
+// instead of gating it behind "seen once" below -- Georges wants max
+// exposure while the campaign is driving new traffic, and anyone who
+// already knows the flow just hits Skip. markOnboardingSeen() below still
+// runs on dismiss either way, so flipping this back to false once the
+// initial push is over immediately reverts to "show once per browser" for
+// everyone, without any other code change.
+const ALWAYS_SHOW_ONBOARDING = true;
+
 // A condensed 4-icon echo of the homepage's full ListingStepsSection,
 // shown only on the "becomeHost" screen -- just enough to signal "it's a
 // quick guided flow", not a repeat of that section's step-by-step detail.
@@ -57,7 +66,7 @@ const OnboardingWelcomeModal = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
-    if (!hasSeenOnboarding()) {
+    if (ALWAYS_SHOW_ONBOARDING || !hasSeenOnboarding()) {
       setOpen(true);
     }
   }, []);
