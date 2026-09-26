@@ -1007,6 +1007,11 @@
         "title": "Vous êtes prêt",
         "subtitle": "Explorez les espaces disponibles près de chez vous, ou publiez le vôtre et commencez à gagner de l'argent"
       }
+    },
+    "listStepsTeaser": "4 étapes rapides — vous fixez le prix",
+    "pricingTeaser": {
+      "garage": "Stationnement en garage à proximité : 110 à 240 $/mois",
+      "hostSet": "Ici, les hôtes fixent leur propre prix"
     }
   },
   "home": {

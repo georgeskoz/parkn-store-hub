@@ -1007,6 +1007,11 @@
         "title": "You're all set",
         "subtitle": "Explore spots near you, or list your own space and start earning"
       }
+    },
+    "listStepsTeaser": "4 quick steps — you choose the price",
+    "pricingTeaser": {
+      "garage": "Garage parking nearby: $110–$240/mo",
+      "hostSet": "Here, hosts set their own price"
     }
   },
   "home": {

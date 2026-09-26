@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { MapPin, Car, Package, KeyRound, ShieldCheck, PartyPopper } from "lucide-react";
+import { MapPin, Car, Package, KeyRound, ShieldCheck, PartyPopper, DollarSign, BadgeCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,11 @@ const SCREENS = [
 ] as const;
 
 const LAST_INDEX = SCREENS.length - 1;
+
+// A condensed 4-icon echo of the homepage's full ListingStepsSection,
+// shown only on the "becomeHost" screen -- just enough to signal "it's a
+// quick guided flow", not a repeat of that section's step-by-step detail.
+const HOST_STEP_ICONS = [Car, MapPin, DollarSign, BadgeCheck];
 
 function hasSeenOnboarding(): boolean {
   try {
@@ -101,21 +107,75 @@ const OnboardingWelcomeModal = () => {
             track, letting it shrink to the actual 448px column instead. */}
         <Carousel setApi={setApi} className="w-full min-w-0 pt-4">
           <CarouselContent className="ml-0">
-            {SCREENS.map(({ key, Icon }) => (
-              <CarouselItem key={key} className="pl-0">
-                <div className="flex flex-col items-center px-8 pb-6 pt-6 text-center">
-                  <div className="hero-gradient mb-6 flex h-20 w-20 items-center justify-center rounded-full">
-                    <Icon className="h-9 w-9 text-primary-foreground" />
+            {SCREENS.map(({ key, Icon }, index) => {
+              // Replays each teaser's reveal every time its own slide becomes
+              // the active one (forward or backward), rather than animating
+              // once on mount -- the carousel keeps all six screens mounted
+              // simultaneously, so "on mount" would fire for all of them at
+              // once regardless of which one is actually visible.
+              const isActive = selectedIndex === index;
+              return (
+                <CarouselItem key={key} className="pl-0">
+                  <div className="flex flex-col items-center px-8 pb-6 pt-6 text-center">
+                    <div className="hero-gradient mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+                      <Icon className="h-9 w-9 text-primary-foreground" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      {t(`onboarding.screens.${key}.title`)}
+                    </h2>
+                    <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                      {t(`onboarding.screens.${key}.subtitle`)}
+                    </p>
+
+                    {/* Light teaser only -- full step-by-step detail and the
+                        pricing-comparison card already live on the homepage
+                        (ListingStepsSection). This just hints at both so a
+                        first-time visitor already has a reason to look. */}
+                    {key === "becomeHost" && (
+                      <motion.div
+                        initial={false}
+                        animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                        className="mt-5 flex flex-col items-center gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          {HOST_STEP_ICONS.map((StepIcon, i) => (
+                            <motion.div
+                              key={i}
+                              initial={false}
+                              animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+                              transition={{ duration: 0.35, delay: 0.1 + i * 0.08, ease: "easeOut" }}
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
+                            >
+                              <StepIcon className="h-4 w-4" />
+                            </motion.div>
+                          ))}
+                        </div>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("onboarding.listStepsTeaser")}
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {key === "findParking" && (
+                      <motion.div
+                        initial={false}
+                        animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                        transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}
+                        className="mt-5 rounded-lg bg-muted/50 px-4 py-3"
+                      >
+                        <p className="text-xs text-muted-foreground">
+                          {t("onboarding.pricingTeaser.garage")}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-primary">
+                          {t("onboarding.pricingTeaser.hostSet")}
+                        </p>
+                      </motion.div>
+                    )}
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground">
-                    {t(`onboarding.screens.${key}.title`)}
-                  </h2>
-                  <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                    {t(`onboarding.screens.${key}.subtitle`)}
-                  </p>
-                </div>
-              </CarouselItem>
-            ))}
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
         </Carousel>
 
