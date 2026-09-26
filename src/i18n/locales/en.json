@@ -1070,6 +1070,35 @@
         }
       }
     },
+    "listSteps": {
+      "title": "List your space in minutes",
+      "subtitle": "Four simple steps from empty driveway to your first booking.",
+      "steps": {
+        "chooseType": {
+          "title": "Choose parking or storage",
+          "description": "Tell us what kind of space you're listing — a driveway, garage, or storage area."
+        },
+        "addDetails": {
+          "title": "Add your address & photos",
+          "description": "Drop a pin on the map and add a few photos so renters know exactly what to expect."
+        },
+        "setPrice": {
+          "title": "Set your price & availability",
+          "description": "You choose the price and when it's available — hourly, daily, weekly, or monthly."
+        },
+        "getApproved": {
+          "title": "Get approved & start earning",
+          "description": "We review new listings quickly, then your space goes live and bookings can start."
+        }
+      }
+    },
+    "pricingCompare": {
+      "label": "Why renters choose SpotsVault",
+      "garageLabel": "Typical downtown Ottawa monthly garage parking",
+      "hostSetLabel": "You set the price",
+      "hostSetSubtitle": "Hosts price their own space — often well under garage rates, since a driveway has none of a garage's overhead",
+      "note": "Garage rate range based on published downtown Ottawa monthly parking rates, September 2026."
+    },
     "cta": {
       "title": "Got an empty driveway or garage?",
       "subtitle": "Turn your unused space into income. List for free and start earning with every booking.",

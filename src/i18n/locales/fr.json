@@ -1070,6 +1070,35 @@
         }
       }
     },
+    "listSteps": {
+      "title": "Publiez votre espace en quelques minutes",
+      "subtitle": "Quatre étapes simples, d'une entrée vide à votre première réservation.",
+      "steps": {
+        "chooseType": {
+          "title": "Choisissez stationnement ou entreposage",
+          "description": "Dites-nous quel type d'espace vous publiez — une entrée, un garage ou un espace d'entreposage."
+        },
+        "addDetails": {
+          "title": "Ajoutez votre adresse et des photos",
+          "description": "Placez une épingle sur la carte et ajoutez quelques photos pour que les locataires sachent exactement à quoi s'attendre."
+        },
+        "setPrice": {
+          "title": "Fixez votre prix et vos disponibilités",
+          "description": "Vous choisissez le prix et les disponibilités — à l'heure, à la journée, à la semaine ou au mois."
+        },
+        "getApproved": {
+          "title": "Soyez approuvé et commencez à gagner",
+          "description": "Nous vérifions rapidement les nouvelles annonces, puis votre espace est publié et les réservations peuvent commencer."
+        }
+      }
+    },
+    "pricingCompare": {
+      "label": "Pourquoi les locataires choisissent SpotsVault",
+      "garageLabel": "Tarif mensuel typique d'un garage au centre-ville d'Ottawa",
+      "hostSetLabel": "Vous fixez le prix",
+      "hostSetSubtitle": "Les hôtes fixent eux-mêmes le prix de leur espace — souvent bien en dessous des tarifs de garage, puisqu'une entrée n'a pas les frais généraux d'un garage",
+      "note": "Fourchette de tarifs de garage basée sur les tarifs mensuels publiés pour le stationnement au centre-ville d'Ottawa, septembre 2026."
+    },
     "cta": {
       "title": "Une entrée de garage ou un garage vide?",
       "subtitle": "Transformez votre espace inutilisé en revenu. Louez gratuitement et commencez à gagner de l'argent à chaque réservation.",
