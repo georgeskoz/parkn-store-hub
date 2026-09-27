@@ -1104,6 +1104,36 @@
       "hostSetSubtitle": "Les hôtes fixent eux-mêmes le prix de leur espace — souvent bien en dessous des tarifs de garage, puisqu'une entrée n'a pas les frais généraux d'un garage",
       "note": "Fourchette de tarifs de garage basée sur les tarifs mensuels publiés pour le stationnement au centre-ville d'Ottawa, septembre 2026."
     },
+    "faq": {
+      "title": "Questions fréquentes",
+      "subtitle": "Les réponses courtes. Contactez-nous en tout temps pour plus de détails.",
+      "items": {
+        "pricing": {
+          "question": "Combien coûte la publication d'une annonce ou une réservation?",
+          "answer": "Les hôtes fixent leur propre prix horaire, quotidien, hebdomadaire ou mensuel — il n'y a pas de tarif fixe imposé par la plateforme. Les locataires voient le prix total, frais inclus, avant de réserver."
+        },
+        "listing": {
+          "question": "Comment puis-je publier mon espace de stationnement ou d'entreposage?",
+          "answer": "Choisissez stationnement ou entreposage, ajoutez votre adresse et quelques photos, fixez votre prix et vos disponibilités, puis soumettez. Nous examinons rapidement les nouvelles annonces, puis votre espace est publié et les réservations peuvent commencer."
+        },
+        "escrow": {
+          "question": "Mon paiement est-il protégé?",
+          "answer": "Oui. Les paiements des locataires sont conservés en sécurité jusqu'à ce que les conditions de la réservation soient remplies, puis versés à l'hôte — une même réservation ne peut jamais être payée deux fois."
+        },
+        "installments": {
+          "question": "Puis-je payer en versements?",
+          "answer": "Pour les réservations plus longues, les hôtes peuvent permettre aux locataires de répartir le montant total en versements hebdomadaires ou mensuels plutôt que de tout payer d'avance."
+        },
+        "coverage": {
+          "question": "Où SpotsVault est-il offert?",
+          "answer": "SpotsVault est offert partout au Canada, avec un accent initial sur la région d'Ottawa-Gatineau à mesure que nous grandissons."
+        },
+        "french": {
+          "question": "SpotsVault est-il offert en français?",
+          "answer": "Oui — le site et l'application sont entièrement bilingues, en anglais et en français."
+        }
+      }
+    },
     "cta": {
       "title": "Une entrée de garage ou un garage vide?",
       "subtitle": "Transformez votre espace inutilisé en revenu. Louez gratuitement et commencez à gagner de l'argent à chaque réservation.",

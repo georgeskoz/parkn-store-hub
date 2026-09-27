@@ -1104,6 +1104,36 @@
       "hostSetSubtitle": "Hosts price their own space — often well under garage rates, since a driveway has none of a garage's overhead",
       "note": "Garage rate range based on published downtown Ottawa monthly parking rates, September 2026."
     },
+    "faq": {
+      "title": "Frequently asked questions",
+      "subtitle": "The short answers. Reach out any time if you need more detail.",
+      "items": {
+        "pricing": {
+          "question": "How much does it cost to list or book?",
+          "answer": "Hosts set their own hourly, daily, weekly, or monthly price — there's no fixed platform rate. Renters see the total price, including fees, before booking."
+        },
+        "listing": {
+          "question": "How do I list my parking or storage space?",
+          "answer": "Choose parking or storage, add your address and a few photos, set your price and availability, and submit. We review new listings quickly, then your space goes live and bookings can start."
+        },
+        "escrow": {
+          "question": "Is my payment protected?",
+          "answer": "Yes. Renter payments are held securely until the booking's release conditions are met, then paid out to the host — the same booking never pays out twice."
+        },
+        "installments": {
+          "question": "Can I pay in installments?",
+          "answer": "For longer bookings, hosts can allow renters to split the total into weekly or monthly installments instead of paying the full amount upfront."
+        },
+        "coverage": {
+          "question": "Where is SpotsVault available?",
+          "answer": "SpotsVault is available across Canada, with our initial focus on the Ottawa-Gatineau region as we grow."
+        },
+        "french": {
+          "question": "Is SpotsVault available in French?",
+          "answer": "Yes — the entire site and app are fully bilingual in English and French."
+        }
+      }
+    },
     "cta": {
       "title": "Got an empty driveway or garage?",
       "subtitle": "Turn your unused space into income. List for free and start earning with every booking.",
