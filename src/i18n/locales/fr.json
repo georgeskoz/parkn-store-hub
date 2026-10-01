@@ -52,6 +52,7 @@
     "legal": "Mentions légales",
     "termsOfService": "Conditions d'utilisation",
     "privacyPolicy": "Politique de confidentialité",
+    "usSupplement": "Supplément américain (Conditions et confidentialité)",
     "copyright": "© {{year}} Spotsvault. Tous droits réservés."
   },
   "chrome": {
@@ -383,7 +384,7 @@
     "platformFee": "Frais de plateforme",
     "providerPayout": "Versement au fournisseur",
     "processing": "Traitement en cours...",
-    "payAmount": "Payer {{amount}} $ CAD",
+    "payAmount": "Payer {{amount}} $ {{currency}}",
     "browseMore": "Voir plus d'options",
     "howToPay": "Comment souhaitez-vous payer?",
     "payInFull": "Payer en totalité",
@@ -391,7 +392,7 @@
       "weekly": "Hebdomadaire ({{count}} paiements)",
       "monthly": "Mensuel ({{count}} paiements)"
     },
-    "installmentSummary": "{{count}} paiements {{frequency}} de {{amount}} $ CAD, à partir d'aujourd'hui.",
+    "installmentSummary": "{{count}} paiements {{frequency}} de {{amount}} $ {{currency}}, à partir d'aujourd'hui.",
     "frequencyAdverb": {
       "weekly": "hebdomadaires",
       "monthly": "mensuels"
@@ -461,6 +462,10 @@
     "couldNotSaveBlockedDates": "Impossible d'enregistrer les dates bloquées",
     "couldNotSaveSchedule": "Impossible d'enregistrer l'horaire",
     "country": "Pays",
+    "countryName": {
+      "canada": "Canada",
+      "unitedStates": "États-Unis"
+    },
     "createListingSubtitle": "Créez une nouvelle annonce de stationnement ou d'entreposage en quelques étapes.",
     "dailyDollar": "Quotidien ($)",
     "descriptionHint": "Plus vous fournissez de détails, moins il y aura de surprises pour les chercheurs.",
@@ -513,10 +518,27 @@
     "pinExactLocationHint": "Cliquez sur la carte ou faites glisser l'épingle pour définir l'emplacement exact.",
     "pinLocationRequired": "Obligatoire — cliquez sur la carte ci-dessus pour définir votre emplacement exact.",
     "postalZipCode": "Code postal / ZIP",
-    "pricesInCadTaxHint": "Prix en CAD. Les taxes du Québec (TPS 5 % + TVQ 9,975 %) seront ajoutées au paiement.",
+    "pricesInCadTaxHint": "Prix en {{currency}}. Les taxes provinciales ou d'État applicables seront ajoutées au paiement.",
     "pricing": "Tarification",
     "pricingAndAvailability": "Tarification et disponibilité",
     "provinceState": "Province / État",
+    "provinceLabel": "Province",
+    "stateLabel": "État",
+    "provinceName": {
+      "alberta": "Alberta",
+      "britishColumbia": "Colombie-Britannique",
+      "manitoba": "Manitoba",
+      "newBrunswick": "Nouveau-Brunswick",
+      "newfoundlandLabrador": "Terre-Neuve-et-Labrador",
+      "novaScotia": "Nouvelle-Écosse",
+      "northwestTerritories": "Territoires du Nord-Ouest",
+      "nunavut": "Nunavut",
+      "ontario": "Ontario",
+      "princeEdwardIsland": "Île-du-Prince-Édouard",
+      "quebec": "Québec",
+      "saskatchewan": "Saskatchewan",
+      "yukon": "Yukon"
+    },
     "regionLabel": "Région",
     "regionNeighbourhood": "Région / Quartier",
     "rentalPeriod": "Période de location",
@@ -529,6 +551,9 @@
     "seasonStart": "Début de la saison",
     "seasonalRental": "Location saisonnière",
     "seasonalRentalHint": "p. ex. novembre–avril pour l'entreposage hivernal",
+    "selectCountry": "Sélectionner un pays",
+    "selectCountryFirst": "Sélectionnez d'abord un pays",
+    "selectProvinceState": "Sélectionner une province ou un état",
     "selectType": "Sélectionner le type",
     "signInRequired": "Connexion requise",
     "slotNumber": "Plage {{number}}",
@@ -791,7 +816,7 @@
     },
     "estimatedRefund": "Remboursement estimé :",
     "extensionRequested": "Prolongation demandée",
-    "extensionTotalPending": "Total {{total}} $ CAD en attente d'approbation du fournisseur.",
+    "extensionTotalPending": "Total {{total}} $ {{currency}} en attente d'approbation du fournisseur.",
     "extraHours": "Heures supplémentaires",
     "failed": "Échec",
     "fiftyPercentRefund": "remboursement de 50 %",
@@ -969,7 +994,8 @@
   },
   "legal": {
     "termsTitle": "Conditions d'utilisation",
-    "privacyTitle": "Politique de confidentialité"
+    "privacyTitle": "Politique de confidentialité",
+    "usSupplementTitle": "Supplément américain aux Conditions d'utilisation et à la Politique de confidentialité"
   },
   "ui": {
     "goToPreviousPage": "Aller à la page précédente",

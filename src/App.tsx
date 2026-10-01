@@ -42,6 +42,7 @@ import AdminContentPages from "./pages/admin/AdminContentPages";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import UsSupplement from "./pages/UsSupplement";
 import Contact from "./pages/Contact";
 import Support from "./pages/Support";
 import OAuthConsent from "./pages/OAuthConsent";
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/legal/us-supplement" element={<UsSupplement />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/support" element={<Support />} />
             {/* Admin Routes */}

@@ -52,6 +52,7 @@
     "legal": "Legal",
     "termsOfService": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
+    "usSupplement": "US Terms & Privacy Supplement",
     "copyright": "© {{year}} Spotsvault. All rights reserved."
   },
   "chrome": {
@@ -383,7 +384,7 @@
     "platformFee": "Platform fee",
     "providerPayout": "Provider payout",
     "processing": "Processing...",
-    "payAmount": "Pay ${{amount}} CAD",
+    "payAmount": "Pay ${{amount}} {{currency}}",
     "browseMore": "Browse More",
     "howToPay": "How would you like to pay?",
     "payInFull": "Pay in full",
@@ -391,7 +392,7 @@
       "weekly": "Weekly ({{count}} payments)",
       "monthly": "Monthly ({{count}} payments)"
     },
-    "installmentSummary": "{{count}} {{frequency}} payments of ${{amount}} CAD, starting today.",
+    "installmentSummary": "{{count}} {{frequency}} payments of ${{amount}} {{currency}}, starting today.",
     "frequencyAdverb": {
       "weekly": "weekly",
       "monthly": "monthly"
@@ -461,6 +462,10 @@
     "couldNotSaveBlockedDates": "Could not save blocked dates",
     "couldNotSaveSchedule": "Could not save schedule",
     "country": "Country",
+    "countryName": {
+      "canada": "Canada",
+      "unitedStates": "United States"
+    },
     "createListingSubtitle": "Create a new parking or storage listing in a few steps.",
     "dailyDollar": "Daily ($)",
     "descriptionHint": "The more detail you provide, the fewer surprises for seekers.",
@@ -513,10 +518,27 @@
     "pinExactLocationHint": "Click on the map or drag the pin to set the exact spot.",
     "pinLocationRequired": "Required — click on the map above to set your exact location.",
     "postalZipCode": "Postal / Zip Code",
-    "pricesInCadTaxHint": "Prices in CAD. Quebec taxes (GST 5% + QST 9.975%) will be added at checkout.",
+    "pricesInCadTaxHint": "Prices in {{currency}}. Applicable state or provincial taxes will be added at checkout.",
     "pricing": "Pricing",
     "pricingAndAvailability": "Pricing & Availability",
     "provinceState": "Province / State",
+    "provinceLabel": "Province",
+    "stateLabel": "State",
+    "provinceName": {
+      "alberta": "Alberta",
+      "britishColumbia": "British Columbia",
+      "manitoba": "Manitoba",
+      "newBrunswick": "New Brunswick",
+      "newfoundlandLabrador": "Newfoundland and Labrador",
+      "novaScotia": "Nova Scotia",
+      "northwestTerritories": "Northwest Territories",
+      "nunavut": "Nunavut",
+      "ontario": "Ontario",
+      "princeEdwardIsland": "Prince Edward Island",
+      "quebec": "Quebec",
+      "saskatchewan": "Saskatchewan",
+      "yukon": "Yukon"
+    },
     "regionLabel": "Region",
     "regionNeighbourhood": "Region / Neighbourhood",
     "rentalPeriod": "Rental Period",
@@ -529,6 +551,9 @@
     "seasonStart": "Season start",
     "seasonalRental": "Seasonal rental",
     "seasonalRentalHint": "e.g. November–April for winter storage",
+    "selectCountry": "Select a country",
+    "selectCountryFirst": "Select a country first",
+    "selectProvinceState": "Select a province or state",
     "selectType": "Select type",
     "signInRequired": "Sign in required",
     "slotNumber": "Slot {{number}}",
@@ -791,7 +816,7 @@
     },
     "estimatedRefund": "Estimated refund:",
     "extensionRequested": "Extension requested",
-    "extensionTotalPending": "Total ${{total}} CAD pending provider approval.",
+    "extensionTotalPending": "Total ${{total}} {{currency}} pending provider approval.",
     "extraHours": "Extra hours",
     "failed": "Failed",
     "fiftyPercentRefund": "50% refund",
@@ -969,7 +994,8 @@
   },
   "legal": {
     "termsTitle": "Terms and Conditions",
-    "privacyTitle": "Privacy Policy"
+    "privacyTitle": "Privacy Policy",
+    "usSupplementTitle": "US Terms & Privacy Supplement"
   },
   "ui": {
     "goToPreviousPage": "Go to previous page",
