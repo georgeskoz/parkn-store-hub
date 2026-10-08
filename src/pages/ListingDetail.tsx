@@ -20,7 +20,9 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { MapPin, ArrowLeft, User, Phone, Check, CalendarIcon, Clock } from "lucide-react";
+import { MapPin, ArrowLeft, User, MessageCircle, Check, CalendarIcon, Clock } from "lucide-react";
+import { openBookingConversation } from "@/lib/messaging";
+import { toast } from "@/hooks/use-toast";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -65,9 +67,10 @@ interface DbListing {
   user_id: string;
 }
 
+// Public host fields only. The host's phone is deliberately not read here:
+// visitors contact the host through in-app messaging (tied to a booking).
 interface UserProfile {
-  display_name: string;
-  phone: string | null;
+  display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
 }
@@ -181,6 +184,11 @@ export default function ListingDetail() {
   const { user, loading: authLoading } = useAuth();
   const [listing, setListing] = useState<DbListing | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  // The signed-in visitor's own most recent non-cancelled booking of this
+  // listing, if any -- messaging is booking-keyed, so this is what the
+  // "Message host" button opens.
+  const [myBookingId, setMyBookingId] = useState<string | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -270,7 +278,7 @@ export default function ListingDetail() {
         // Fetch profile info
         const { data: profileData } = await (supabase as any)
           .from("profiles_public")
-          .select("display_name, phone, avatar_url, bio")
+          .select("display_name, avatar_url, bio")
           .eq("id", data.user_id)
           .maybeSingle();
 
@@ -318,6 +326,31 @@ export default function ListingDetail() {
 
     fetchListing();
   }, [id, authLoading, user]);
+
+  // The visitor's own booking of this listing (if any), for "Message host".
+  // RLS on bookings only returns the caller's own rows.
+  useEffect(() => {
+    if (!user || !id) {
+      setMyBookingId(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("listing_id", id)
+        .eq("renter_id", user.id)
+        .neq("status", "cancelled")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) setMyBookingId((data?.id as string | undefined) ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, id]);
 
   // Must be declared here, before the loading/error early returns below --
   // hooks can't be called conditionally. Derives subtotal via
@@ -501,6 +534,31 @@ export default function ListingDetail() {
   const handleBook = () => {
     if (!startDate || !endDate || !bestRate) return;
     goToBooking(startDate, endDate, startTime, endTime);
+  };
+
+  // "Message host": logged-out visitors sign in first (and come back here);
+  // signed-in visitors with a booking open that booking's conversation.
+  // Without a booking the button is disabled -- conversations are
+  // booking-keyed, there is no pre-booking chat.
+  const handleMessageHost = async () => {
+    if (!user) {
+      navigate(`/auth?redirect=${encodeURIComponent(`/listing/${id}`)}`);
+      return;
+    }
+    if (!myBookingId) return;
+    setOpeningChat(true);
+    try {
+      const conversationId = await openBookingConversation(myBookingId);
+      navigate("/messages", { state: { conversationId } });
+    } catch (e) {
+      toast({
+        title: t("listingDetail.messageHostFailed"),
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setOpeningChat(false);
+    }
   };
 
   // Quick-book shortcuts for the pricing tiles below -- tapping a rate
@@ -756,7 +814,7 @@ export default function ListingDetail() {
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
-                        alt={profile.display_name}
+                        alt={profile.display_name || t("listingDetail.hostFallback")}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
@@ -764,20 +822,28 @@ export default function ListingDetail() {
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{profile?.display_name || t("listingDetail.unknownProvider")}</p>
+                    <p className="font-semibold text-foreground">{profile?.display_name || t("listingDetail.hostFallback")}</p>
                     {profile?.bio && <p className="text-xs text-muted-foreground">{profile.bio}</p>}
                   </div>
                 </div>
 
-                {/* Contact buttons */}
-                {profile?.phone && (
+                {/* Contact: in-app messaging only (no phone number shown).
+                    Hidden on the host's own listing. */}
+                {user?.id !== listing.user_id && (
                   <div className="space-y-2 pt-4 border-t border-border">
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <a href={`tel:${profile.phone}`}>
-                        <Phone className="w-4 h-4 mr-2" />
-                        {profile.phone}
-                      </a>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={handleMessageHost}
+                      disabled={openingChat || (!!user && !myBookingId)}
+                      data-testid="message-host-button"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      {user ? t("booking.messageHost") : t("listingDetail.signInToMessageHost")}
                     </Button>
+                    {user && !myBookingId && (
+                      <p className="text-xs text-muted-foreground">{t("listingDetail.messageHostAfterBooking")}</p>
+                    )}
                   </div>
                 )}
 
