@@ -199,7 +199,10 @@
     "reviews": "Reviews",
     "location": "Location",
     "contactProvider": "Contact Provider",
-    "unknownProvider": "Unknown Provider",
+    "hostFallback": "Host",
+    "signInToMessageHost": "Sign in to message the host",
+    "messageHostAfterBooking": "You can message the host once you have a booking for this space.",
+    "messageHostFailed": "Could not open the conversation",
     "startingAt": "Starting at",
     "pickDate": "Pick date",
     "unitsLabel": {

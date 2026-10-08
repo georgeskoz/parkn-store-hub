@@ -199,7 +199,10 @@
     "reviews": "Avis",
     "location": "Emplacement",
     "contactProvider": "Contacter le fournisseur",
-    "unknownProvider": "Fournisseur inconnu",
+    "hostFallback": "Hôte",
+    "signInToMessageHost": "Connectez-vous pour écrire à l’hôte",
+    "messageHostAfterBooking": "Vous pourrez écrire à l’hôte une fois que vous aurez réservé cet espace.",
+    "messageHostFailed": "Impossible d’ouvrir la conversation",
     "startingAt": "À partir de",
     "pickDate": "Choisir une date",
     "unitsLabel": {
